@@ -51,7 +51,7 @@ public class Config {
         private int sessionManagerPort = 5555;
         private String pathLogs= "";
         private int defaultNumOfPoolInstances = 10;
-        private long sessionTimeout = 1000 * 60 * 5;
+        private long sessionTimeout = 1000 * 60 * 5 * 60 * 24;
         private boolean shouldShowException = false;
         public String serverAddress = "127.0.0.1";
 
@@ -89,8 +89,9 @@ public class Config {
             return this;
         }
 
-        public void setShouldShowException(boolean shouldShowException) {
+        public Builder setShouldShowException(boolean shouldShowException) {
             this.shouldShowException = shouldShowException;
+            return this;
         }
     }
 
