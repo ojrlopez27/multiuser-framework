@@ -26,6 +26,7 @@ import edu.cmu.inmind.multiuser.controller.session.Session;
 import edu.cmu.inmind.multiuser.controller.sync.ForceSync;
 import edu.cmu.inmind.multiuser.controller.sync.SynchronizableEvent;
 
+import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -180,7 +181,11 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         if( !isClosed ) {
             Log4J.info(this, String.format("Closing Process Orchestrator for session: %s", sessionId));
             isClosed = true;
-            logger.store();
+            try {
+                logger.store();
+            } catch (FileNotFoundException fnfe) {
+                fnfe.printStackTrace();
+            }
             status = Constants.ORCHESTRATOR_STOPPED;
             serviceManager.stopAsync().awaitStopped(5, TimeUnit.SECONDS);
             serviceManager.awaitStopped();
