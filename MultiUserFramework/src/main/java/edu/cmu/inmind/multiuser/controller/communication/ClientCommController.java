@@ -4,6 +4,7 @@ import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.Pair;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import org.zeromq.ZMsg;
 
 import java.util.Arrays;
@@ -32,7 +33,7 @@ public class ClientCommController {
     //we need to keep the state in case of failure and reconnection
     private int sentMessages = 0;
     private int receivedMessages = 0;
-    private SharedObject sharedObject;
+    private final SharedObject sharedObject;
     private long timeToWait = 15;
 
     //control
@@ -210,6 +211,7 @@ public class ClientCommController {
                 while( !Thread.currentThread().isInterrupted() && !stop){
                     try {
                         String response = receive();
+                        receivedMessages++;
                         if ((response == null || checkNumSent) && (sentMessages > receivedMessages + difference)) {
                             stop = true;
                         }else if(responseListener != null ){
@@ -269,7 +271,8 @@ public class ClientCommController {
         private Condition bufferNotFull = aLock.newCondition();
         private Condition bufferNotEmpty = aLock.newCondition();
 
-        public void put(Pair<String, Object> message){
+        void put(Pair<String, Object> message){
+            //Log4J.debug(this, "putting: " + message.toString());
             aLock.lock();
             try {
                 while (messageQueue.size() >= Constants.QUEUE_CAPACITY) {
@@ -287,9 +290,11 @@ public class ClientCommController {
             }finally {
                 aLock.unlock();
             }
+            //Log4J.debug(this, "done putting ...");
         }
 
-        public Pair<String, Object> get(){
+        Pair<String, Object> get(){
+            //Log4J.debug(this, "attempting to get ...");
             aLock.lock();
             Pair<String, Object> value = null;
             try {
@@ -305,6 +310,7 @@ public class ClientCommController {
             } finally{
                 aLock.unlock();
             }
+            //Log4J.debug(this, "got: " + value.toString());
             return value;
         }
 
