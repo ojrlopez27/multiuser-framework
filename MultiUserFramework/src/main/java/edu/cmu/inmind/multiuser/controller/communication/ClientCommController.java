@@ -205,33 +205,31 @@ public class ClientCommController {
     }
 
     private void receiveThread() {
-        receiveThread = new Thread(){
-            public void run(){
-                receiveState = checkFSM(receiveState, Constants.CONNECTION_STARTED);
-                while( !Thread.currentThread().isInterrupted() && !stop){
-                    try {
-                        String response = receive();
-                        receivedMessages++;
-                        if ((response == null || checkNumSent) && (sentMessages > receivedMessages + difference)) {
-                            stop = true;
-                        }else if(responseListener != null ){
-                            if( shouldProcessReply ) {
-                                responseListener.process(response);
-                            }else{
-                                shouldProcessReply = true;
-                            }
+        receiveThread = new Thread(() -> {
+            receiveState = checkFSM(receiveState, Constants.CONNECTION_STARTED);
+            while( !Thread.currentThread().isInterrupted() && !stop){
+                try {
+                    String response = receive();
+                    receivedMessages++;
+                    if ((response == null || checkNumSent) && (sentMessages > receivedMessages + difference)) {
+                        stop = true;
+                    }else if(responseListener != null ){
+                        if( shouldProcessReply ) {
+                            responseListener.process(response);
+                        }else{
+                            shouldProcessReply = true;
                         }
-                    }catch (Exception e){
-                        ExceptionHandler.handle(e);
                     }
+                }catch (Exception e){
+                    ExceptionHandler.handle(e);
                 }
-                if( sendThread.isAlive() ){
-                    sendThread.interrupt();
-                }
-                receiveState = checkFSM(receiveState, Constants.CONNECTION_FINISHED);
-                checkReconnect();
             }
-        };
+            if( sendThread.isAlive() ){
+                sendThread.interrupt();
+            }
+            receiveState = checkFSM(receiveState, Constants.CONNECTION_FINISHED);
+            checkReconnect();
+        });
         receiveThread.start();
     }
 
@@ -247,18 +245,16 @@ public class ClientCommController {
 
     private void reconnect() {
         release = checkFSM(release, Constants.CONNECTION_STARTED);
-        new Thread(){
-            public void run(){
-                try {
-                    sendThread.join();
-                    receiveThread.join();
-                    release = checkFSM(release, Constants.CONNECTION_FINISHED);
-                    execute();
-                }catch (Exception e){
-                    ExceptionHandler.handle( e );
-                }
+        new Thread(() -> {
+            try {
+                sendThread.join();
+                receiveThread.join();
+                release = checkFSM(release, Constants.CONNECTION_FINISHED);
+                execute();
+            }catch (Exception e){
+                ExceptionHandler.handle( e );
             }
-        }.start();
+        }).start();
     }
 
     /********************************* UTILS ********************************************/
@@ -273,61 +269,59 @@ public class ClientCommController {
 
         void put(Pair<String, Object> message){
             //Log4J.debug(this, "putting: " + message.toString());
-            aLock.lock();
+            boolean isLocked = false;
             try {
-                while (messageQueue.size() >= Constants.QUEUE_CAPACITY) {
-                    bufferNotEmpty.await( timeToWait * 10, TimeUnit.MILLISECONDS);
-                    //we start to lose messages :(
-                    messageQueue.clear();
-                }
+                isLocked = aLock.tryLock( timeToWait * 10, TimeUnit.MILLISECONDS);
+                if( isLocked ) {
+                    while (messageQueue.size() >= Constants.QUEUE_CAPACITY) {
+                        bufferNotEmpty.await(timeToWait * 10, TimeUnit.MILLISECONDS);
+                        //we start to lose messages :(
+                        messageQueue.clear();
+                    }
 
-                boolean isAdded = messageQueue.offer( message );
-                if (isAdded) {
-                    bufferNotFull.signalAll();
+                    boolean isAdded = messageQueue.offer(message);
+                    if (isAdded) {
+                        bufferNotFull.signalAll();
+                    }
                 }
             }catch (Exception e) {
                 ExceptionHandler.handle(e);
             }finally {
-                aLock.unlock();
+                if( isLocked ) aLock.unlock();
             }
             //Log4J.debug(this, "done putting ...");
         }
 
         Pair<String, Object> get(){
             //Log4J.debug(this, "attempting to get ...");
-            aLock.lock();
+            boolean isLocked = false;
             Pair<String, Object> value = null;
             try {
-                while (messageQueue.size() == 0) {
-                    bufferNotFull.await();
-                }
-                value = messageQueue.poll();
-                if (value != null) {
-                    bufferNotEmpty.signalAll();
+                isLocked = aLock.tryLock(timeToWait * 10, TimeUnit.MILLISECONDS );
+                if( isLocked ) {
+                    while (messageQueue.size() == 0) {
+                        bufferNotFull.await();
+                    }
+                    value = messageQueue.poll();
+                    if (value != null) {
+                        bufferNotEmpty.signalAll();
+                    }
                 }
             } catch(Exception e){
                 ExceptionHandler.handle( e );
             } finally{
-                aLock.unlock();
+                if( isLocked ) aLock.unlock();
             }
             //Log4J.debug(this, "got: " + value.toString());
             return value;
         }
 
+        //TODO: who needs to call thi?
         public void reset() {
             aLock = new ReentrantLock();
             bufferNotFull = aLock.newCondition();
             bufferNotEmpty = aLock.newCondition();
             messageQueue.clear();
-        }
-
-        public int size() {
-            aLock.lock();
-            try{
-                return messageQueue.size();
-            }finally{
-                aLock.unlock();
-            }
         }
     }
 
