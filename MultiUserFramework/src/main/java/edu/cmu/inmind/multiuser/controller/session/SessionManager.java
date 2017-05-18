@@ -186,10 +186,10 @@ public class SessionManager implements Runnable{
     }
 
     private void reconnect(ZMsgWrapper msgRequest, SessionMessage request, Session session){
-        Log4J.info(this, "Reconnecting session: " + session.getId());
+        Log4J.info(this, "Reconnecting session: " + session.getId() + " as per request " + request.getSessionId());
         if(request.getSessionId().equals(session.getId())){
             serverCommController.send( msgRequest, new SessionMessage(Constants.SESSION_RECONNECTED) );
-        }else {
+        } else {
             serverCommController.send( msgRequest, new SessionMessage(Constants.RESPONSE_ALREADY_CONNECTED) );
         }
     }
@@ -213,7 +213,7 @@ public class SessionManager implements Runnable{
     }
 
     public void start() {
-        thread = new Thread( this );
+        thread = new Thread( this, "session manager thread" );
         thread.start();
     }
 }

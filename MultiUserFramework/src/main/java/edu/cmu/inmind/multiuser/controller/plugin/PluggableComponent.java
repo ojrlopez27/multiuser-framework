@@ -123,6 +123,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         sessions.put(session.getId(), session);
     }
 
+    /** TODO: this method really needs some short documentation as to its expected usage! */
     public abstract void execute();
 
     public void close() throws Exception{
@@ -150,7 +151,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
 
     @Override
     public void shutDown() {
-        Log4J.info(this, "Shutting down component: " + this.getClass().getSimpleName());
+        Log4J.info(this, "Shutting down component: " + this.getClass().getSimpleName() + " instantiation " + this.hashCode());
         isShutDown = true;
         blackboards.clear();
         blackboards = null;

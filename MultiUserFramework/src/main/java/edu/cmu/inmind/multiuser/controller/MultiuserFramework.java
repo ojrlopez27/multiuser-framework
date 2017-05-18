@@ -19,7 +19,7 @@ public class MultiuserFramework{
 
     public static void start( PluginModule[] modules, Config config, ServiceInfo serviceInfo ){
         if( instance == null ){
-            Runtime.getRuntime().addShutdownHook(new Thread() {
+            Runtime.getRuntime().addShutdownHook(new Thread("shutdown hook in Multiuser framework") {
                 public void run() {
                     try {
                         MultiuserFramework.stop();

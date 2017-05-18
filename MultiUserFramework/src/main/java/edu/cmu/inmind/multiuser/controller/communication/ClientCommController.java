@@ -161,28 +161,26 @@ public class ClientCommController {
     }
 
     private void sendThread() {
-        sendThread = new Thread(){
-            public void run(){
-                sendState = checkFSM(sendState, Constants.CONNECTION_STARTED);
-                while( !Thread.currentThread().isInterrupted() && !stop){
-                    try {
-                        Pair<String, Object> message = sharedObject.get();
-                        stop = (!sendToBroker(message) || checkNumSent) && (sentMessages > receivedMessages + difference);
-                        if (stop) {
-                            continue;
-                        }
-                        sentMessages++;
-                    }catch (Exception e){
-                        ExceptionHandler.handle(e);
+        sendThread = new Thread(() -> {
+            sendState = checkFSM(sendState, Constants.CONNECTION_STARTED);
+            while( !Thread.currentThread().isInterrupted() && !stop){
+                try {
+                    Pair<String, Object> message = sharedObject.get();
+                    stop = (!sendToBroker(message) || checkNumSent) && (sentMessages > receivedMessages + difference);
+                    if (stop) {
+                        continue;
                     }
+                    sentMessages++;
+                }catch (Exception e){
+                    ExceptionHandler.handle(e);
                 }
-                if( receiveThread.isAlive() ){
-                    receiveThread.interrupt();
-                }
-                sendState = checkFSM(sendState, Constants.CONNECTION_FINISHED);
-                checkReconnect();
             }
-        };
+            if( receiveThread.isAlive() ){
+                receiveThread.interrupt();
+            }
+            sendState = checkFSM(sendState, Constants.CONNECTION_FINISHED);
+            checkReconnect();
+        }, "clientcommcontroler send thread");
         sendThread.start();
     }
 
@@ -229,7 +227,7 @@ public class ClientCommController {
             }
             receiveState = checkFSM(receiveState, Constants.CONNECTION_FINISHED);
             checkReconnect();
-        });
+        }, "clientCommControler recv thread");
         receiveThread.start();
     }
 
@@ -254,7 +252,7 @@ public class ClientCommController {
             }catch (Exception e){
                 ExceptionHandler.handle( e );
             }
-        }).start();
+        }, "clientCommControler reconnect thread").start();
     }
 
     /********************************* UTILS ********************************************/

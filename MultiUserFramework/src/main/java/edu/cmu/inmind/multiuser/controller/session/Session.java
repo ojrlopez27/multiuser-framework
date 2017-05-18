@@ -30,7 +30,7 @@ public class Session implements Runnable, OrchestratorListener{
     private ZMsgWrapper replyMsg = new ZMsgWrapper();
 
     public Session() {
-        this.thread = new Thread( this );
+        this.thread = new Thread( this, "session thread");
         this.timer = new InactivityTimer();
     }
 
@@ -42,6 +42,7 @@ public class Session implements Runnable, OrchestratorListener{
         if( this.id == null ){
             Log4J.info(this, "A new session has been created with id: " + id);
             this.sessionCommController = new ServerCommController( Constants.FULL_ADDRESS, id, msg);
+            this.thread.setName("session thread with id " + id);
             this.thread.start();
         }
         this.id = id;
@@ -122,6 +123,7 @@ public class Session implements Runnable, OrchestratorListener{
     @Override
     public void processOutput(SessionMessage output) {
         sessionCommController.send(output);
+        Log4J.debug(this, "session timeout is " + Config.getSessionTimeout());
         timer.schedule(new InactivityCheck(), Config.getSessionTimeout());
     }
 

@@ -18,7 +18,7 @@ import java.util.*;
  *  Majordomo Protocol broker
  *  A minimal implementation of http://rfc.zeromq.org/spec:7 and spec:8
  */
-public class Broker extends Thread{
+public class Broker extends Thread {
 
     // We'd normally pull these from config data
     private static final String INTERNAL_SERVICE_PREFIX = "mmi.";
@@ -42,6 +42,11 @@ public class Broker extends Thread{
             this.requests = new ArrayDeque<>();
             this.waiting = new ArrayDeque<>();
         }
+
+        @Override
+        public String toString() {
+            return "service " + name;
+        }
     }
 
     /**
@@ -57,6 +62,9 @@ public class Broker extends Thread{
             this.address = address;
             this.identity = identity;
             this.expiry = System.currentTimeMillis() + HEARTBEAT_INTERVAL * HEARTBEAT_LIVENESS;
+        }
+        @Override public String toString() {
+            return "worker " + identity + " for service " + service.toString() + " with address " + address + " and expiration " + expiry;
         }
     }
 
@@ -76,6 +84,7 @@ public class Broker extends Thread{
      * Initialize broker state.
      */
     public Broker() {
+        super("broker thread");
         this.services = new HashMap<>();
         this.workers = new HashMap<>();
         this.waiting = new ArrayDeque<>();
@@ -100,24 +109,30 @@ public class Broker extends Thread{
      */
     public void mediate() throws Exception{
         while (!Thread.currentThread().isInterrupted()) {
+            //Log4J.debug(this, "polling ZMQ");
             ZMQ.Poller items = new ZMQ.Poller(1);
             items.register(socket, ZMQ.Poller.POLLIN);
             if (items.poll(HEARTBEAT_INTERVAL) == -1)
                 break; // Interrupted
             if (items.pollin(0)) {
                 ZMsg msg = ZMsg.recvMsg(socket);
-                if (msg == null)
+                if (msg == null) {
+                    Log4J.debug(this, "interrupted while receiving mesage.");
                     break; // Interrupted
+                }
 
                 ZFrame sender = msg.pop();
                 ZFrame empty = msg.pop();
                 ZFrame header = msg.pop();
 
                 if (MDP.C_CLIENT.frameEquals(header)) {
+                    Log4J.debug(this, "received message " + msg.toString() + " for client and coming from " + sender.toString());
                     processClient(sender, msg);
-                } else if (MDP.S_ORCHESTRATOR.frameEquals(header))
+                } else if (MDP.S_ORCHESTRATOR.frameEquals(header)) {
+                    Log4J.debug(this, "received message " + msg.toString() + " is for orchestrator");
                     processWorker(sender, msg);
-                else {
+                }else {
+                    Log4J.debug(this, "received message " + msg.toString() + " remains unhandled.");
                     msg.destroy();
                 }
 
@@ -129,6 +144,7 @@ public class Broker extends Thread{
             purgeWorkers();
             sendHeartbeats();
         }
+        Log4J.debug(this, "mediate() is about to terminate.");
         close(); // interrupted
     }
 
@@ -141,6 +157,7 @@ public class Broker extends Thread{
             ArrayList<Worker> wrkrs = new ArrayList( workers.values() );
             wrkrs.forEach(worker -> deleteWorker(worker, true));
             ctx.destroy();
+            Log4J.debug(this, "Broker is now closing down.");
         }
     }
 
@@ -352,6 +369,7 @@ public class Broker extends Thread{
 
         // Stack routing envelope to start of message
         msg.wrap(worker.address.duplicate());
+        Log4J.debug(this, "sending to worker " + worker.toString());
         msg.send(socket);
     }
 }
