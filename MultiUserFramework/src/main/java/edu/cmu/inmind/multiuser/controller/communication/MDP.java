@@ -41,6 +41,10 @@ public enum MDP {
         this.data = new byte[] { b };
     }
 
+    @Override public String toString() {
+        return new String(this.data, ZMQ.CHARSET);
+    }
+
     public ZFrame newFrame () {
         return new ZFrame(data);
     }
