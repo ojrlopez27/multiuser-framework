@@ -22,7 +22,7 @@ import java.util.Map;
 /**
  * Created by oscarr on 3/16/17.
  */
-public abstract class PluggableComponent extends AbstractIdleService implements BlackboardListener {
+public abstract class PluggableComponent extends AbstractIdleService implements BlackboardListener, Pluggable {
     private Map<String, Blackboard> blackboards = new HashMap<>();
     protected Map<String, MessageLog> messageLoggers = new HashMap<>();
     protected Map<String, Session> sessions = new HashMap<>();//a component may be shared by several sessions (Stateless)
@@ -123,8 +123,9 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         sessions.put(session.getId(), session);
     }
 
-    /** TODO: this method really needs some short documentation as to its expected usage! */
-    public abstract void execute();
+    public void execute(){
+        //do nothing
+    }
 
     public void close() throws Exception{
         if( clientCommController != null ){
