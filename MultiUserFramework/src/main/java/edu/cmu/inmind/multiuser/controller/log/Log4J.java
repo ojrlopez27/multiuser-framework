@@ -27,6 +27,10 @@ public class Log4J{
         return sessionId;
     }
 
+    private static String getSessionAndMsg(String sessionId, String message){
+        return String.format( "%s\t%s", sessionId, message );
+    }
+
     public static void info(Object caller, String message){
         String sessionId = getSessionId(caller);
         if (turnedOn){
@@ -72,19 +76,19 @@ public class Log4J{
     }
 
     public static void info(Object caller, String sessionId, String message){
-        if( turnedOn ) getLogger(caller).info( sessionId + "\t" + message );
+        if( turnedOn ) getLogger(caller).info( getSessionAndMsg(sessionId, message ));
     }
 
     public static void debug(Object caller, String sessionId, String message){
-        if( turnedOn ) getLogger(caller).debug(sessionId + "\t" +message);
+        if( turnedOn ) getLogger(caller).debug( getSessionAndMsg(sessionId, message ));
     }
 
     public static void error(Object caller, String sessionId, String message){
-        if( turnedOn ) getLogger(caller).error( sessionId + "\t" + message);
+        if( turnedOn ) getLogger(caller).error( getSessionAndMsg(sessionId, message ));
     }
 
     public static void warn(Object caller, String sessionId, String message){
-        if( turnedOn ) getLogger(caller).warn( sessionId + "\t" + message );
+        if( turnedOn ) getLogger(caller).warn( getSessionAndMsg(sessionId, message ));
     }
 
     private static Logger getLogger(Object caller){
