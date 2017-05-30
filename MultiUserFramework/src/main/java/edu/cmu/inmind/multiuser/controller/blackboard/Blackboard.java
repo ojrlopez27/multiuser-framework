@@ -219,7 +219,11 @@ public class Blackboard {
                         if (subscriber instanceof PluggableComponent) {
                             ((PluggableComponent) subscriber).setActiveSession(sender.getSessionId());
                         }
-                        subscriber.onEvent(event);
+                        new Thread("NotifyBlackboardSubscribersThread"){
+                            public void run(){
+                                subscriber.onEvent(event);
+                            }
+                        }.start();
                         if (subscriber instanceof PluggableComponent && subscriber.getClass()
                                 .isAnnotationPresent(ConnectRemoteService.class)) {
                             SessionMessage sessionMessage = new SessionMessage();
