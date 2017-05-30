@@ -213,7 +213,7 @@ public class SessionManager implements Runnable{
     }
 
     public void start() {
-        thread = new Thread( this );
+        thread = new Thread( this, "SessionManagerThread" );
         thread.start();
     }
 }

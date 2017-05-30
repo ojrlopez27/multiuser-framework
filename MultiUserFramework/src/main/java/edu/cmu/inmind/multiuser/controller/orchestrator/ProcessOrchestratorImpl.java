@@ -265,7 +265,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         try{
             for (PluggableComponent component : components) {
                 component.setActiveSession( session );
-                new Thread(){
+                new Thread("ExecuteComponentAsyncThread"){
                     public void run(){
                         execute(component);
                     }

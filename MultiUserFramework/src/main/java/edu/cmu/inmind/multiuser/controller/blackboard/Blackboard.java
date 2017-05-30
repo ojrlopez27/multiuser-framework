@@ -246,7 +246,7 @@ public class Blackboard {
     }
 
     public void reset(){
-        new Thread(){
+        new Thread("BlackboardResetThread"){
             public void run(){
                 lock.lock();
                 try{
