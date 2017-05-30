@@ -1,5 +1,6 @@
 package edu.cmu.inmind.multiuser.controller.communication;
 
+import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
@@ -66,7 +67,9 @@ public class ClientCommAPI {
             return null; // Interrupted
 
         if (items.pollin(0)) {
+            Log4J.debug(this, "attempting to receive ... ");
             ZMsg msg = ZMsg.recvMsg(client, ZMQ.DONTWAIT);
+            Log4J.debug(this, "received message " + msg.toString());
 
             // Don't try to handle errors, just assert noisily
             assert (msg.size() >= 4);
@@ -76,7 +79,7 @@ public class ClientCommAPI {
             empty.destroy();
 
             ZFrame header = msg.pop();
-            assert (MDP.C_CLIENT.equals(header.toString()));
+            assert (MDP.C_CLIENT.toString().equals(header.toString())) : header.toString() + " vs. " + MDP.C_CLIENT;
             header.destroy();
 
             ZFrame replyService = msg.pop();
@@ -101,10 +104,12 @@ public class ClientCommAPI {
         request.addFirst(service);
         request.addFirst(MDP.C_CLIENT.newFrame());
         request.addFirst("");
-
+        Log4J.debug(this, "about to send " + request.toString());
         if( !request.send(client) ){
+            Log4J.debug(this, "failed to send " + request.toString());
             return false;
         }
+        Log4J.debug(this, "successfully sent " + request.toString());
         return true;
     }
 

@@ -37,4 +37,9 @@ public class ZMsgWrapper {
         if(msg != null) msg.destroy();
         if(replyTo != null) replyTo.destroy();
     }
+
+    @Override
+    public String toString() {
+        return "zmsgWrapper for " + this.msg.toString() + " and replyTo " + this.replyTo.toString();
+    }
 }

@@ -152,7 +152,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
 
     @Override
     public void shutDown() {
-        Log4J.info(this, "Shutting down component: " + this.getClass().getSimpleName());
+        Log4J.info(this, "Shutting down component: " + this.getClass().getSimpleName() + " instantiation " + this.hashCode());
         isShutDown = true;
         blackboards.clear();
         blackboards = null;

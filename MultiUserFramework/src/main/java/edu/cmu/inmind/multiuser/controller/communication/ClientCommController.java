@@ -176,13 +176,13 @@ public class ClientCommController {
                         ExceptionHandler.handle(e);
                     }
                 }
-                if( receiveThread.isAlive() ){
-                    receiveThread.interrupt();
-                }
-                sendState = checkFSM(sendState, Constants.CONNECTION_FINISHED);
-                checkReconnect();
             }
-        };
+            if( receiveThread.isAlive() ){
+                receiveThread.interrupt();
+            }
+            sendState = checkFSM(sendState, Constants.CONNECTION_FINISHED);
+            checkReconnect();
+        }, "clientcommcontroler send thread");
         sendThread.start();
     }
 

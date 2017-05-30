@@ -51,7 +51,7 @@ public class Config {
         private int sessionManagerPort = 5555;
         private String pathLogs= "";
         private int defaultNumOfPoolInstances = 10;
-        private long sessionTimeout = 1000 * 60 * 5 * 60 * 24;
+        private long sessionTimeout = 1000 * 60 * 5; // set to 5 minutes by default
         private boolean shouldShowException = false;
         public String serverAddress = "127.0.0.1";
 
