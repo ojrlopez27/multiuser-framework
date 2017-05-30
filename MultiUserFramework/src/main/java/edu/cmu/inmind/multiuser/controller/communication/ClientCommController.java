@@ -161,18 +161,20 @@ public class ClientCommController {
     }
 
     private void sendThread() {
-        sendThread = new Thread(() -> {
-            sendState = checkFSM(sendState, Constants.CONNECTION_STARTED);
-            while( !Thread.currentThread().isInterrupted() && !stop){
-                try {
-                    Pair<String, Object> message = sharedObject.get();
-                    stop = (!sendToBroker(message) || checkNumSent) && (sentMessages > receivedMessages + difference);
-                    if (stop) {
-                        continue;
+        sendThread = new Thread("ClientSendMsgsThread"){
+            public void run(){
+                sendState = checkFSM(sendState, Constants.CONNECTION_STARTED);
+                while( !Thread.currentThread().isInterrupted() && !stop){
+                    try {
+                        Pair<String, Object> message = sharedObject.get();
+                        stop = (!sendToBroker(message) || checkNumSent) && (sentMessages > receivedMessages + difference);
+                        if (stop) {
+                            continue;
+                        }
+                        sentMessages++;
+                    }catch (Exception e){
+                        ExceptionHandler.handle(e);
                     }
-                    sentMessages++;
-                }catch (Exception e){
-                    ExceptionHandler.handle(e);
                 }
             }
             if( receiveThread.isAlive() ){
@@ -203,31 +205,33 @@ public class ClientCommController {
     }
 
     private void receiveThread() {
-        receiveThread = new Thread(() -> {
-            receiveState = checkFSM(receiveState, Constants.CONNECTION_STARTED);
-            while( !Thread.currentThread().isInterrupted() && !stop){
-                try {
-                    String response = receive();
-                    receivedMessages++;
-                    if ((response == null || checkNumSent) && (sentMessages > receivedMessages + difference)) {
-                        stop = true;
-                    }else if(responseListener != null ){
-                        if( shouldProcessReply ) {
-                            responseListener.process(response);
-                        }else{
-                            shouldProcessReply = true;
+        receiveThread = new Thread("ClientReceiveMsgsThread"){
+            public void run() {
+                receiveState = checkFSM(receiveState, Constants.CONNECTION_STARTED);
+                while (!Thread.currentThread().isInterrupted() && !stop) {
+                    try {
+                        String response = receive();
+                        receivedMessages++;
+                        if ((response == null || checkNumSent) && (sentMessages > receivedMessages + difference)) {
+                            stop = true;
+                        } else if (responseListener != null) {
+                            if (shouldProcessReply) {
+                                responseListener.process(response);
+                            } else {
+                                shouldProcessReply = true;
+                            }
                         }
+                    } catch (Exception e) {
+                        ExceptionHandler.handle(e);
                     }
-                }catch (Exception e){
-                    ExceptionHandler.handle(e);
                 }
+                if (sendThread.isAlive()) {
+                    sendThread.interrupt();
+                }
+                receiveState = checkFSM(receiveState, Constants.CONNECTION_FINISHED);
+                checkReconnect();
             }
-            if( sendThread.isAlive() ){
-                sendThread.interrupt();
-            }
-            receiveState = checkFSM(receiveState, Constants.CONNECTION_FINISHED);
-            checkReconnect();
-        }, "clientCommControler recv thread");
+        };
         receiveThread.start();
     }
 
@@ -243,16 +247,18 @@ public class ClientCommController {
 
     private void reconnect() {
         release = checkFSM(release, Constants.CONNECTION_STARTED);
-        new Thread(() -> {
-            try {
-                sendThread.join();
-                receiveThread.join();
-                release = checkFSM(release, Constants.CONNECTION_FINISHED);
-                execute();
-            }catch (Exception e){
-                ExceptionHandler.handle( e );
+        new Thread("ReconnectClientThread") {
+            public void run() {
+                try {
+                    sendThread.join();
+                    receiveThread.join();
+                    release = checkFSM(release, Constants.CONNECTION_FINISHED);
+                    execute();
+                } catch (Exception e) {
+                    ExceptionHandler.handle(e);
+                }
             }
-        }, "clientCommControler reconnect thread").start();
+        }.start();
     }
 
     /********************************* UTILS ********************************************/
