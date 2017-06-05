@@ -98,27 +98,32 @@ public class Blackboard {
     }
 
     private void post(BlackboardListener sender, String key, Object element, boolean shouldClone){
-        lock.lock();
+        boolean isLocked = false;
         try {
-            while( isRetrieving || isRemoving ){
-                canAdd.await();
+            isLocked = lock.tryLock( 10, TimeUnit.MILLISECONDS);
+            if( isLocked ) {
+                while (isRetrieving || isRemoving) {
+                    canAdd.await();
+                }
+                isInserting = true;
+                Object clone = shouldClone ? Utils.clone(element) : element;
+                if (keepModel) model.put(key, clone);
+                isInserting = false;
+                canRetrieve.signalAll();
+                canRemove.signalAll();
+                if (loggerOn) {
+                    logger.add(key, clone.toString());
+                }
+                notifySubscribers(sender, Constants.ELEMENT_ADDED, key, clone);
             }
-            isInserting = true;
-            Object clone = shouldClone? Utils.clone( element ) : element;
-            if(keepModel) model.put(key, clone);
-            isInserting = false;
-            canRetrieve.signalAll();
-            canRemove.signalAll();
-            if( loggerOn ){
-                logger.add( key, clone.toString() );
-            }
-            notifySubscribers(sender, Constants.ELEMENT_ADDED, key, clone );
         }
         catch (NoClassDefFoundError e){
             post( sender, key, element, false);
         }catch(Exception e){
         }finally {
-            lock.unlock();
+            if( isLocked ) {
+                lock.unlock();
+            }
         }
     }
 
@@ -127,29 +132,34 @@ public class Blackboard {
     }
 
     private void remove(BlackboardListener sender, String key, boolean shouldClone){
-        lock.lock();
+        boolean isLocked = false;
         try {
-            while( isRetrieving || isInserting ){
-                canAdd.await();
+            isLocked = lock.tryLock( 10, TimeUnit.MILLISECONDS);
+            if( isLocked ) {
+                while (isRetrieving || isInserting) {
+                    canAdd.await();
+                }
+                isRemoving = true;
+                Object clone = Utils.clone(model.get(key));
+                if (key.contains(Constants.REMOVE_ALL)) {
+                    model.clear();
+                } else {
+                    if (keepModel) model.remove(key);
+                }
+                isRemoving = false;
+                canAdd.signalAll();
+                canRetrieve.signalAll();
+                notifySubscribers(sender, Constants.ELEMENT_REMOVED, key, clone);
             }
-            isRemoving = true;
-            Object clone = Utils.clone(model.get(key));
-            if (key.contains(Constants.REMOVE_ALL)) {
-                model.clear();
-            } else {
-                if(keepModel) model.remove(key);
-            }
-            isRemoving = false;
-            canAdd.signalAll();
-            canRetrieve.signalAll();
-            notifySubscribers(sender, Constants.ELEMENT_REMOVED, key, clone );
         }catch( NoClassDefFoundError e){
             remove(sender, key, false);
         }
         catch (Exception e){
             ExceptionHandler.handle( e );
         }finally {
-            lock.unlock();
+            if( isLocked ) {
+                lock.unlock();
+            }
         }
     }
 
@@ -159,21 +169,27 @@ public class Blackboard {
 
     private Object get(String key, boolean shouldClone) {
         Object value = null;
+        boolean isLocked = false;
         try {
-            while( isInserting || isRemoving ){
-                canRetrieve.await();
+            isLocked = lock.tryLock( 10, TimeUnit.MILLISECONDS);
+            if( isLocked ) {
+                while (isInserting || isRemoving) {
+                    canRetrieve.await();
+                }
+                isRetrieving = true;
+                lock.lock();
+                value = shouldClone ? Utils.clone(model.get(key)) : model.get(key);
+                isRetrieving = false;
+                canAdd.signalAll();
+                canRemove.signalAll();
             }
-            isRetrieving = true;
-            lock.lock();
-            value = shouldClone? Utils.clone( model.get(key) ) : model.get(key);
-            isRetrieving = false;
-            canAdd.signalAll();
-            canRemove.signalAll();
         }catch (NoClassDefFoundError e){
             value = get(key, false);
         }catch (Exception e) {
         }finally {
-            lock.unlock();
+            if( isLocked ) {
+                lock.unlock();
+            }
         }
         return value;
     }
@@ -248,13 +264,14 @@ public class Blackboard {
     public void reset(){
         new Thread("BlackboardResetThread"){
             public void run(){
-                lock.lock();
-                try{
-                    model.clear();
+                boolean isLocked = false;
+                try {
+                    isLocked = lock.tryLock( 10, TimeUnit.MILLISECONDS);
+                    if( isLocked ) model.clear();
                 }catch (Exception e){
                     ExceptionHandler.handle(e);
                 }finally {
-                    lock.unlock();
+                    is( isLocked ) lock.unlock();
                 }
             }
         }.start();
