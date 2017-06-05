@@ -64,7 +64,8 @@ public class Broker extends Thread {
             this.expiry = System.currentTimeMillis() + HEARTBEAT_INTERVAL * HEARTBEAT_LIVENESS;
         }
         @Override public String toString() {
-            return "worker " + identity + " for service " + service.toString() + " with address " + address + " and expiration " + expiry;
+            return "worker " + identity + " for service " + (service == null? service : service.toString())
+                    + " with address " + address + " and expiration " + expiry;
         }
     }
 

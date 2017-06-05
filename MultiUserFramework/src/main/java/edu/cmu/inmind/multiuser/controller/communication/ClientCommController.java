@@ -1,3 +1,4 @@
+
 package edu.cmu.inmind.multiuser.controller.communication;
 
 import edu.cmu.inmind.multiuser.common.Constants;
@@ -162,9 +163,9 @@ public class ClientCommController {
 
     private void sendThread() {
         sendThread = new Thread("ClientSendMsgsThread"){
-            public void run(){
+            public void run() {
                 sendState = checkFSM(sendState, Constants.CONNECTION_STARTED);
-                while( !Thread.currentThread().isInterrupted() && !stop){
+                while (!Thread.currentThread().isInterrupted() && !stop) {
                     try {
                         Pair<String, Object> message = sharedObject.get();
                         stop = (!sendToBroker(message) || checkNumSent) && (sentMessages > receivedMessages + difference);
@@ -172,17 +173,17 @@ public class ClientCommController {
                             continue;
                         }
                         sentMessages++;
-                    }catch (Exception e){
+                    } catch (Exception e) {
                         ExceptionHandler.handle(e);
                     }
                 }
+                if (receiveThread.isAlive()) {
+                    receiveThread.interrupt();
+                }
+                sendState = checkFSM(sendState, Constants.CONNECTION_FINISHED);
+                checkReconnect();
             }
-            if( receiveThread.isAlive() ){
-                receiveThread.interrupt();
-            }
-            sendState = checkFSM(sendState, Constants.CONNECTION_FINISHED);
-            checkReconnect();
-        }, "clientcommcontroler send thread");
+        };
         sendThread.start();
     }
 

@@ -11,6 +11,7 @@ import edu.cmu.inmind.multiuser.controller.session.SessionManager;
  */
 public class MultiuserFramework{
     private SessionManager sessionManager;
+    private static boolean stopping;
     private static MultiuserFramework instance;
 
     private MultiuserFramework( SessionManager sessionManager){
@@ -37,11 +38,14 @@ public class MultiuserFramework{
         start( modules, config, null);
     }
 
-    public static void stop(){
-        try {
-            instance.sessionManager.stop();
-        }catch (Exception e){
-            ExceptionHandler.handle(e);
+    public synchronized static void stop(){
+        if( !stopping ) {
+            stopping = true;
+            try {
+                instance.sessionManager.stop();
+            } catch (Exception e) {
+                ExceptionHandler.handle(e);
+            }
         }
     }
 }
