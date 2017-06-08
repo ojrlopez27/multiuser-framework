@@ -18,6 +18,7 @@ public class MultiuserFramework{
         this.sessionManager = sessionManager;
     }
 
+    //https://stackoverflow.com/questions/13158847/java-shutdown-hook-with-more-than-one-thread
     public static void start( PluginModule[] modules, Config config, ServiceInfo serviceInfo ){
         if( instance == null ){
             Runtime.getRuntime().addShutdownHook(new Thread("FrameworkShutdownThread") {
