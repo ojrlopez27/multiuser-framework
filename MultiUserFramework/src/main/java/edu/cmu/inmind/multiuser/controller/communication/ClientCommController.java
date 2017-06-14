@@ -5,7 +5,6 @@ import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.Pair;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
-import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import org.zeromq.ZMsg;
 
 import java.util.Arrays;
@@ -34,7 +33,7 @@ public class ClientCommController {
     //we need to keep the state in case of failure and reconnection
     private int sentMessages = 0;
     private int receivedMessages = 0;
-    private final SharedObject sharedObject;
+    private final ClientMessage clientMessage;
     private long timeToWait = 15;
 
     //control
@@ -79,7 +78,7 @@ public class ClientCommController {
         this.msgTemplate = msgWrapper.duplicate();
         this.requestType = requestType;
         this.subscriptionMessages = msgSubscriptions;
-        this.sharedObject = new SharedObject();
+        this.clientMessage = new ClientMessage();
         execute();
     }
 
@@ -152,7 +151,7 @@ public class ClientCommController {
     }
 
     public void send(Pair<String, Object> message) {
-        sharedObject.put( message );
+        clientMessage.put( message );
     }
 
     private boolean sendToBroker(Pair<String, Object> message) throws Exception{
@@ -167,7 +166,7 @@ public class ClientCommController {
                 sendState = checkFSM(sendState, Constants.CONNECTION_STARTED);
                 while (!Thread.currentThread().isInterrupted() && !stop) {
                     try {
-                        Pair<String, Object> message = sharedObject.get();
+                        Pair<String, Object> message = clientMessage.get();
                         stop = (!sendToBroker(message) || checkNumSent) && (sentMessages > receivedMessages + difference);
                         if (stop) {
                             continue;
@@ -265,7 +264,7 @@ public class ClientCommController {
     /********************************* UTILS ********************************************/
     /************************************************************************************/
 
-    class SharedObject{
+    class ClientMessage {
         private final LinkedList<Pair<String, Object>> messageQueue = new LinkedList<>();
         // lock and condition variables
         private Lock aLock = new ReentrantLock();
