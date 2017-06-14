@@ -90,7 +90,8 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
 
     @Override
     public void process(String input){
-        while( status.equals( Constants.ORCHESTRATOR_STOPPED) || status.equals( Constants.ORCHESTRATOR_PAUSED)) {
+        while( status != null && (status.equals( Constants.ORCHESTRATOR_STOPPED)
+                || status.equals( Constants.ORCHESTRATOR_PAUSED))) {
             Utils.sleep( 500 );
         }
     }
