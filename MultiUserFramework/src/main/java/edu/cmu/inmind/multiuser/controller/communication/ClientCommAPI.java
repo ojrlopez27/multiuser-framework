@@ -104,12 +104,12 @@ public class ClientCommAPI {
         request.addFirst(service);
         request.addFirst(MDP.C_CLIENT.newFrame());
         request.addFirst("");
-        Log4J.debug(this, "about to send " + request.toString());
+        //Log4J.debug(this, "about to send " + request.toString());
         if( !request.send(client) ){
-            Log4J.debug(this, "failed to send " + request.toString());
+            //Log4J.debug(this, "failed to send " + request.toString());
             return false;
         }
-        Log4J.debug(this, "successfully sent " + request.toString());
+        //Log4J.debug(this, "successfully sent " + request.toString());
         return true;
     }
 
