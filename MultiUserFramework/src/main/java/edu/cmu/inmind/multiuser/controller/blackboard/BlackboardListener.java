@@ -6,5 +6,5 @@ package edu.cmu.inmind.multiuser.controller.blackboard;
  */
 public interface BlackboardListener {
     void onEvent(BlackboardEvent event);
-    String getSessionId() throws Exception;
+    String getSessionId() throws Throwable;
 }

@@ -102,7 +102,7 @@ public class Broker extends Thread {
         try {
             bind("tcp://*:" + port);
             mediate();
-        }catch (Exception e){
+        }catch (Throwable e){
             ExceptionHandler.handle( e );
         }
     }
@@ -110,7 +110,7 @@ public class Broker extends Thread {
     /**
      * Main broker work happens here
      */
-    public void mediate() throws Exception{
+    public void mediate() throws Throwable{
         while (!Thread.currentThread().isInterrupted()) {
             //Log4J.debug(this, "polling ZMQ");
             ZMQ.Poller items = new ZMQ.Poller(1);
@@ -154,7 +154,7 @@ public class Broker extends Thread {
     /**
      * Disconnect all workers, destroy context.
      */
-    public void close() throws Exception{
+    public void close() throws Throwable{
         if( !isTerminated ){
             isTerminated = true;
             ArrayList<Worker> wrkrs = new ArrayList( workers.values() );

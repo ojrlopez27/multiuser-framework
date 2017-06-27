@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.controller;
 
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.session.SessionManager;
 
 /**
@@ -13,6 +14,7 @@ public class MultiuserFramework{
     private boolean stopping;
 
     MultiuserFramework( SessionManager sessionManager, String id){
+        ClassLoader.getSystemClassLoader().setPackageAssertionStatus("zmq",false);
         this.sessionManager = sessionManager;
         this.id = id;
         addShutDown();
@@ -23,7 +25,7 @@ public class MultiuserFramework{
             public void run() {
                 try {
                     MultiuserFramework.this.stop();
-                }catch (Exception e){
+                }catch (Throwable e){
                     ExceptionHandler.handle(e);
                 }
             }
@@ -35,11 +37,14 @@ public class MultiuserFramework{
     }
 
     public void stop(){
+        Log4J.info(this, "1...");
         if( !stopping ) {
             stopping = true;
             try {
+                Log4J.info(this, "2...");
                 sessionManager.stop();
-            } catch (Exception e) {
+                Log4J.info(this, "3...");
+            } catch (Throwable e) {
                 ExceptionHandler.handle(e);
             }
         }

@@ -33,7 +33,7 @@ public class PluginModule extends AbstractModule {
         this.orchestrator = builder.orchestrator;
     }
 
-    private void addPlugin( ModuleComponent moduleComponent ) throws Exception{
+    private void addPlugin( ModuleComponent moduleComponent ) throws Throwable{
         Class<? extends PluggableComponent> component = moduleComponent.component;
         String message = moduleComponent.message;
         int numOfInstances = moduleComponent.numOfInstances;
@@ -80,7 +80,7 @@ public class PluginModule extends AbstractModule {
             }
             addOrchestrator(orchestrator);
             addInterceptors();
-        }catch (Exception e){
+        }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
     }
@@ -113,7 +113,7 @@ public class PluginModule extends AbstractModule {
             return addPlugin( component, defaultNumOfInstances, mapping );
         }
 
-        public Builder addPlugin( String className, int numOfInstances, String mapping ) throws Exception{
+        public Builder addPlugin( String className, int numOfInstances, String mapping ) throws Throwable{
             Class component = Class.forName(className);
             return addPlugin (component, numOfInstances, mapping );
         }
@@ -121,7 +121,7 @@ public class PluginModule extends AbstractModule {
         public Builder addPlugin( String className, String mapping ){
             try {
                 return addPlugin(className, defaultNumOfInstances, mapping);
-            }catch (Exception e){
+            }catch (Throwable e){
                 ExceptionHandler.handle(e);
             }
             return null;

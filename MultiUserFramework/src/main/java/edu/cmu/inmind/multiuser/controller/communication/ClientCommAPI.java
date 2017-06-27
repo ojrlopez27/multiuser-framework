@@ -29,7 +29,7 @@ public class ClientCommAPI {
         this.timeout = timeout;
     }
 
-    public ClientCommAPI(String broker) throws Exception{
+    public ClientCommAPI(String broker) throws Throwable{
         this.broker = broker;
         ctx = new ZContext();
         reconnectToBroker();
@@ -50,7 +50,7 @@ public class ClientCommAPI {
         client.connect(broker);
     }
 
-    public void initialize() throws Exception{
+    public void initialize() throws Throwable{
         // Poll socket for a reply, with timeout
         items = new ZMQ.Poller(1);
         items.register(client, ZMQ.Poller.POLLIN);
@@ -61,7 +61,7 @@ public class ClientCommAPI {
      * to recover from a broker failure, this is not possible without storing
      * all unanswered requests and resending them all…
      */
-    public ZMsg recv() throws Exception{
+    public ZMsg recv() throws Throwable{
         ZMsg reply = null;
         if (items.poll(timeout * 1000) == -1)
             return null; // Interrupted
@@ -94,7 +94,7 @@ public class ClientCommAPI {
      * Send request to broker and get reply by hook or crook Takes ownership of
      * request message and destroys it when sent.
      */
-    public boolean send(String service, ZMsg request) throws Exception{
+    public boolean send(String service, ZMsg request) throws Throwable{
         assert (request != null);
 
         // Prefix request with protocol frames
@@ -113,7 +113,7 @@ public class ClientCommAPI {
         return true;
     }
 
-    public void destroy() throws Exception{
+    public void destroy() throws Throwable{
         ctx.destroy();
     }
 }

@@ -16,11 +16,11 @@ public interface ProcessOrchestrator {
     void start();
     void pause();
     void resume();
-    void close() throws Exception;
+    void close() throws Throwable;
     void subscribe(OrchestratorListener listener);
     void unsubscribe(OrchestratorListener listener);
     PluggableComponent processMsg(SessionMessage message);
     List<PluggableComponent> getComponents();
-    void initialize( Session session ) throws Exception;
+    void initialize( Session session ) throws Throwable;
     void execute(PluggableComponent component);
 }

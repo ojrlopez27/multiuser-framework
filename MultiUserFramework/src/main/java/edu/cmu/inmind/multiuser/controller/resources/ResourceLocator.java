@@ -55,14 +55,14 @@ public class ResourceLocator {
     }
 
     public static void addServiceToComponent(Set<PluggableComponent> components, String sessionId, String fullAddress)
-            throws Exception{
+            throws Throwable{
         for (PluggableComponent component : components) {
             addServiceToComponent(component, sessionId, fullAddress);
         }
     }
 
     public static void addServiceToComponent(PluggableComponent component, String sessionId, String fullAddress)
-            throws Exception{
+            throws Throwable{
         if (component.getClass().isAnnotationPresent(ConnectRemoteService.class)) {
             String servideId = component.getClass().getAnnotation(ConnectRemoteService.class).remoteService();
             ServiceComponent serviceComponent = serviceRegistry.get(servideId);

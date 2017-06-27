@@ -27,7 +27,7 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
 
             Utils.changeAnnotation(getClass().getAnnotation(BlackboardSubscription.class), "messages", messages);
             getClientCommController().receive(this);
-        }catch (Exception e){
+        }catch (Throwable e){
             ExceptionHandler.handle( e );
         }
     }
@@ -47,7 +47,7 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
             sessionMessage.setPayload( Utils.toJson(event.getElement() ));
             getClientCommController().setShouldProcessReply( true );
             getClientCommController().send( sessionId, sessionMessage );
-        }catch (Exception e){
+        }catch (Throwable e){
             ExceptionHandler.handle( e );
         }
     }
@@ -67,7 +67,7 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
     }
 
     @Override
-    public void close() throws Exception{
+    public void close() throws Throwable{
         super.close();
     }
 

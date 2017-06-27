@@ -128,7 +128,7 @@ public class ClientCommController {
                     stop = true;
                 }
             }
-        }catch (Exception e){
+        }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
     }
@@ -138,7 +138,7 @@ public class ClientCommController {
             stop = true;
             clientCommAPI.destroy();
             clientCommAPI = null;
-        }catch (Exception e) {
+        }catch (Throwable e) {
             ExceptionHandler.handle(e);
         }
     }
@@ -154,7 +154,7 @@ public class ClientCommController {
         clientMessage.put( message );
     }
 
-    private boolean sendToBroker(Pair<String, Object> message) throws Exception{
+    private boolean sendToBroker(Pair<String, Object> message) throws Throwable{
         ZMsg request = new ZMsg();
         request.addString( Utils.toJson( message.snd ) );
         return clientCommAPI.send( message.fst, request);
@@ -163,24 +163,28 @@ public class ClientCommController {
     private void sendThread() {
         sendThread = new Thread("ClientSendMsgsThread"){
             public void run() {
-                sendState = checkFSM(sendState, Constants.CONNECTION_STARTED);
-                while (!Thread.currentThread().isInterrupted() && !stop) {
-                    try {
-                        Pair<String, Object> message = clientMessage.get();
-                        stop = (!sendToBroker(message) || checkNumSent) && (sentMessages > receivedMessages + difference);
-                        if (stop) {
-                            continue;
+                try {
+                    sendState = checkFSM(sendState, Constants.CONNECTION_STARTED);
+                    while (!Thread.currentThread().isInterrupted() && !stop) {
+                        try {
+                            Pair<String, Object> message = clientMessage.get();
+                            stop = (!sendToBroker(message) || checkNumSent) && (sentMessages > receivedMessages + difference);
+                            if (stop) {
+                                continue;
+                            }
+                            sentMessages++;
+                        } catch (Throwable e) {
+                            ExceptionHandler.handle(e);
                         }
-                        sentMessages++;
-                    } catch (Exception e) {
-                        ExceptionHandler.handle(e);
                     }
+                    if (receiveThread.isAlive()) {
+                        receiveThread.interrupt();
+                    }
+                    sendState = checkFSM(sendState, Constants.CONNECTION_FINISHED);
+                    checkReconnect();
+                }catch (Throwable e){
+                    ExceptionHandler.handle( e );
                 }
-                if (receiveThread.isAlive()) {
-                    receiveThread.interrupt();
-                }
-                sendState = checkFSM(sendState, Constants.CONNECTION_FINISHED);
-                checkReconnect();
             }
         };
         sendThread.start();
@@ -190,7 +194,7 @@ public class ClientCommController {
     /************************************************************************************/
 
 
-    private String receive() throws Exception{
+    private String receive() throws Throwable{
         ZMsg reply = clientCommAPI.recv();
         if( reply != null && reply.peekLast() != null){
             String response = reply.peekLast().toString();
@@ -207,29 +211,33 @@ public class ClientCommController {
     private void receiveThread() {
         receiveThread = new Thread("ClientReceiveMsgsThread"){
             public void run() {
-                receiveState = checkFSM(receiveState, Constants.CONNECTION_STARTED);
-                while (!Thread.currentThread().isInterrupted() && !stop) {
-                    try {
-                        String response = receive();
-                        receivedMessages++;
-                        if ((response == null || checkNumSent) && (sentMessages > receivedMessages + difference)) {
-                            stop = true;
-                        } else if (responseListener != null) {
-                            if (shouldProcessReply) {
-                                responseListener.process(response);
-                            } else {
-                                shouldProcessReply = true;
+                try{
+                    receiveState = checkFSM(receiveState, Constants.CONNECTION_STARTED);
+                    while (!Thread.currentThread().isInterrupted() && !stop) {
+                        try {
+                            String response = receive();
+                            receivedMessages++;
+                            if ((response == null || checkNumSent) && (sentMessages > receivedMessages + difference)) {
+                                stop = true;
+                            } else if (responseListener != null) {
+                                if (shouldProcessReply) {
+                                    responseListener.process(response);
+                                } else {
+                                    shouldProcessReply = true;
+                                }
                             }
+                        } catch (Throwable e) {
+                            ExceptionHandler.handle(e);
                         }
-                    } catch (Exception e) {
-                        ExceptionHandler.handle(e);
                     }
+                    if (sendThread.isAlive()) {
+                        sendThread.interrupt();
+                    }
+                    receiveState = checkFSM(receiveState, Constants.CONNECTION_FINISHED);
+                    checkReconnect();
+                }catch (Throwable e){
+                    ExceptionHandler.handle( e );
                 }
-                if (sendThread.isAlive()) {
-                    sendThread.interrupt();
-                }
-                receiveState = checkFSM(receiveState, Constants.CONNECTION_FINISHED);
-                checkReconnect();
             }
         };
         receiveThread.start();
@@ -254,7 +262,7 @@ public class ClientCommController {
                     receiveThread.join();
                     release = checkFSM(release, Constants.CONNECTION_FINISHED);
                     execute();
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     ExceptionHandler.handle(e);
                 }
             }
@@ -288,7 +296,7 @@ public class ClientCommController {
                         bufferNotFull.signalAll();
                     }
                 }
-            }catch (Exception e) {
+            }catch (Throwable e) {
                 ExceptionHandler.handle(e);
             }finally {
                 if( isLocked ) aLock.unlock();
@@ -311,7 +319,7 @@ public class ClientCommController {
                         bufferNotEmpty.signalAll();
                     }
                 }
-            } catch(Exception e){
+            } catch(Throwable e){
                 ExceptionHandler.handle( e );
             } finally{
                 if( isLocked ) aLock.unlock();

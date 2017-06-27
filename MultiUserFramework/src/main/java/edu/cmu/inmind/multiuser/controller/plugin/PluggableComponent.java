@@ -36,7 +36,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         blackboards.put(sessionId, blackboard);
     }
 
-    public Session getSession() throws Exception{
+    public Session getSession() throws Throwable{
         checkActiveSession();
         return activeSession;
     }
@@ -69,7 +69,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
             }
             clientCommController.setShouldProcessReply( shouldProcessReply );
             clientCommController.send( getSessionId(), sessionMessage);
-        }catch (Exception e){
+        }catch (Throwable e){
             ExceptionHandler.handle( e );
         }
     }
@@ -80,7 +80,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
                 throw new MultiuserException(ErrorMessages.NO_REMOTE_ANNOTATION, getClass().getSimpleName());
             }
             clientCommController.receive(responseListener);
-        }catch (Exception e){
+        }catch (Throwable e){
             ExceptionHandler.handle( e );
         }
     }
@@ -97,7 +97,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         try {
             checkActiveSession();
             return messageLoggers.get( activeSession.getId() );
-        }catch (Exception e){
+        }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
         return null;
@@ -126,7 +126,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         //do nothing
     }
 
-    public void close() throws Exception{
+    public void close() throws Throwable{
         if( clientCommController != null ){
             for(Session session : sessions.values() ) {
                 clientCommController.send(session.getId(), new SessionMessage(Constants.SESSION_CLOSED));
@@ -165,7 +165,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
             if (next != null) {
                 next.notifyNext();
             }
-        }catch (Exception e){
+        }catch (Throwable e){
             ExceptionHandler.handle( e );
         }
     }

@@ -7,6 +7,6 @@ public interface MessageLog {
     void setId(String id);
     void setPath(String path);
     void add(String messageId, String messageContent);
-    void store() throws Exception;
+    void store() throws Throwable;
     void turnOn(boolean shouldTurnOn);
 }

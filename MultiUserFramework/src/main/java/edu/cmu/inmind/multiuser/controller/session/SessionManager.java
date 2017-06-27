@@ -40,6 +40,7 @@ public class SessionManager implements Runnable{
     private int port;
     private String address;
     private String fullAddress;
+    private boolean stopped;
 
 
     public SessionManager(PluginModule[] modules, Config config, ServiceInfo serviceInfo){
@@ -83,26 +84,35 @@ public class SessionManager implements Runnable{
         Log4J.info(this, "Starting Multiuser framework...");
         try {
             reply = null;
-            while (!Thread.currentThread().isInterrupted()) {
+            Log4J.info(this, "run 1...");
+            while (!Thread.currentThread().isInterrupted() && !stopped ) {
                 processRequest( );
             }
-        }catch (Exception e){
+            Log4J.info(this, "run 2...");
+        }catch (Throwable e){
             ExceptionHandler.handle(e);
         }finally{
+            Log4J.info(this, "run 3...");
             boolean done = false;
             while( !done ) {
+                Log4J.info(this, "run 4...");
                 done = true;
                 for (ServiceManager serviceManager : ResourceLocator.getServiceManagers().keySet()) {
+                    Log4J.info(this, "run 5...");
                     // if the sever manager has stopped, we are done!
                     if( !ResourceLocator.getServiceManagers().get(serviceManager).equals(Constants.SERVICE_MANAGER_STOPPED) ){
                         done = false;
+                        Log4J.info(this, "run 6...");
                         break;
                     }
                 }
+                Log4J.info(this, "run 7...");
                 Utils.sleep(500);
             }
+            Log4J.info(this, "run 8...");
             System.err.println("Session Manager stopped. Bye bye!");
             if( config.executeExit() ) {
+                Log4J.info(this, "run 9...");
                 System.exit(0);
             }
         }
@@ -113,31 +123,37 @@ public class SessionManager implements Runnable{
      * It processes requests from clients related to the session lifecycle: connect, disconnect, pause and resume;
      * and also requests from remote services.
      */
-    private void processRequest( ) throws Exception{
-        ZMsgWrapper msgRequest = serverCommController.receive( reply );
-        SessionMessage request = getServerRequest(msgRequest);
-        Session session = sessions.get(request.getSessionId());
-        if( session != null ){
-            if( request.getRequestType().equals( Constants.REQUEST_PAUSE) ){
-                pause(session, msgRequest);
-            }else if( request.getRequestType().equals( Constants.REQUEST_RESUME) ){
-                resume(session, msgRequest);
-            }else if( request.getRequestType().equals( Constants.REQUEST_DISCONNECT) ){
-                disconnect(session, msgRequest);
-            }else if( request.getRequestType().equals( Constants.REQUEST_CONNECT) ){
-                reconnect(msgRequest, request, session);
-            }else{
-                serverCommController.send( msgRequest, new SessionMessage(Constants.RESPONSE_NOT_VALID_OPERATION) );
+    private void processRequest( ) throws Throwable{
+        Log4J.info(this, "run 1.1..");
+        if( !stopped ) {
+            Log4J.info(this, "run 1.2..");
+            ZMsgWrapper msgRequest = serverCommController.receive(reply);
+            SessionMessage request = getServerRequest(msgRequest);
+            Session session = sessions.get(request.getSessionId());
+            if (session != null) {
+                if (request.getRequestType().equals(Constants.REQUEST_PAUSE)) {
+                    pause(session, msgRequest);
+                } else if (request.getRequestType().equals(Constants.REQUEST_RESUME)) {
+                    resume(session, msgRequest);
+                } else if (request.getRequestType().equals(Constants.REQUEST_DISCONNECT)) {
+                    disconnect(session, msgRequest);
+                } else if (request.getRequestType().equals(Constants.REQUEST_CONNECT)) {
+                    reconnect(msgRequest, request, session);
+                } else {
+                    serverCommController.send(msgRequest, new SessionMessage(Constants.RESPONSE_NOT_VALID_OPERATION));
+                }
+            } else if (request.getRequestType().equals(Constants.REQUEST_CONNECT)) {
+                //if session doesn't exist, SessionManager can only create a new session
+                createSession(msgRequest, request);
+            } else if (request.getRequestType().equals(Constants.REGISTER_REMOTE_SERVICE)) {
+                registerRemoteService(request, msgRequest);
+            } else if (request.getRequestType().equals(Constants.UNREGISTER_REMOTE_SERVICE)) {
+                unregisterRemoteService(request, msgRequest);
+            } else {
+                serverCommController.send(msgRequest, new SessionMessage(Constants.RESPONSE_UNKNOWN_SESSION));
             }
-        }else if( request.getRequestType().equals( Constants.REQUEST_CONNECT ) ){
-            //if session doesn't exist, SessionManager can only create a new session
-            createSession(msgRequest, request);
-        }else if( request.getRequestType().equals( Constants.REGISTER_REMOTE_SERVICE) ){
-            registerRemoteService(request, msgRequest);
-        }else if( request.getRequestType().equals( Constants.UNREGISTER_REMOTE_SERVICE) ){
-            unregisterRemoteService(request, msgRequest);
-        }else{
-            serverCommController.send( msgRequest, new SessionMessage(Constants.RESPONSE_UNKNOWN_SESSION) );
+        }else {
+            Log4J.info(null, "here");
         }
     }
 
@@ -153,7 +169,7 @@ public class SessionManager implements Runnable{
         serverCommController.send( msgRequest, new SessionMessage(Constants.SESSION_PAUSED) );
     }
 
-    private void disconnect(Session session, ZMsgWrapper msgRequest) throws Exception{
+    private void disconnect(Session session, ZMsgWrapper msgRequest) throws Throwable{
         Log4J.info(this, "Disconnecting session: " + session.getId());
         session.close( );
         sessions.remove( session.getId() );
@@ -244,19 +260,28 @@ public class SessionManager implements Runnable{
     /**
      * It disconnects all sessions, closes all sockets and stop the multiuser framework.
      */
-    public void stop() throws Exception{
+    public void stop() throws Throwable{
+        stopped = true;
         Log4J.info(this, "Start closing all sessions...");
+        Log4J.info(this, "1...");
         for( Session session : sessions.values() ){
+            Log4J.info(this, "1.1...");
             session.close();
         }
+        Log4J.info(this, "2...");
         SessionMessage sessionMessage = new SessionMessage();
         sessionMessage.setRequestType( Constants.REQUEST_SHUTDOWN_SYSTEM );
         sessionMessage.setMessageId( Constants.SESSION_MANAGER_SERVICE );
+        Log4J.info(this, "3...");
         for( ServiceComponent serviceComponent : ResourceLocator.getServiceRegistry().values() ){
+            Log4J.info(this, "3.1...");
             serverCommController.send( serviceComponent.getMsgTemplate(), sessionMessage );
         }
+        Log4J.info(this, "4...");
         serverCommController.close();
+        Log4J.info(this, "5...");
         broker.close();
+        Log4J.info(this, "6...");
     }
 
     /**
