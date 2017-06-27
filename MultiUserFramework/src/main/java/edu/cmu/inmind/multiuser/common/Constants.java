@@ -27,9 +27,6 @@ public class Constants {
     public static final boolean VERBOSE = true;
 
     //communication
-    public static int SESSION_MANAGER_PORT = Integer.valueOf(Config.getSessionManagerPort() );
-    public static String ADDRESS = "tcp://" + Config.getServerAddress(); //"tcp://*";
-    public static String FULL_ADDRESS = ADDRESS + ":" + SESSION_MANAGER_PORT;
     public static final String SESSION_MANAGER_SERVICE = "session-manager";
     public static final String CONNECTION_NEW = "CONNECTION_NEW";
     public static final String CONNECTION_STARTED = "CONNECTION_STARTED";

@@ -26,6 +26,7 @@ public class Broker extends Thread {
     private static final int HEARTBEAT_INTERVAL = 2500; // msecs
     private static final int HEARTBEAT_EXPIRY = HEARTBEAT_INTERVAL * HEARTBEAT_LIVENESS;
     private boolean isTerminated = false;
+    private int port;
 
     // ---------------------------------------------------------------------
 
@@ -84,7 +85,7 @@ public class Broker extends Thread {
     /**
      * Initialize broker state.
      */
-    public Broker() {
+    public Broker(int port) {
         super("broker thread");
         this.services = new HashMap<>();
         this.workers = new HashMap<>();
@@ -92,13 +93,14 @@ public class Broker extends Thread {
         this.heartbeatAt = System.currentTimeMillis() + HEARTBEAT_INTERVAL;
         this.ctx = new ZContext();
         this.socket = ctx.createSocket(ZMQ.ROUTER);
+        this.port = port;
     }
 
     // ---------------------------------------------------------------------
     @Override
     public void run(){
         try {
-            bind("tcp://*:" + Constants.SESSION_MANAGER_PORT);
+            bind("tcp://*:" + port);
             mediate();
         }catch (Exception e){
             ExceptionHandler.handle( e );

@@ -2,14 +2,23 @@ package edu.cmu.inmind.multiuser.controller.communication;
 
 /**
  * Created by oscarr on 4/4/17.
+ * Use this class to specify information about a slave MUF, that is, a MUF that
+ * receives messages from a master MUF
  */
 public class ServiceInfo {
+    /** URL of the master MUF */
     private String serverAddress;
+    /** name of the slave MUF */
     private String serviceName;
+    /** URL of the slave MUF */
     private String clientAddress;
+    /** connection, disconenction, etc. */
     private String requestType;
+    /** wrapper of the messages between master and slave MUF's */
     private ZMsgWrapper msgWrapper;
+    /** specify a list of messages that the slave MUF is subscribed to */
     private String[] msgSubscriptions;
+    /** use this listener to process the responses from external components */
     private ResponseListener responseListener;
 
     public ServiceInfo(Builder builder) {

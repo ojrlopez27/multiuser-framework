@@ -10,9 +10,9 @@ public class Config {
     private String pathLogs;
     private int defaultNumOfPoolInstances;
     private long sessionTimeout;
-    private static Config instance;
-    private static String serverAddress;
-    private static boolean shouldShowException;
+    private String serverAddress;
+    private static boolean showAllExceptions;
+    private boolean executeExit;
 
     private Config( Builder builder) {
         this.sessionManagerPort = builder.sessionManagerPort;
@@ -20,31 +20,36 @@ public class Config {
         this.defaultNumOfPoolInstances = builder.defaultNumOfPoolInstances;
         this.sessionTimeout = builder.sessionTimeout;
         this.serverAddress = builder.serverAddress;
-        this.shouldShowException = builder.shouldShowException;
+        this.showAllExceptions = builder.shouldShowException;
+        this.executeExit = builder.executeExit;
     }
 
-    public static int getSessionManagerPort() {
-        return instance.sessionManagerPort;
+    public int getSessionManagerPort() {
+        return sessionManagerPort;
     }
 
-    public static String getPathLogs() {
-        return instance.pathLogs;
+    public String getPathLogs() {
+        return pathLogs;
     }
 
-    public static int getNumOfInstancesPool() {
-        return instance.defaultNumOfPoolInstances;
+    public int getNumOfInstancesPool() {
+        return defaultNumOfPoolInstances;
     }
 
-    public static long getSessionTimeout() {
-        return instance.sessionTimeout;
+    public long getSessionTimeout() {
+        return sessionTimeout;
     }
 
-    public static String getServerAddress() {
+    public String getServerAddress() {
         return serverAddress;
     }
 
-    public static boolean isShouldShowException() {
-        return shouldShowException;
+    public static boolean isShowAllExceptions() {
+        return showAllExceptions;
+    }
+
+    public boolean executeExit() {
+        return executeExit;
     }
 
     public static class Builder{
@@ -53,6 +58,7 @@ public class Config {
         private int defaultNumOfPoolInstances = 10;
         private long sessionTimeout = 1000 * 60 * 5; // set to 5 minutes by default
         private boolean shouldShowException = false;
+        private boolean executeExit;
         public String serverAddress = "127.0.0.1";
 
         public Builder setSessionManagerPort(int sessionManagerPort) {
@@ -71,7 +77,7 @@ public class Config {
         }
 
         public Config build(){
-            return instance = new Config( this );
+            return new Config( this );
         }
 
         public Builder setSessionTimeout(long timeout, TimeUnit minutes) {
@@ -91,6 +97,11 @@ public class Config {
 
         public Builder setShouldShowException(boolean shouldShowException) {
             this.shouldShowException = shouldShowException;
+            return this;
+        }
+
+        public Builder setExecuteExit(boolean executeExit) {
+            this.executeExit = executeExit;
             return this;
         }
     }

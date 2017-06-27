@@ -8,8 +8,8 @@ import java.util.List;
 
 /**
  * Created by oscarr on 3/7/17.
- * Extensions of this abstract class have to deal with a mechanism to coordinate internal execution (e.g., sequential, in
- * parallel, etc.) given an input message, and return a single output as result.
+ * Extensions of this abstract class have to deal with a mechanism to coordinate internal execution (e.g., sequential,
+ * in parallel, etc.) given an input message, and return a single output as result.
  */
 public interface ProcessOrchestrator {
     void process(String message);

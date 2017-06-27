@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.plugin;
 
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
@@ -20,16 +21,19 @@ import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 public class ExternalComponent extends PluggableComponent implements ResponseListener{
 
     public ExternalComponent(String serviceURL, String sessionId, ZMsgWrapper zMsgWrapper, String[] messages){
-        setClientCommController( new ClientCommController(serviceURL, sessionId, Constants.FULL_ADDRESS,
-                Constants.REQUEST_CONNECT, zMsgWrapper) );
+        try {
+            setClientCommController(new ClientCommController(serviceURL, sessionId, getSession().getFullAddress(),
+                    Constants.REQUEST_CONNECT, zMsgWrapper));
 
-        Utils.changeAnnotation(getClass().getAnnotation(BlackboardSubscription.class), "messages", messages);
-        getClientCommController().receive( this );
+            Utils.changeAnnotation(getClass().getAnnotation(BlackboardSubscription.class), "messages", messages);
+            getClientCommController().receive(this);
+        }catch (Exception e){
+            ExceptionHandler.handle( e );
+        }
     }
 
     @Override
     public void execute() {
-
     }
 
     @Override
