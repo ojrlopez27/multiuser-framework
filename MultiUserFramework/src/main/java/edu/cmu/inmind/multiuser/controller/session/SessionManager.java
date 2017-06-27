@@ -3,7 +3,6 @@ package edu.cmu.inmind.multiuser.controller.session;
 import com.google.common.util.concurrent.ServiceManager;
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.Utils;
-import edu.cmu.inmind.multiuser.controller.MultiuserFramework;
 import edu.cmu.inmind.multiuser.controller.communication.*;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
@@ -21,34 +20,63 @@ import java.util.Map;
  * This class will control the sessions lifecycle (connect, disconnect, pause, resume)
  */
 public class SessionManager implements Runnable{
+    /** sessions handled by the session manager */
     private Map<String, Session> sessions;
+    /** communication controller that process
+     * lifecycle request messages (connect a client, disconnect, etc.)*/
     private ServerCommController serverCommController;
     private Config config;
+    /** the session manager runs on its own thread */
     private Thread thread;
+    /** message that is used to reply to clients */
     private ZMsg reply;
+    /** this is the id of the session manager. we use it to filter messages that must be
+     * processed by the session manager
+     */
     private String serviceId = Constants.SESSION_MANAGER_SERVICE;
+
+    private Broker broker;
+
+    private int port;
+    private String address;
+    private String fullAddress;
+
 
     public SessionManager(PluginModule[] modules, Config config, ServiceInfo serviceInfo){
         this.config = config;
         if( modules == null || modules.length == 0 ){
             throw new NullPointerException( "Parameter \"modules\" cannot be null nor empty!" );
         }
+
         if( serviceInfo != null ){
+            // if your MUF is a slave MUF
             createFrameworkAsService(serviceInfo);
         }
         extractConfig();
-        ResourceLocator.initializeBroker();
+        initializeBroker();
         sessions = new HashMap<>();
-        serverCommController = new ServerCommController( Constants.FULL_ADDRESS, serviceId, null);
+        serverCommController = new ServerCommController( fullAddress, serviceId, null);
         DependencyManager.getInstance(modules);
     }
 
+    /**
+     * settings information that belongs to the session manager
+     */
     private void extractConfig() {
-        Constants.SESSION_MANAGER_PORT = Config.getSessionManagerPort();
+        port = config.getSessionManagerPort();
+        address = "tcp://" + config.getServerAddress(); //"tcp://*";
+        fullAddress = address + ":" + port;
+        // ...
+    }
+
+    public void initializeBroker(){
+        broker = new Broker(port);
+        // Can be called multiple times with different endpoints
+        broker.start();
     }
 
     /**
-     * It waits for new clients that want to connect to multiuser. Once a request is received, the system creates an
+     * It waits for new clients that want to connect to MUF. Once a request is received, the system creates an
      * instance of ServerCommController which will start receiving/sending results to the client.
      */
     public void run(){
@@ -65,6 +93,7 @@ public class SessionManager implements Runnable{
             while( !done ) {
                 done = true;
                 for (ServiceManager serviceManager : ResourceLocator.getServiceManagers().keySet()) {
+                    // if the sever manager has stopped, we are done!
                     if( !ResourceLocator.getServiceManagers().get(serviceManager).equals(Constants.SERVICE_MANAGER_STOPPED) ){
                         done = false;
                         break;
@@ -73,14 +102,16 @@ public class SessionManager implements Runnable{
                 Utils.sleep(500);
             }
             System.err.println("Session Manager stopped. Bye bye!");
-            System.exit(0);
+            if( config.executeExit() ) {
+                System.exit(0);
+            }
         }
     }
 
 
     /**
-     * It processes requests from client related to the Session lifecycle: connect, disconnect, pause and resume;
-     * and also from remote services
+     * It processes requests from clients related to the session lifecycle: connect, disconnect, pause and resume;
+     * and also requests from remote services.
      */
     private void processRequest( ) throws Exception{
         ZMsgWrapper msgRequest = serverCommController.receive( reply );
@@ -129,18 +160,28 @@ public class SessionManager implements Runnable{
         serverCommController.send( msgRequest, new SessionMessage(Constants.SESSION_CLOSED) );
     }
 
-    private void unregisterRemoteService(SessionMessage request, ZMsgWrapper msgRequest) {
-        Log4J.info(this, "Unregistering service: " + request.getSessionId());
-        ResourceLocator.unregisterService(request);
-        serverCommController.send( msgRequest, new SessionMessage(Constants.RESPONSE_REMOTE_UNREGISTERED) );
-    }
-
+    /**
+     * Remote services can register and unregister with the session manager through the Resource Locator.
+     * @param request
+     * @param msgRequest
+     */
     private void registerRemoteService(SessionMessage request, ZMsgWrapper msgRequest) {
         Log4J.info(this, "Registering service: " + request.getSessionId());
         ResourceLocator.registerService(request, msgRequest, request.getPayload());
         serverCommController.send( msgRequest, new SessionMessage(Constants.RESPONSE_REMOTE_REGISTERED) );
     }
 
+    private void unregisterRemoteService(SessionMessage request, ZMsgWrapper msgRequest) {
+        Log4J.info(this, "Unregistering service: " + request.getSessionId());
+        ResourceLocator.unregisterService(request);
+        serverCommController.send( msgRequest, new SessionMessage(Constants.RESPONSE_REMOTE_UNREGISTERED) );
+    }
+
+    /**
+     * extracts the message (which comes as byte array format) and parses it to an instance of SessionMessage
+     * @param msgRequest
+     * @return
+     */
     private SessionMessage getServerRequest(ZMsgWrapper msgRequest) {
         if( msgRequest != null && msgRequest.getMsg().peekLast() != null ) {
             return Utils.fromJson(msgRequest.getMsg().peekLast().toString(), SessionMessage.class);
@@ -155,12 +196,17 @@ public class SessionManager implements Runnable{
     private void createSession(ZMsgWrapper msgRequest, SessionMessage request) {
         String key = request.getSessionId();
         Session session = DependencyManager.getInstance().getComponent(Session.class);
-        session.setId(key, msgRequest);
+        session.setId(key, msgRequest, fullAddress);
         sessions.put( key, session );
         serverCommController.send( msgRequest, new SessionMessage( Constants.SESSION_INITIATED) );
         Log4J.info(this, "Creating session: " + session.getId());
     }
 
+    /**
+     * If the MUF behaves a slave MUF, it must be created as a service that registers itself with the
+     * master MUF.
+     * @param serviceInfo
+     */
     private void createFrameworkAsService(ServiceInfo serviceInfo) {
         ClientCommController clientCommController = new ClientCommController(
                 serviceInfo.getServerAddress(),
@@ -180,13 +226,14 @@ public class SessionManager implements Runnable{
             if( sessionMessage.getRequestType().equals( Constants.REQUEST_SHUTDOWN_SYSTEM )
                     && messageId.equals( Constants.SESSION_MANAGER_SERVICE) ){
                 clientCommController.close();
-                MultiuserFramework.stop();
+                //MultiuserFramework.stop();
             }
         });
     }
 
     private void reconnect(ZMsgWrapper msgRequest, SessionMessage request, Session session){
-        Log4J.info(this, "Reconnecting session: " + session.getId() + " as per request " + request.getSessionId());
+        Log4J.info(this, "Reconnecting session: " + session.getId() + " as per request "
+                + request.getSessionId());
         if(request.getSessionId().equals(session.getId())){
             serverCommController.send( msgRequest, new SessionMessage(Constants.SESSION_RECONNECTED) );
         } else {
@@ -209,9 +256,12 @@ public class SessionManager implements Runnable{
             serverCommController.send( serviceComponent.getMsgTemplate(), sessionMessage );
         }
         serverCommController.close();
-        ResourceLocator.getBroker().close();
+        broker.close();
     }
 
+    /**
+     * MUF runs on its own separate thread
+     */
     public void start() {
         thread = new Thread( this, "SessionManagerThread" );
         thread.start();

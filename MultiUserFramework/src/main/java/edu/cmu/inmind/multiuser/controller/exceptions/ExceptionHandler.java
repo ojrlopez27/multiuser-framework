@@ -12,7 +12,7 @@ import java.util.MissingFormatArgumentException;
  */
 public class ExceptionHandler {
     public static void handle(Exception e){
-        /*if( Config.isShouldShowException() ) {
+        if( !Config.isShowAllExceptions() ) {
             // We only execute errors different to a shutdown error
             if (!(e instanceof ZMQException && ((ZMQException) e).getErrorCode() == 156384765) &&
                     !(e instanceof ZError.IOException) && !(e instanceof MissingFormatArgumentException) &&
@@ -21,9 +21,9 @@ public class ExceptionHandler {
                     !(e instanceof IllegalStateException)) {
                 e.printStackTrace();
             }
-        }else{*/
+        }else{
             e.printStackTrace();
-        //}
+        }
     }
 
     public static void checkAssert(boolean expression) {

@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.Inject;
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
@@ -34,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Created by oscarr on 3/10/17.
+ * 
  */
 public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, BlackboardListener {
 
@@ -47,6 +49,8 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     protected ServiceManager serviceManager;
     private String sessionId;
     private boolean isClosed;
+    private Config config;
+    private String fullAddress;
 
     public ProcessOrchestratorImpl(){
         blackboard = new Blackboard( );
@@ -103,17 +107,19 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     @Override
     public void initialize( Session session ) throws Exception{
         this.session = session;
+        this.fullAddress = session.getFullAddress();
         sessionId = session.getId();
         Log4J.info(this, String.format("Creating Process Orchestrator for session: %s", sessionId));
         components.addAll(componentsSet);
         components.addAll( createExternalComponents() );
+        config = session.getConfig();
         //by default we use a file messageLogger
         if( logger == null ){
             logger = new FileLogger();
-            logger.setPath( Config.getPathLogs() );
+            logger.setPath( config.getPathLogs() );
         }
         logger.setId( sessionId );
-        ResourceLocator.addServiceToComponent(components, sessionId);
+        ResourceLocator.addServiceToComponent(components, sessionId, fullAddress );
         for( PluggableComponent component : components ){
             if( component instanceof PluggableComponent){
                 component.addMessageLogger(sessionId, logger);
@@ -220,7 +226,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     public PluggableComponent processMsg(SessionMessage message){
         try {
             if ( message == null || message.getMessageId() == null) {
-                throw new MultiuserException("Message is null");
+                throw new MultiuserException(ErrorMessages.OBJECT_NULL, "message");
             }
             Class<? extends PluggableComponent> clazz = ResourceLocator.getMsgMapping(message.getMessageId());
             if (clazz == null) {
@@ -235,8 +241,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
                     }
                 }
                 if( clazz == null ) {
-                    throw new MultiuserException("Message prefix " + message + " has not been mapped with any " +
-                            "component in the Module");
+                    throw new MultiuserException( ErrorMessages.PREFIX_NOT_MAPPED, message );
                 }
             }
             for (PluggableComponent component : components) {

@@ -2,6 +2,7 @@ package edu.cmu.inmind.multiuser.controller.plugin;
 
 import com.google.common.util.concurrent.AbstractIdleService;
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardListener;
@@ -64,8 +65,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
     public void send( SessionMessage sessionMessage , boolean shouldProcessReply ){
         try {
             if (clientCommController == null) {
-                throw new MultiuserException("PluggableComponent " + getClass().getSimpleName() + " has not defined a " +
-                        "ConnectRemoteService annotation, thus no messages can be sent to remote services");
+                throw new MultiuserException( ErrorMessages.NO_REMOTE_ANNOTATION, getClass().getSimpleName() );
             }
             clientCommController.setShouldProcessReply( shouldProcessReply );
             clientCommController.send( getSessionId(), sessionMessage);
@@ -77,8 +77,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
     public void receive(ResponseListener responseListener){
         try {
             if (clientCommController == null) {
-                throw new MultiuserException("PluggableComponent " + getClass().getSimpleName() + " has not defined a " +
-                        "ConnectRemoteService annotation, thus no messages can be sent to remote services");
+                throw new MultiuserException(ErrorMessages.NO_REMOTE_ANNOTATION, getClass().getSimpleName());
             }
             clientCommController.receive(responseListener);
         }catch (Exception e){
@@ -109,8 +108,8 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
             if( sessions.size() == 1 ){
                 activeSession = new ArrayList<>( sessions.values() ).get(0);
             }else {
-                ExceptionHandler.handle( new MultiuserException("Attribute 'activeSession' is null. It must be defined "
-                        + "somewhere by using setActiveSession") );
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.ATTRIBUTE_NULL, "activeSession",
+                        "setActiveSession") );
             }
         }
     }

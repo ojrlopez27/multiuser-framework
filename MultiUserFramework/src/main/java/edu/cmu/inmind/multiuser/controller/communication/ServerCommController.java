@@ -1,5 +1,6 @@
 package edu.cmu.inmind.multiuser.controller.communication;
 
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
@@ -178,7 +179,7 @@ public class ServerCommController {
 
     public void send(Object message){
         if( msgTemplate == null ){
-            ExceptionHandler.handle( new MultiuserException("msgTemplate is null.") );
+            ExceptionHandler.handle( new MultiuserException( ErrorMessages.OBJECT_NULL, "msgTemplate" ) );
         }
         send(msgTemplate.duplicate(), message);
     }

@@ -3,6 +3,7 @@ package edu.cmu.inmind.multiuser.controller.resources;
 
 import com.google.common.util.concurrent.ServiceManager;
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.communication.*;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
@@ -21,14 +22,6 @@ public class ResourceLocator {
     private static Map<String, Queue> syncMap = new HashMap<>();
     private static Map<ServiceManager, String> serviceManagers = new HashMap<>();
     private static Map<Class, Logger> loggers = new HashMap<>();
-    private static Broker broker;
-
-
-    public static void initializeBroker(){
-        broker = new Broker();
-        // Can be called multiple times with different endpoints
-        broker.start();
-    }
 
     /**
      * This method registers remote or external services that can be looked up by other components
@@ -61,13 +54,15 @@ public class ResourceLocator {
         return serviceRegistry;
     }
 
-    public static void addServiceToComponent(Set<PluggableComponent> components, String sessionId) throws Exception{
+    public static void addServiceToComponent(Set<PluggableComponent> components, String sessionId, String fullAddress)
+            throws Exception{
         for (PluggableComponent component : components) {
-            addServiceToComponent(component, sessionId);
+            addServiceToComponent(component, sessionId, fullAddress);
         }
     }
 
-    public static void addServiceToComponent(PluggableComponent component, String sessionId) throws Exception{
+    public static void addServiceToComponent(PluggableComponent component, String sessionId, String fullAddress)
+            throws Exception{
         if (component.getClass().isAnnotationPresent(ConnectRemoteService.class)) {
             String servideId = component.getClass().getAnnotation(ConnectRemoteService.class).remoteService();
             ServiceComponent serviceComponent = serviceRegistry.get(servideId);
@@ -76,10 +71,10 @@ public class ResourceLocator {
                     serviceComponent.setComponent( component.getClass() );
                 }
                 component.setClientCommController(new ClientCommController(serviceComponent.getServiceURL(),
-                        sessionId, Constants.FULL_ADDRESS, Constants.REQUEST_CONNECT,
+                        sessionId, fullAddress, Constants.REQUEST_CONNECT,
                         serviceComponent.getMsgTemplate()));
             }else {
-                throw new MultiuserException("Service " + servideId + " is not registered!");
+                throw new MultiuserException(ErrorMessages.SERVICE_NOT_REGISTERED, servideId );
             }
         }
     }
@@ -136,10 +131,6 @@ public class ResourceLocator {
 
     public static void addLogger(Class clazz, Logger logger){
         loggers.put(clazz, logger);
-    }
-
-    public static Broker getBroker() {
-        return broker;
     }
 
 }

@@ -4,6 +4,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.multibindings.Multibinder;
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Loggable;
@@ -57,11 +58,9 @@ public class PluginModule extends AbstractModule {
         if( numBonds == 1 ){
             return;
         }else if( numBonds > 1 ){
-            throw new MultiuserException("PluggableComponent annotations (Stateless, Stateful and Pool) are mutually" +
-                    "exclusive, so you should use only one of these.");
+            throw new MultiuserException(ErrorMessages.COMP_MUTUAL_EXCLUSIVE);
         }else {
-            throw new MultiuserException("PluggableComponent component must have one of these annotations: " +
-                    "StatelessComponent, StatefulComponent or PoolComponent");
+            throw new MultiuserException(ErrorMessages.COMP_NO_ANNOTATIONS);
         }
     }
 

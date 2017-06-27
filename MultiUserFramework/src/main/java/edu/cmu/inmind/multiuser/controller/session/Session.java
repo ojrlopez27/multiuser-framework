@@ -18,6 +18,7 @@ import java.util.TimerTask;
 
 /**
  * Created by oscarr on 3/3/17.
+ * This class controls all the interaction between a client and a set of specific components.
  */
 public class Session implements Runnable, OrchestratorListener{
     private String id;
@@ -28,20 +29,37 @@ public class Session implements Runnable, OrchestratorListener{
     private InactivityTimer timer;
     private ServerCommController sessionCommController;
     private ZMsgWrapper replyMsg = new ZMsgWrapper();
+    private Config config;
+    private String fullAddress;
 
-    public Session() {
+    public Session(Config config) {
         this.timer = new InactivityTimer();
+        this.config = config;
     }
 
     public String getId() {
         return id;
     }
 
-    public void setId(String id, ZMsgWrapper msg) {
+    public Config getConfig() {
+        return config;
+    }
+
+    public String getFullAddress() {
+        return fullAddress;
+    }
+
+    /**
+     * each session must have a unique id. A new thread is created for each new session
+     * @param id
+     * @param msg
+     */
+    public void setId(String id, ZMsgWrapper msg, String fullAddress) {
         if( this.id == null ){
             this.thread = new Thread( this, String.format("Session-%s-Thread", id ));
             Log4J.info(this, "A new session has been created with id: " + id);
-            this.sessionCommController = new ServerCommController( Constants.FULL_ADDRESS, id, msg);
+            this.fullAddress = fullAddress;
+            this.sessionCommController = new ServerCommController( fullAddress, id, msg);
             this.thread.setName("session thread with id " + id);
             this.thread.start();
         }
@@ -66,6 +84,11 @@ public class Session implements Runnable, OrchestratorListener{
         //TODO: add some logic when session is resumed
     }
 
+    /**
+     * it clises the session and all its subcomponents: orchestrator, pluggable components and
+     * communication controllers
+     * @throws Exception
+     */
     public void close() throws Exception{
         if( !isClosed ) {
             Log4J.info(this, String.format("Closing session: %s", id));
@@ -85,6 +108,10 @@ public class Session implements Runnable, OrchestratorListener{
         }
     }
 
+    /**
+     * this method creates a new orchestrator and injects a set of pre-defined components
+     * @throws Exception
+     */
     private void initialize() throws Exception{
         Log4J.info(this, String.format("Initializing session: %s.", id));
         orchestrator = DependencyManager.getInstance().getOrchestrator();
@@ -120,17 +147,24 @@ public class Session implements Runnable, OrchestratorListener{
         }
     }
 
+    /**
+     * it sends a response back to the client
+     * @param output
+     */
     @Override
     public void processOutput(SessionMessage output) {
         sessionCommController.send(output);
-        Log4J.debug(this, "session timeout is " + Config.getSessionTimeout());
-        timer.schedule(new InactivityCheck(), Config.getSessionTimeout());
+        Log4J.debug(this, "session timeout is " +  config.getSessionTimeout());
+        timer.schedule(new InactivityCheck(), config.getSessionTimeout());
     }
 
     private void stopTimer(){
         timer.stopTimer();
     }
 
+    /**
+     * we need a timer to determine whether a session is inactive (it has reached a timeout)
+     */
     class InactivityCheck extends TimerTask{
         @Override
         public void run() {

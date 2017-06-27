@@ -7,4 +7,8 @@ public class MultiuserException extends Exception {
     public MultiuserException(String message) {
         super(message);
     }
+
+    public MultiuserException(String errorCode, Object... params){
+        super( String.format( errorCode, params) );
+    }
 }
