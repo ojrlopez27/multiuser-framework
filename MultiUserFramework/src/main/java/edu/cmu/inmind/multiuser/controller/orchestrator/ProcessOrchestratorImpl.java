@@ -105,7 +105,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     }
 
     @Override
-    public void initialize( Session session ) throws Exception{
+    public void initialize( Session session ) throws Throwable{
         this.session = session;
         this.fullAddress = session.getFullAddress();
         sessionId = session.getId();
@@ -184,7 +184,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     }
 
     @Override
-    public void close() throws Exception{
+    public void close() throws Throwable{
         if( !isClosed ) {
             Log4J.info(this, String.format("Closing Process Orchestrator for session: %s", sessionId));
             isClosed = true;
@@ -249,7 +249,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
                     return component;
                 }
             }
-        }catch (Exception e){
+        }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
         return null;
@@ -262,7 +262,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
                 component.setActiveSession( session );
                 execute(component);
             }
-        }catch (Exception e){
+        }catch (Throwable e){
             ExceptionHandler.handle( e );
         }
     }
@@ -273,11 +273,15 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
                 component.setActiveSession( session );
                 new Thread("ExecuteComponentAsyncThread"){
                     public void run(){
-                        execute(component);
+                        try{
+                            execute(component);
+                        }catch (Throwable e){
+                            ExceptionHandler.handle( e );
+                        }
                     }
                 }.start();
             }
-        }catch (Exception e){
+        }catch (Throwable e){
             ExceptionHandler.handle( e );
         }
     }
@@ -315,7 +319,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
                     queue.poll().component.execute();
                 }
             }
-        }catch (Exception e){
+        }catch (Throwable e){
             ExceptionHandler.handle( e );
         }
     }
@@ -393,7 +397,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     }
 
     @Override
-    public String getSessionId() throws Exception{
+    public String getSessionId() throws Throwable{
         return sessionId;
     }
 

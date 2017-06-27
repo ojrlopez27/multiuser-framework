@@ -87,9 +87,9 @@ public class Session implements Runnable, OrchestratorListener{
     /**
      * it clises the session and all its subcomponents: orchestrator, pluggable components and
      * communication controllers
-     * @throws Exception
+     * @throws Throwable
      */
-    public void close() throws Exception{
+    public void close() throws Throwable{
         if( !isClosed ) {
             Log4J.info(this, String.format("Closing session: %s", id));
             isClosed = true;
@@ -110,9 +110,9 @@ public class Session implements Runnable, OrchestratorListener{
 
     /**
      * this method creates a new orchestrator and injects a set of pre-defined components
-     * @throws Exception
+     * @throws Throwable
      */
-    private void initialize() throws Exception{
+    private void initialize() throws Throwable{
         Log4J.info(this, String.format("Initializing session: %s.", id));
         orchestrator = DependencyManager.getInstance().getOrchestrator();
         orchestrator.initialize(this);
@@ -142,7 +142,7 @@ public class Session implements Runnable, OrchestratorListener{
                 }
             }
             close();
-        }catch (Exception e){
+        }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
     }
@@ -170,7 +170,7 @@ public class Session implements Runnable, OrchestratorListener{
         public void run() {
             try {
                 close();
-            }catch (Exception e){
+            }catch (Throwable e){
                 ExceptionHandler.handle( e );
             }
         }

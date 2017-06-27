@@ -34,7 +34,7 @@ public class FileLogger implements MessageLog {
     }
 
     @Override
-    public void store() throws Exception{
+    public void store() throws Throwable{
         if( turnedOn ) {
             File file = new File(path + id + "-" + Utils.getDateString() + ".log");
             PrintWriter printWriter = new PrintWriter(file);

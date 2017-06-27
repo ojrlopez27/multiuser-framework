@@ -21,7 +21,7 @@ public class Log4J{
             }else if (caller instanceof PluggableComponent) {
                 sessionId = ((PluggableComponent) caller).getSessionId();
             }
-        }catch (Exception e){
+        }catch (Throwable e){
             e.printStackTrace();
         }
         return sessionId;

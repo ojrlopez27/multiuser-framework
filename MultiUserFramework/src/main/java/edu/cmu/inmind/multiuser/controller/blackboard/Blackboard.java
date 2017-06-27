@@ -61,7 +61,7 @@ public class Blackboard {
                     component.addBlackboard(sessionId, this);
                 }
             }
-        }catch (Exception e){
+        }catch (Throwable e){
             ExceptionHandler.handle( e );
         }
     }
@@ -120,7 +120,7 @@ public class Blackboard {
         }
         catch (NoClassDefFoundError e){
             post( sender, key, element, false);
-        }catch(Exception e){
+        }catch(Throwable e){
         }finally {
 //            if( isLocked ) {
 //                lock.unlock();
@@ -155,7 +155,7 @@ public class Blackboard {
         }catch( NoClassDefFoundError e){
             remove(sender, key, false);
         }
-        catch (Exception e){
+        catch (Throwable e){
             ExceptionHandler.handle( e );
         }finally {
 //            if( isLocked ) {
@@ -186,7 +186,7 @@ public class Blackboard {
 //            }
         }catch (NoClassDefFoundError e){
             value = get(key, false);
-        }catch (Exception e) {
+        }catch (Throwable e) {
         }finally {
 //            if( isLocked ) {
 //                lock.unlock();
@@ -238,7 +238,11 @@ public class Blackboard {
                         }
                         new Thread("NotifyBlackboardSubscribersThread"){
                             public void run(){
-                                subscriber.onEvent(event);
+                                try {
+                                    subscriber.onEvent(event);
+                                }catch (Throwable e){
+                                    ExceptionHandler.handle( e );
+                                }
                             }
                         }.start();
                         if (subscriber instanceof PluggableComponent && subscriber.getClass()
@@ -252,7 +256,7 @@ public class Blackboard {
                         }
                     }
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 ExceptionHandler.handle(e);
             }
         }
@@ -270,7 +274,7 @@ public class Blackboard {
 //                    isLocked = lock.tryLock( 10, TimeUnit.MILLISECONDS);
 //                    if( isLocked )
                         model.clear();
-                }catch (Exception e){
+                }catch (Throwable e){
                     ExceptionHandler.handle(e);
                 }finally {
 //                    if( isLocked ) lock.unlock();
@@ -294,7 +298,7 @@ public class Blackboard {
             }
         }catch (NoClassDefFoundError e){
             value = getSyncEvent( keyElement, false );
-        }catch(Exception e) {
+        }catch(Throwable e) {
             ExceptionHandler.handle( e );
         } finally {
 //            lock.unlock();

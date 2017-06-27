@@ -151,7 +151,7 @@ public class Utils {
             SimpleDateFormat sdf = new SimpleDateFormat(ISO_8601_24H_FULL_FORMAT);
             sdf.setTimeZone( timezone );
             return sdf.parse(formattedDate);
-        }catch (Exception e){
+        }catch (Throwable e){
             e.printStackTrace();
         }
         return null;
@@ -162,7 +162,7 @@ public class Utils {
         try{
             Thread.yield();
             Thread.sleep(millis);
-        }catch (Exception e){ }
+        }catch (Throwable e){ }
     }
 
 
@@ -173,7 +173,7 @@ public class Utils {
             out.println(json);
             out.flush();
             out.close();
-        }catch (Exception e){
+        }catch (Throwable e){
             e.printStackTrace();
         }
     }
@@ -181,7 +181,7 @@ public class Utils {
     public static String toJson(Object object){
         try {
             return gson.toJson(object);
-        }catch (Exception e){
+        }catch (Throwable e){
             e.printStackTrace();
         }
         return null;
@@ -190,7 +190,7 @@ public class Utils {
     public static <T> T fromJson(String stringRepresentation, Class<T> clazz){
         try {
             return gson.fromJson( trimDoubleQuotes(stringRepresentation), clazz);
-        }catch (Exception e){
+        }catch (Throwable e){
             return null;
         }
     }
@@ -238,7 +238,7 @@ public class Utils {
         try {
             Constructor constructor = clazz.getConstructor( parameterTypes );
             return (T)constructor.newInstance( args );
-        }catch (Exception e){
+        }catch (Throwable e){
             for( int i = 0; i < args.length; i++ ){
                 if( args[i] != null && !(args[i] instanceof Class) ){
                     Class argClass = args[i].getClass().getSuperclass();
@@ -250,7 +250,7 @@ public class Utils {
             try{
                 Constructor constructor = clazz.getConstructor( parameterTypes );
                 return (T)constructor.newInstance( args );
-            }catch(Exception e1){
+            }catch(Throwable e1){
                 e1.printStackTrace();
             }
         }
@@ -270,7 +270,7 @@ public class Utils {
                 properties.load(input);
             }
             value = properties.getProperty( key );
-        } catch (IOException ex) {
+        } catch (Throwable ex) {
             ex.printStackTrace();
         } finally {
             if (input != null) {
@@ -318,7 +318,7 @@ public class Utils {
         if( className.contains("$$Enhancer") ){
             try {
                 clazz = Class.forName(className.substring(0, className.indexOf("$$Enhancer")));
-            }catch (Exception e){
+            }catch (Throwable e){
                 ExceptionHandler.handle(e);
             }
         }
@@ -362,7 +362,7 @@ public class Utils {
             }else{
                 return null;
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             //e.printStackTrace();
         }
         return null;
@@ -380,7 +380,7 @@ public class Utils {
                 writer.print( gson.toJson( obj ) );
                 writer.flush();
                 writer.close();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
         }

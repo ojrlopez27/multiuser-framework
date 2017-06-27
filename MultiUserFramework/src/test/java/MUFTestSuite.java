@@ -1,3 +1,5 @@
+import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.MultiuserFramework;
 import edu.cmu.inmind.multiuser.controller.MultiuserFrameworkFactory;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
@@ -16,9 +18,18 @@ import java.util.concurrent.TimeUnit;
 public class MUFTestSuite {
 
     @Test
-    public void testMUFCreation() throws Exception{
+    public void testMUFCreation() throws Throwable{
         MultiuserFramework muf = MultiuserFrameworkFactory.startFramework( getModules()
-                , createConfig(), null );
+                , createConfig( 5555 ), null );
+        Utils.sleep(3000);
+        muf.stop();
+    }
+
+    @Test
+    public void testAnotherTest() throws Throwable{
+        MultiuserFramework muf = MultiuserFrameworkFactory.startFramework( getModules()
+                , createConfig( 5556 ), null );
+        Utils.sleep(3000);
         muf.stop();
     }
 
@@ -30,30 +41,16 @@ public class MUFTestSuite {
         };
     }
 
-    protected Config createConfig() {
+    protected Config createConfig(int port) {
         return new Config.Builder()
                 // you can add values directly like this:
-                .setSessionManagerPort(5555)
+                .setSessionManagerPort(port)
                 .setDefaultNumOfPoolInstances(10)
                 // or you can refer to values in your config.properties file:
                 //.setPathLogs(Utils.getProperty("pathLogs"))
                 .setSessionTimeout(5, TimeUnit.MINUTES)
                 .setServerAddress("127.0.0.1") //use IP instead of 'localhost'
-                .setShouldShowException(true)
+                .setExceptionTraceLevel(Constants.SHOW_MUF_EXCEPTIONS)
                 .build();
-    }
-
-
-    static class TestOrchestrator extends ProcessOrchestratorImpl{
-        //TODO
-    }
-
-    @StatelessComponent
-    static class TestPluggableComponent  extends PluggableComponent{
-
-        @Override
-        public void onEvent(BlackboardEvent event) {
-            //TODO
-        }
     }
 }

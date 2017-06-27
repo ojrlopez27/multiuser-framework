@@ -57,4 +57,8 @@ public class Constants {
     public static final String SERVICE_MANAGER_STARTED = "SERVICE_MANAGER_STARTED";
     public static final String SERVICE_MANAGER_STOPPED = "SERVICE_MANAGER_STOPPED";
 
+    public static final int SHOW_ALL_EXCEPTIONS = 1;
+    public static final int SHOW_MUF_EXCEPTIONS = 2;
+    public static final int SHOW_NO_EXCEPTIONS = 3;
+    public static final int SHOW_NON_MUF_EXCEPTIONS = 4;
 }

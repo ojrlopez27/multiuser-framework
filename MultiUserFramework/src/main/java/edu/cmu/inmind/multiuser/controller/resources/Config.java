@@ -1,5 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.resources;
 
+import edu.cmu.inmind.multiuser.common.Constants;
+
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -11,7 +13,7 @@ public class Config {
     private int defaultNumOfPoolInstances;
     private long sessionTimeout;
     private String serverAddress;
-    private static boolean showAllExceptions;
+    private static int exceptionTraceLevel;
     private boolean executeExit;
 
     private Config( Builder builder) {
@@ -20,7 +22,7 @@ public class Config {
         this.defaultNumOfPoolInstances = builder.defaultNumOfPoolInstances;
         this.sessionTimeout = builder.sessionTimeout;
         this.serverAddress = builder.serverAddress;
-        this.showAllExceptions = builder.shouldShowException;
+        this.exceptionTraceLevel = builder.exceptionTraceLevel;
         this.executeExit = builder.executeExit;
     }
 
@@ -44,8 +46,8 @@ public class Config {
         return serverAddress;
     }
 
-    public static boolean isShowAllExceptions() {
-        return showAllExceptions;
+    public static int getExceptionTraceLevel() {
+        return exceptionTraceLevel;
     }
 
     public boolean executeExit() {
@@ -57,7 +59,7 @@ public class Config {
         private String pathLogs= "";
         private int defaultNumOfPoolInstances = 10;
         private long sessionTimeout = 1000 * 60 * 5; // set to 5 minutes by default
-        private boolean shouldShowException = false;
+        private int exceptionTraceLevel = Constants.SHOW_ALL_EXCEPTIONS;
         private boolean executeExit;
         public String serverAddress = "127.0.0.1";
 
@@ -95,8 +97,8 @@ public class Config {
             return this;
         }
 
-        public Builder setShouldShowException(boolean shouldShowException) {
-            this.shouldShowException = shouldShowException;
+        public Builder setExceptionTraceLevel(int exceptionTraceLevel) {
+            this.exceptionTraceLevel = exceptionTraceLevel;
             return this;
         }
 
