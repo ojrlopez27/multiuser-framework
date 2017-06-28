@@ -4,7 +4,6 @@ package edu.cmu.inmind.multiuser.controller.communication;
  * Created by oscarr on 3/28/17.
  */
 
-import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import org.zeromq.ZContext;

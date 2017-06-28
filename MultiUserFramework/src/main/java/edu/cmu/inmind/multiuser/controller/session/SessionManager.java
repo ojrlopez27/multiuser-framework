@@ -2,9 +2,12 @@ package edu.cmu.inmind.multiuser.controller.session;
 
 import com.google.common.util.concurrent.ServiceManager;
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
+import edu.cmu.inmind.multiuser.common.Pair;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.*;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
@@ -41,29 +44,37 @@ public class SessionManager implements Runnable{
     private String address;
     private String fullAddress;
     private boolean stopped;
+    private ClientMessage clientMessage;
 
 
-    public SessionManager(PluginModule[] modules, Config config, ServiceInfo serviceInfo){
+    public SessionManager(PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws Throwable{
         this.config = config;
+        if( config == null ){
+            throw new MultiuserException(ErrorMessages.OBJECT_NULL, "config");
+        }
         if( modules == null || modules.length == 0 ){
-            throw new NullPointerException( "Parameter \"modules\" cannot be null nor empty!" );
+            throw new MultiuserException(ErrorMessages.OBJECT_NULL, "modules");
         }
 
         if( serviceInfo != null ){
             // if your MUF is a slave MUF
             createFrameworkAsService(serviceInfo);
         }
-        extractConfig();
-        initializeBroker();
         sessions = new HashMap<>();
-        serverCommController = new ServerCommController( fullAddress, serviceId, null);
+        extractConfig();
+        if( config.isTCPon() ) {
+            initializeBroker();
+            serverCommController = new ServerCommController(fullAddress, serviceId, null);
+        }else{
+            clientMessage = new ClientMessage();
+        }
         DependencyManager.getInstance(modules);
     }
 
     /**
      * settings information that belongs to the session manager
      */
-    private void extractConfig() {
+    private void extractConfig(){
         port = config.getSessionManagerPort();
         address = "tcp://" + config.getServerAddress(); //"tcp://*";
         fullAddress = address + ":" + port;
@@ -110,7 +121,7 @@ public class SessionManager implements Runnable{
                 Utils.sleep(500);
             }
             Log4J.info(this, "run 8...");
-            System.err.println("Session Manager stopped. Bye bye!");
+            Log4J.info(this, "Session Manager stopped. Bye bye!");
             if( config.executeExit() ) {
                 Log4J.info(this, "run 9...");
                 System.exit(0);
@@ -127,8 +138,14 @@ public class SessionManager implements Runnable{
         Log4J.info(this, "run 1.1..");
         if( !stopped ) {
             Log4J.info(this, "run 1.2..");
-            ZMsgWrapper msgRequest = serverCommController.receive(reply);
-            SessionMessage request = getServerRequest(msgRequest);
+            ZMsgWrapper msgRequest = null;
+            SessionMessage request = null;
+            if( config.isTCPon() ){
+                msgRequest = serverCommController.receive(reply);
+                request = getServerRequest(msgRequest);
+            }else{
+                request = getClientMessage();
+            }
             Session session = sessions.get(request.getSessionId());
             if (session != null) {
                 if (request.getRequestType().equals(Constants.REQUEST_PAUSE)) {
@@ -140,7 +157,7 @@ public class SessionManager implements Runnable{
                 } else if (request.getRequestType().equals(Constants.REQUEST_CONNECT)) {
                     reconnect(msgRequest, request, session);
                 } else {
-                    serverCommController.send(msgRequest, new SessionMessage(Constants.RESPONSE_NOT_VALID_OPERATION));
+                    send(msgRequest, new SessionMessage(Constants.RESPONSE_NOT_VALID_OPERATION));
                 }
             } else if (request.getRequestType().equals(Constants.REQUEST_CONNECT)) {
                 //if session doesn't exist, SessionManager can only create a new session
@@ -150,30 +167,45 @@ public class SessionManager implements Runnable{
             } else if (request.getRequestType().equals(Constants.UNREGISTER_REMOTE_SERVICE)) {
                 unregisterRemoteService(request, msgRequest);
             } else {
-                serverCommController.send(msgRequest, new SessionMessage(Constants.RESPONSE_UNKNOWN_SESSION));
+                send(msgRequest, new SessionMessage(Constants.RESPONSE_UNKNOWN_SESSION));
             }
-        }else {
-            Log4J.info(null, "here");
         }
+    }
+
+    private SessionMessage getClientMessage() {
+        Pair<String, Object> message = clientMessage.get();
+        return (SessionMessage) message.snd;
+    }
+
+    /**
+     * This method should be used only when working with TCP off
+     * @param sessionId
+     * @param message
+     */
+    public void send(String sessionId, Object message) throws Throwable{
+        if( config.isTCPon() ){
+            throw new MultiuserException( ErrorMessages.USE_TCP_INSTEAD, "send" );
+        }
+        clientMessage.put( new Pair<>(sessionId, message) );
     }
 
     private void resume(Session session, ZMsgWrapper msgRequest) {
         Log4J.info(this, "Resuming session: " + session.getId());
         session.resume();
-        serverCommController.send( msgRequest, new SessionMessage(Constants.SESSION_RESUMED) );
+        send( msgRequest, new SessionMessage(Constants.SESSION_RESUMED) );
     }
 
     private void pause(Session session, ZMsgWrapper msgRequest) {
         Log4J.info(this, "Pausing session: " + session.getId());
         session.pause();
-        serverCommController.send( msgRequest, new SessionMessage(Constants.SESSION_PAUSED) );
+        send( msgRequest, new SessionMessage(Constants.SESSION_PAUSED) );
     }
 
     private void disconnect(Session session, ZMsgWrapper msgRequest) throws Throwable{
         Log4J.info(this, "Disconnecting session: " + session.getId());
         session.close( );
         sessions.remove( session.getId() );
-        serverCommController.send( msgRequest, new SessionMessage(Constants.SESSION_CLOSED) );
+        send( msgRequest, new SessionMessage(Constants.SESSION_CLOSED) );
     }
 
     /**
@@ -184,13 +216,13 @@ public class SessionManager implements Runnable{
     private void registerRemoteService(SessionMessage request, ZMsgWrapper msgRequest) {
         Log4J.info(this, "Registering service: " + request.getSessionId());
         ResourceLocator.registerService(request, msgRequest, request.getPayload());
-        serverCommController.send( msgRequest, new SessionMessage(Constants.RESPONSE_REMOTE_REGISTERED) );
+        send( msgRequest, new SessionMessage(Constants.RESPONSE_REMOTE_REGISTERED) );
     }
 
     private void unregisterRemoteService(SessionMessage request, ZMsgWrapper msgRequest) {
         Log4J.info(this, "Unregistering service: " + request.getSessionId());
         ResourceLocator.unregisterService(request);
-        serverCommController.send( msgRequest, new SessionMessage(Constants.RESPONSE_REMOTE_UNREGISTERED) );
+        send( msgRequest, new SessionMessage(Constants.RESPONSE_REMOTE_UNREGISTERED) );
     }
 
     /**
@@ -214,7 +246,7 @@ public class SessionManager implements Runnable{
         Session session = DependencyManager.getInstance().getComponent(Session.class);
         session.setId(key, msgRequest, fullAddress);
         sessions.put( key, session );
-        serverCommController.send( msgRequest, new SessionMessage( Constants.SESSION_INITIATED) );
+        send( msgRequest, new SessionMessage( Constants.SESSION_INITIATED) );
         Log4J.info(this, "Creating session: " + session.getId());
     }
 
@@ -230,7 +262,8 @@ public class SessionManager implements Runnable{
                 serviceInfo.getClientAddress(),
                 Constants.REGISTER_REMOTE_SERVICE,
                 serviceInfo.getMsgWrapper(),
-                serviceInfo.getMsgSubscriptions());
+                serviceInfo.getMsgSubscriptions(),
+                true);
         Log4J.info(this, "Creating new service as a framework: " + serviceInfo.getServiceName());
 
         // let's process the response
@@ -251,9 +284,15 @@ public class SessionManager implements Runnable{
         Log4J.info(this, "Reconnecting session: " + session.getId() + " as per request "
                 + request.getSessionId());
         if(request.getSessionId().equals(session.getId())){
-            serverCommController.send( msgRequest, new SessionMessage(Constants.SESSION_RECONNECTED) );
+            send( msgRequest, new SessionMessage(Constants.SESSION_RECONNECTED) );
         } else {
-            serverCommController.send( msgRequest, new SessionMessage(Constants.RESPONSE_ALREADY_CONNECTED) );
+            send( msgRequest, new SessionMessage(Constants.RESPONSE_ALREADY_CONNECTED) );
+        }
+    }
+
+    private void send(ZMsgWrapper msgRequest, SessionMessage request){
+        if( serverCommController != null ){
+            send( msgRequest, request );
         }
     }
 
@@ -275,13 +314,17 @@ public class SessionManager implements Runnable{
         Log4J.info(this, "3...");
         for( ServiceComponent serviceComponent : ResourceLocator.getServiceRegistry().values() ){
             Log4J.info(this, "3.1...");
-            serverCommController.send( serviceComponent.getMsgTemplate(), sessionMessage );
+            send( serviceComponent.getMsgTemplate(), sessionMessage );
         }
         Log4J.info(this, "4...");
-        serverCommController.close();
-        Log4J.info(this, "5...");
-        broker.close();
+        if( config.isTCPon() ) {
+            serverCommController.close();
+            Log4J.info(this, "5...");
+            broker.close();
+        }
         Log4J.info(this, "6...");
+        thread.interrupt();
+        Log4J.info(this, "7...");
     }
 
     /**

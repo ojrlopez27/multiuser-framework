@@ -34,7 +34,6 @@ public class ClientCommController {
     private int sentMessages = 0;
     private int receivedMessages = 0;
     private final ClientMessage clientMessage;
-    private long timeToWait = 15;
 
     //control
     private boolean stop;
@@ -45,7 +44,12 @@ public class ClientCommController {
     private String  receiveState = Constants.CONNECTION_NEW;
     private ResponseListener responseListener;
     private boolean shouldProcessReply;
+    private boolean isTCPon;
 
+
+    public ClientCommController(String serverAddress, String serviceName, String requestType, boolean isTCPon) {
+        this(serverAddress, serviceName, null, requestType, new ZMsgWrapper(), new String[]{}, isTCPon );
+    }
 
     public ClientCommController(String serverAddress, String serviceName, String clientAddress, String requestType) {
         this(serverAddress, serviceName, clientAddress, requestType, new ZMsgWrapper() );
@@ -57,20 +61,19 @@ public class ClientCommController {
         this.shouldProcessReply = shouldProcessReply;
     }
 
-
-
     public ClientCommController(String serverAddress, String serviceName, String clientAddress, String requestType,
                                 ZMsgWrapper msgWrapper){
-        this(serverAddress, serviceName, clientAddress, requestType, msgWrapper, new String[]{} );
+        this(serverAddress, serviceName, clientAddress, requestType, msgWrapper, new String[]{}, true );
     }
 
     public ClientCommController(String serverAddress, String serviceName, String clientAddress, String requestType,
                                 String[] msgSubscriptions){
-        this(serverAddress, serviceName, clientAddress, requestType, new ZMsgWrapper(), msgSubscriptions);
+        this(serverAddress, serviceName, clientAddress, requestType, new ZMsgWrapper(), msgSubscriptions, true);
     }
 
     public ClientCommController(String serverAddress, String serviceName, String clientAddress, String requestType,
-                                ZMsgWrapper msgWrapper, String[] msgSubscriptions){
+                                ZMsgWrapper msgWrapper, String[] msgSubscriptions, boolean isTCPon){
+        this.isTCPon = isTCPon;
         this.serviceName = serviceName;
         this.sessionManagerService = Constants.SESSION_MANAGER_SERVICE;
         this.serverAddress = serverAddress;
@@ -107,25 +110,27 @@ public class ClientCommController {
         release = checkFSM( release, Constants.CONNECTION_NEW);
     }
 
-    public void connect() {
+    private void connect() {
         try {
-            this.clientCommAPI = new ClientCommAPI(serverAddress);
-            SessionMessage sessionMessage = new SessionMessage();
-            sessionMessage.setSessionId(serviceName);
-            sessionMessage.setRequestType(requestType);
-            sessionMessage.setUrl(clientAddress);
-            sessionMessage.setPayload( Arrays.toString(subscriptionMessages));
-            stop = !sendToBroker( new Pair<>(sessionManagerService, sessionMessage) );
-            if( !stop ) {
-                SessionMessage reply = Utils.fromJson(receive(), SessionMessage.class);
-                if( reply != null ) {
-                    if (reply.getRequestType().equals(Constants.RESPONSE_ALREADY_CONNECTED)
-                            || reply.getRequestType().equals(Constants.RESPONSE_NOT_VALID_OPERATION)
-                            || reply.getRequestType().equals(Constants.RESPONSE_UNKNOWN_SESSION)) {
-                        throw new Exception(reply.getRequestType());
+            if( isTCPon ) {
+                this.clientCommAPI = new ClientCommAPI(serverAddress);
+                SessionMessage sessionMessage = new SessionMessage();
+                sessionMessage.setSessionId(serviceName);
+                sessionMessage.setRequestType(requestType);
+                sessionMessage.setUrl(clientAddress);
+                sessionMessage.setPayload(Arrays.toString(subscriptionMessages));
+                stop = !sendToBroker(new Pair<>(sessionManagerService, sessionMessage));
+                if (!stop) {
+                    SessionMessage reply = Utils.fromJson(receive(), SessionMessage.class);
+                    if (reply != null) {
+                        if (reply.getRequestType().equals(Constants.RESPONSE_ALREADY_CONNECTED)
+                                || reply.getRequestType().equals(Constants.RESPONSE_NOT_VALID_OPERATION)
+                                || reply.getRequestType().equals(Constants.RESPONSE_UNKNOWN_SESSION)) {
+                            throw new Exception(reply.getRequestType());
+                        }
+                    } else {
+                        stop = true;
                     }
-                }else {
-                    stop = true;
                 }
             }
         }catch (Throwable e){
@@ -195,11 +200,16 @@ public class ClientCommController {
 
 
     private String receive() throws Throwable{
-        ZMsg reply = clientCommAPI.recv();
-        if( reply != null && reply.peekLast() != null){
-            String response = reply.peekLast().toString();
-            reply.destroy();
-            return response;
+        if( isTCPon ) {
+            ZMsg reply = clientCommAPI.recv();
+            if (reply != null && reply.peekLast() != null) {
+                String response = reply.peekLast().toString();
+                reply.destroy();
+                return response;
+            }
+        }else{
+            Pair<String, Object> message = clientMessage.get();
+            String hey = message.fst;
         }
         return null;
     }
@@ -271,71 +281,6 @@ public class ClientCommController {
 
     /********************************* UTILS ********************************************/
     /************************************************************************************/
-
-    class ClientMessage {
-        private final LinkedList<Pair<String, Object>> messageQueue = new LinkedList<>();
-        // lock and condition variables
-        private Lock aLock = new ReentrantLock();
-        private Condition bufferNotFull = aLock.newCondition();
-        private Condition bufferNotEmpty = aLock.newCondition();
-
-        void put(Pair<String, Object> message){
-            //Log4J.debug(this, "putting: " + message.toString());
-            boolean isLocked = false;
-            try {
-                isLocked = aLock.tryLock( timeToWait * 10, TimeUnit.MILLISECONDS);
-                if( isLocked ) {
-                    while (messageQueue.size() >= Constants.QUEUE_CAPACITY) {
-                        bufferNotEmpty.await(timeToWait * 10, TimeUnit.MILLISECONDS);
-                        //we start to lose messages :(
-                        messageQueue.clear();
-                    }
-
-                    boolean isAdded = messageQueue.offer(message);
-                    if (isAdded) {
-                        bufferNotFull.signalAll();
-                    }
-                }
-            }catch (Throwable e) {
-                ExceptionHandler.handle(e);
-            }finally {
-                if( isLocked ) aLock.unlock();
-            }
-            //Log4J.debug(this, "done putting ...");
-        }
-
-        Pair<String, Object> get(){
-            //Log4J.debug(this, "attempting to get ...");
-            boolean isLocked = false;
-            Pair<String, Object> value = null;
-            try {
-                isLocked = aLock.tryLock(timeToWait * 10, TimeUnit.MILLISECONDS );
-                if( isLocked ) {
-                    while (messageQueue.size() == 0) {
-                        bufferNotFull.await();
-                    }
-                    value = messageQueue.poll();
-                    if (value != null) {
-                        bufferNotEmpty.signalAll();
-                    }
-                }
-            } catch(Throwable e){
-                ExceptionHandler.handle( e );
-            } finally{
-                if( isLocked ) aLock.unlock();
-            }
-            //Log4J.debug(this, "got: " + value.toString());
-            return value;
-        }
-
-        //TODO: who needs to call thi?
-        public void reset() {
-            aLock = new ReentrantLock();
-            bufferNotFull = aLock.newCondition();
-            bufferNotEmpty = aLock.newCondition();
-            messageQueue.clear();
-        }
-    }
 
     private String checkFSM(String currentState, String newState){
         if (    (currentState.equals( newState) )

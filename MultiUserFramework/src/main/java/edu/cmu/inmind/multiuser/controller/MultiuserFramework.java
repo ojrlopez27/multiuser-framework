@@ -13,7 +13,11 @@ public class MultiuserFramework{
     private SessionManager sessionManager;
     private boolean stopping;
 
-    MultiuserFramework( SessionManager sessionManager, String id){
+    public String getId() {
+        return id;
+    }
+
+    MultiuserFramework(SessionManager sessionManager, String id){
         ClassLoader.getSystemClassLoader().setPackageAssertionStatus("zmq",false);
         this.sessionManager = sessionManager;
         this.id = id;
@@ -32,11 +36,11 @@ public class MultiuserFramework{
         });
     }
 
-    public void start( ){
+    void start( ){
         sessionManager.start();
     }
 
-    public void stop(){
+    void stop(){
         Log4J.info(this, "1...");
         if( !stopping ) {
             stopping = true;
@@ -45,8 +49,11 @@ public class MultiuserFramework{
                 sessionManager.stop();
                 Log4J.info(this, "3...");
             } catch (Throwable e) {
+                Log4J.info(this, "4...");
                 ExceptionHandler.handle(e);
             }
+            Log4J.info(this, "5...");
         }
+        Log4J.info(this, "6...");
     }
 }

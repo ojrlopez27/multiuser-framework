@@ -2,11 +2,6 @@ package edu.cmu.inmind.multiuser.controller.exceptions;
 
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
-import org.zeromq.ZMQException;
-import zmq.ZError;
-
-import java.nio.channels.CancelledKeyException;
-import java.util.MissingFormatArgumentException;
 
 /**
  * Created by oscarr on 3/24/17.
