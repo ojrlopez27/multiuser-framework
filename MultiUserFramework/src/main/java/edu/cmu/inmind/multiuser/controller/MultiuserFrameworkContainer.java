@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * Created by oscarr on 6/27/17.
  */
-public class MultiuserFrameworkFactory {
+public class MultiuserFrameworkContainer {
     private static Map<String, MultiuserFramework> mufs = new HashMap<>();
 
     /**
@@ -26,7 +26,7 @@ public class MultiuserFrameworkFactory {
      *                    is a slave, then provide connection information about it.
      */
     public static MultiuserFramework startFramework(PluginModule[] modules, Config config, ServiceInfo serviceInfo )
-            throws MultiuserException{
+            throws Throwable{
         String id = config.getServerAddress() + ":" + config.getSessionManagerPort();
         if( null != mufs.get( id ) ){
             throw new MultiuserException(ErrorMessages.FRAMEWORK_ALREADY_EXIST, id );
@@ -42,11 +42,15 @@ public class MultiuserFrameworkFactory {
      * @param modules
      * @param config
      */
-    public static void startFramework( PluginModule[] modules, Config config ) throws MultiuserException{
+    public static void startFramework( PluginModule[] modules, Config config ) throws Throwable{
         startFramework( modules, config, null);
     }
 
     public static void stopFramework( MultiuserFramework muf ){
-        muf.stop();
+        mufs.remove( muf.getId() ).stop();
+    }
+
+    public static Object get(String id) {
+        return mufs.get( id );
     }
 }

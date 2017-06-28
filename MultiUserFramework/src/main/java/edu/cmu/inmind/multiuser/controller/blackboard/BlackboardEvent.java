@@ -1,7 +1,5 @@
 package edu.cmu.inmind.multiuser.controller.blackboard;
 
-import edu.cmu.inmind.multiuser.common.Utils;
-
 /**
  * Created by oscarr on 3/16/17.
  */

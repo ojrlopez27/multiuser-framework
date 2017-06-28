@@ -6,8 +6,6 @@ import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
-import java.util.Formatter;
-
 /**
  * Created by oscarr on 3/29/17.
  */
@@ -19,15 +17,6 @@ public class ClientCommAPI {
     private long timeout = 10000; // ten seconds
     private int highWaterMark = 10 * 1000; //amount of enqueued messages
     private ZMQ.Poller items; // Poll socket for a reply, with timeout
-    private Formatter log = new Formatter(System.out);
-
-    public long getTimeout() {
-        return timeout;
-    }
-
-    public void setTimeout(long timeout) {
-        this.timeout = timeout;
-    }
 
     public ClientCommAPI(String broker) throws Throwable{
         this.broker = broker;

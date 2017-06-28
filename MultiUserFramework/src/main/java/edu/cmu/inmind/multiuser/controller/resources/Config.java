@@ -15,6 +15,7 @@ public class Config {
     private String serverAddress;
     private static int exceptionTraceLevel;
     private boolean executeExit;
+    private boolean isTCPon;
 
     private Config( Builder builder) {
         this.sessionManagerPort = builder.sessionManagerPort;
@@ -24,6 +25,7 @@ public class Config {
         this.serverAddress = builder.serverAddress;
         this.exceptionTraceLevel = builder.exceptionTraceLevel;
         this.executeExit = builder.executeExit;
+        this.isTCPon = builder.isTCPon;
     }
 
     public int getSessionManagerPort() {
@@ -54,6 +56,59 @@ public class Config {
         return executeExit;
     }
 
+    public int getDefaultNumOfPoolInstances() {
+        return defaultNumOfPoolInstances;
+    }
+
+    public boolean isExecuteExit() {
+        return executeExit;
+    }
+
+    public boolean isTCPon() {
+        return isTCPon;
+    }
+
+    public Config setSessionManagerPort(int sessionManagerPort) {
+        this.sessionManagerPort = sessionManagerPort;
+        return this;
+    }
+
+    public Config setPathLogs(String pathLogs) {
+        this.pathLogs = pathLogs;
+        return this;
+
+    }
+
+    public Config setDefaultNumOfPoolInstances(int defaultNumOfPoolInstances) {
+        this.defaultNumOfPoolInstances = defaultNumOfPoolInstances;
+        return this;
+    }
+
+    public Config setSessionTimeout(long sessionTimeout) {
+        this.sessionTimeout = sessionTimeout;
+        return this;
+    }
+
+    public Config setServerAddress(String serverAddress) {
+        this.serverAddress = serverAddress;
+        return this;
+    }
+
+    public Config setExceptionTraceLevel(int exceptionTraceLevel) {
+        Config.exceptionTraceLevel = exceptionTraceLevel;
+        return this;
+    }
+
+    public Config setExecuteExit(boolean executeExit) {
+        this.executeExit = executeExit;
+        return this;
+    }
+
+    public Config setTCPon(boolean TCPon) {
+        isTCPon = TCPon;
+        return this;
+    }
+
     public static class Builder{
         private int sessionManagerPort = 5555;
         private String pathLogs= "";
@@ -61,7 +116,8 @@ public class Config {
         private long sessionTimeout = 1000 * 60 * 5; // set to 5 minutes by default
         private int exceptionTraceLevel = Constants.SHOW_ALL_EXCEPTIONS;
         private boolean executeExit;
-        public String serverAddress = "127.0.0.1";
+        private boolean isTCPon = false;
+        private String serverAddress = "127.0.0.1";
 
         public Builder setSessionManagerPort(int sessionManagerPort) {
             this.sessionManagerPort = sessionManagerPort;
@@ -104,6 +160,11 @@ public class Config {
 
         public Builder setExecuteExit(boolean executeExit) {
             this.executeExit = executeExit;
+            return this;
+        }
+
+        public Builder setTCPon(boolean TCPon) {
+            isTCPon = TCPon;
             return this;
         }
     }

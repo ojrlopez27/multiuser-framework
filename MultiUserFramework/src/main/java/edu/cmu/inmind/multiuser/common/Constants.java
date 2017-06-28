@@ -1,7 +1,5 @@
 package edu.cmu.inmind.multiuser.common;
 
-import edu.cmu.inmind.multiuser.controller.resources.Config;
-
 /**
  * Created by oscarr on 3/3/17.
  */

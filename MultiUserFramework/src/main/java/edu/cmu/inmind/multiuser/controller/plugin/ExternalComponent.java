@@ -1,7 +1,6 @@
 package edu.cmu.inmind.multiuser.controller.plugin;
 
 import edu.cmu.inmind.multiuser.common.Constants;
-import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
