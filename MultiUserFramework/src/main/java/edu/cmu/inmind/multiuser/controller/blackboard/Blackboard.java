@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.blackboard;
 
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ConnectRemoteService;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
@@ -120,6 +121,7 @@ public class Blackboard {
         catch (NoClassDefFoundError e){
             post( sender, key, element, false);
         }catch(Throwable e){
+            ExceptionHandler.handle( e );
         }finally {
 //            if( isLocked ) {
 //                lock.unlock();

@@ -1,4 +1,5 @@
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 
@@ -9,12 +10,20 @@ import java.util.concurrent.TimeUnit;
  */
 public class TestUtils {
 
-    public static PluginModule[] getModules(){
+    public static PluginModule[] getModules(Class<? extends ProcessOrchestratorImpl> orchestrator){
         return new PluginModule[]{
-                new PluginModule.Builder( TestOrchestrator.class )
+                new PluginModule.Builder( orchestrator )
                         .addPlugin(TestPluggableComponent.class, "test")
                         .build()
         };
+    }
+
+    public static PluginModule[] getModules(Class<? extends ProcessOrchestratorImpl> orchestrator, Class[] pluggins){
+        PluginModule.Builder builder = new PluginModule.Builder( orchestrator );
+        for( Class clazz : pluggins ){
+            builder.addPlugin( clazz, clazz.getSimpleName() );
+        }
+        return new PluginModule[]{ builder.build() };
     }
 
     public static Config createConfig(String serverAddress, int port) {
@@ -26,7 +35,7 @@ public class TestUtils {
                 //.setPathLogs(Utils.getProperty("pathLogs"))
                 .setSessionTimeout(5, TimeUnit.MINUTES)
                 .setServerAddress(serverAddress)
-                .setExceptionTraceLevel(Constants.SHOW_MUF_EXCEPTIONS)
+                .setExceptionTraceLevel(Constants.SHOW_ALL_EXCEPTIONS)
                 .build();
     }
 }
