@@ -123,7 +123,7 @@ public class Config {
         private long sessionTimeout = 1000 * 60 * 5; // set to 5 minutes by default
         private int exceptionTraceLevel = Constants.SHOW_ALL_EXCEPTIONS;
         private boolean executeExit;
-        private boolean isTCPon = false;
+        private boolean isTCPon = true;
         private String serverAddress = "127.0.0.1";
         private Class<? extends ProcessOrchestratorImpl> orchestrator;
 

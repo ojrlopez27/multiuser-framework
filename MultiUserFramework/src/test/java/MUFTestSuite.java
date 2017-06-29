@@ -16,8 +16,8 @@ import static org.junit.Assert.*;
  */
 public class MUFTestSuite {
 
-    private long delay = 1000;
-    private String serverAddress = "127.0.0.1"; //use IP instead of 'localhost'
+    private long delay = 10000;
+    private String serverAddress = "tcp://127.0.0.1:"; //use IP instead of 'localhost'
     private String clientAddress = "tcp://127.0.0.1:";
     private int[] ports = new int[]{5555, 5556, 5557, 5558};
 
@@ -98,6 +98,7 @@ public class MUFTestSuite {
 
     @Test
     public void testServerClientWithTCP() throws Throwable{
+        String sessionId = "session-1";
         // creates a MUF and set TCP to off
         MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
                 TestUtils.getModules(TestOrchestrator.class ),
@@ -105,11 +106,11 @@ public class MUFTestSuite {
         assertNotNull(muf);
         Utils.sleep(delay); //give some time to initialize the MUF
         // let's create a client that sends messages to MUF and TCP is set to on
-        ClientCommController client = new ClientCommController( serverAddress, "client-1",
-                clientAddress + ports[0], Constants.REQUEST_CONNECT);
-
-        SessionMessage message = new SessionMessage( "test", "test" );
-        client.send( Constants.SESSION_MANAGER_SERVICE, message);
+        ClientCommController client = new ClientCommController( serverAddress + ports[0], sessionId
+                ,clientAddress + ports[0], Constants.REQUEST_CONNECT);
+        client.receive(message -> assertSame( "This is a test", message));
+        SessionMessage message = new SessionMessage( "test", "test", sessionId );
+        client.send( sessionId, message);
         MultiuserFrameworkContainer.stopFramework( muf );
     }
 }

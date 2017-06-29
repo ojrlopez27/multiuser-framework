@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.controller;
 
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.controller.communication.ServiceInfo;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
@@ -21,18 +22,16 @@ public class MultiuserFramework{
     private ProcessOrchestrator orchestrator;
     private Config config;
 
-    MultiuserFramework(PluginModule[] modules, Config config, String id) {
+    MultiuserFramework(String id, PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws Throwable{
+        ClassLoader.getSystemClassLoader().setPackageAssertionStatus("zmq",false);
         this.id = id;
         this.config = config;
-        this.orchestrator = DependencyManager.getInstance( modules ).getOrchestrator();
         addShutDown();
-    }
-
-    MultiuserFramework(SessionManager sessionManager, String id){
-        ClassLoader.getSystemClassLoader().setPackageAssertionStatus("zmq",false);
-        this.sessionManager = sessionManager;
-        this.id = id;
-        addShutDown();
+        if( config.isTCPon() ){
+            this.sessionManager = new SessionManager(modules, config, serviceInfo);
+        }else{
+            this.orchestrator = DependencyManager.getInstance( modules ).getOrchestrator();
+        }
     }
 
     public String getId() {

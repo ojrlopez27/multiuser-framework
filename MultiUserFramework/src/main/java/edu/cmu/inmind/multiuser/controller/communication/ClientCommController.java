@@ -185,6 +185,9 @@ public class ClientCommController {
                     while (!Thread.currentThread().isInterrupted() && !stop) {
                         try {
                             Pair<String, Object> message = clientMessage.get();
+                            if( message.snd.toString().contains("test") ){
+                                System.out.println("here");
+                            }
                             stop = (!sendToBroker(message) || checkNumSent) && (sentMessages > receivedMessages + difference);
                             if (stop) {
                                 continue;
@@ -221,7 +224,6 @@ public class ClientCommController {
             }
         }else{
             Pair<String, Object> message = clientMessage.get();
-            String hey = message.fst;
         }
         return null;
     }

@@ -76,8 +76,8 @@ public class SessionManager implements Runnable{
      */
     private void extractConfig(){
         port = config.getSessionManagerPort();
-        address = "tcp://" + config.getServerAddress(); //"tcp://*";
-        fullAddress = address + ":" + port;
+        address = config.getServerAddress(); //"tcp://*";
+        fullAddress = address + port;
         // ...
     }
 
@@ -244,6 +244,7 @@ public class SessionManager implements Runnable{
     private void createSession(ZMsgWrapper msgRequest, SessionMessage request) {
         String key = request.getSessionId();
         Session session = DependencyManager.getInstance().getComponent(Session.class);
+        session.setConfig( config );
         session.setId(key, msgRequest, fullAddress);
         sessions.put( key, session );
         send( msgRequest, new SessionMessage( Constants.SESSION_INITIATED) );
@@ -292,7 +293,7 @@ public class SessionManager implements Runnable{
 
     private void send(ZMsgWrapper msgRequest, SessionMessage request){
         if( serverCommController != null ){
-            send( msgRequest, request );
+            serverCommController.send( msgRequest, request );
         }
     }
 
