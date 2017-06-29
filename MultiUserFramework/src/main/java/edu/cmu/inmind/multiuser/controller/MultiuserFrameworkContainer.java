@@ -3,6 +3,7 @@ package edu.cmu.inmind.multiuser.controller;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.communication.ServiceInfo;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
+import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.controller.session.SessionManager;
@@ -15,6 +16,7 @@ import java.util.Map;
  */
 public class MultiuserFrameworkContainer {
     private static Map<String, MultiuserFramework> mufs = new HashMap<>();
+    private static ProcessOrchestratorImpl orchestrator; //when testing with TCP off
 
     /**
      * This method creates an instance of the SessionManager class, which listens to new connection/
@@ -31,7 +33,10 @@ public class MultiuserFrameworkContainer {
         if( null != mufs.get( id ) ){
             throw new MultiuserException(ErrorMessages.FRAMEWORK_ALREADY_EXIST, id );
         }
-        MultiuserFramework muf = new MultiuserFramework( new SessionManager( modules, config, serviceInfo ), id );
+
+        MultiuserFramework muf = config.isTCPon()
+                ? new MultiuserFramework( new SessionManager( modules, config, serviceInfo  ), id)
+                : new MultiuserFramework( modules, config, id );
         mufs.put( id, muf );
         muf.start();
         return muf;

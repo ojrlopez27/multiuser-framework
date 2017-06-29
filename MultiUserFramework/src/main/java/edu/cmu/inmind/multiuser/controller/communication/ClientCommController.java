@@ -4,6 +4,7 @@ package edu.cmu.inmind.multiuser.controller.communication;
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.Pair;
 import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.controller.MultiuserFramework;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import org.zeromq.ZMsg;
 
@@ -45,6 +46,7 @@ public class ClientCommController {
     private ResponseListener responseListener;
     private boolean shouldProcessReply;
     private boolean isTCPon;
+    private MultiuserFramework muf;
 
 
     public ClientCommController(String serverAddress, String serviceName, String requestType, boolean isTCPon) {
@@ -87,6 +89,10 @@ public class ClientCommController {
 
     public void setShouldProcessReply(boolean shouldProcessReply) {
         this.shouldProcessReply = shouldProcessReply;
+    }
+
+    public void setMUF(MultiuserFramework muf) {
+        this.muf = muf;
     }
 
     /********************************* MAIN THREAD **************************************/
@@ -161,8 +167,14 @@ public class ClientCommController {
 
     private boolean sendToBroker(Pair<String, Object> message) throws Throwable{
         ZMsg request = new ZMsg();
-        request.addString( Utils.toJson( message.snd ) );
-        return clientCommAPI.send( message.fst, request);
+        String msgString = Utils.toJson( message.snd );
+        request.addString( msgString );
+        if( isTCPon ) {
+            return clientCommAPI.send(message.fst, request);
+        }else{
+            muf.getOrchestrator().process( msgString );
+            return true;
+        }
     }
 
     private void sendThread() {

@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.resources;
 
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 
 import java.util.concurrent.TimeUnit;
 
@@ -16,6 +17,7 @@ public class Config {
     private static int exceptionTraceLevel;
     private boolean executeExit;
     private boolean isTCPon;
+    private Class<? extends ProcessOrchestratorImpl> orchestrator;
 
     private Config( Builder builder) {
         this.sessionManagerPort = builder.sessionManagerPort;
@@ -26,6 +28,7 @@ public class Config {
         this.exceptionTraceLevel = builder.exceptionTraceLevel;
         this.executeExit = builder.executeExit;
         this.isTCPon = builder.isTCPon;
+        this.orchestrator = builder.orchestrator;
     }
 
     public int getSessionManagerPort() {
@@ -66,6 +69,10 @@ public class Config {
 
     public boolean isTCPon() {
         return isTCPon;
+    }
+
+    public Class<? extends ProcessOrchestratorImpl> getOrchestrator() {
+        return orchestrator;
     }
 
     public Config setSessionManagerPort(int sessionManagerPort) {
@@ -118,6 +125,7 @@ public class Config {
         private boolean executeExit;
         private boolean isTCPon = false;
         private String serverAddress = "127.0.0.1";
+        private Class<? extends ProcessOrchestratorImpl> orchestrator;
 
         public Builder setSessionManagerPort(int sessionManagerPort) {
             this.sessionManagerPort = sessionManagerPort;
@@ -165,6 +173,11 @@ public class Config {
 
         public Builder setTCPon(boolean TCPon) {
             isTCPon = TCPon;
+            return this;
+        }
+
+        public Builder setOrchestrator(Class<? extends ProcessOrchestratorImpl> orchestrator) {
+            this.orchestrator = orchestrator;
             return this;
         }
     }
