@@ -1,5 +1,6 @@
 package edu.cmu.inmind.multiuser.controller.session;
 
+import com.google.inject.Inject;
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.controller.communication.ServerCommController;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
@@ -32,9 +33,8 @@ public class Session implements Runnable, OrchestratorListener{
     private Config config;
     private String fullAddress;
 
-    public Session(Config config) {
+    public Session() {
         this.timer = new InactivityTimer();
-        this.config = config;
     }
 
     public String getId() {
@@ -49,6 +49,10 @@ public class Session implements Runnable, OrchestratorListener{
         return fullAddress;
     }
 
+    public void setConfig(Config config) {
+        this.config = config;
+    }
+
     /**
      * each session must have a unique id. A new thread is created for each new session
      * @param id
@@ -60,7 +64,6 @@ public class Session implements Runnable, OrchestratorListener{
             Log4J.info(this, "A new session has been created with id: " + id);
             this.fullAddress = fullAddress;
             this.sessionCommController = new ServerCommController( fullAddress, id, msg);
-            this.thread.setName("session thread with id " + id);
             this.thread.start();
         }
         this.id = id;

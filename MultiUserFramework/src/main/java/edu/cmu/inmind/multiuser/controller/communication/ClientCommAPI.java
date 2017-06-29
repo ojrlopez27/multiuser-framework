@@ -13,7 +13,7 @@ import org.zeromq.ZMsg;
 public class ClientCommAPI {
     private String broker;
     private ZContext ctx;
-    private ZMQ.Socket client;
+    private ZMQ.Socket clientSocket;
     private long timeout = 10000; // ten seconds
     private int highWaterMark = 10 * 1000; //amount of enqueued messages
     private ZMQ.Poller items; // Poll socket for a reply, with timeout
@@ -29,20 +29,20 @@ public class ClientCommAPI {
      * Connect or reconnect to broker
      */
     void reconnectToBroker() {
-        if (client != null) {
-            ctx.destroySocket(client);
+        if (clientSocket != null) {
+            ctx.destroySocket(clientSocket);
         }
-        client = ctx.createSocket(ZMQ.DEALER);
-        client.setSendTimeOut(0); //  Send messages immediately or return EAGAIN  ojrl
-        client.setHWM(highWaterMark); //  Set a high-water mark that allows for reasonable activity
-        client.setRcvHWM(highWaterMark);
-        client.connect(broker);
+        clientSocket = ctx.createSocket(ZMQ.DEALER);
+        clientSocket.setSendTimeOut(0); //  Send messages immediately or return EAGAIN  ojrl
+        clientSocket.setHWM(highWaterMark); //  Set a high-water mark that allows for reasonable activity
+        clientSocket.setRcvHWM(highWaterMark);
+        clientSocket.connect(broker);
     }
 
     public void initialize() throws Throwable{
         // Poll socket for a reply, with timeout
         items = new ZMQ.Poller(1);
-        items.register(client, ZMQ.Poller.POLLIN);
+        items.register(clientSocket, ZMQ.Poller.POLLIN);
     }
 
     /**
@@ -57,7 +57,7 @@ public class ClientCommAPI {
 
         if (items.pollin(0)) {
             Log4J.debug(this, "attempting to receive ... ");
-            ZMsg msg = ZMsg.recvMsg(client, ZMQ.DONTWAIT);
+            ZMsg msg = ZMsg.recvMsg(clientSocket, ZMQ.DONTWAIT);
             Log4J.debug(this, "received message " + msg.toString());
 
             // Don't try to handle errors, just assert noisily
@@ -94,7 +94,7 @@ public class ClientCommAPI {
         request.addFirst(MDP.C_CLIENT.newFrame());
         request.addFirst("");
         //Log4J.debug(this, "about to send " + request.toString());
-        if( !request.send(client) ){
+        if( !request.send(clientSocket) ){
             //Log4J.debug(this, "failed to send " + request.toString());
             return false;
         }

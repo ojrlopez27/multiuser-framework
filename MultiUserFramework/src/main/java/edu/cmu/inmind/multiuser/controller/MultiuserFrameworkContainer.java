@@ -16,7 +16,6 @@ import java.util.Map;
  */
 public class MultiuserFrameworkContainer {
     private static Map<String, MultiuserFramework> mufs = new HashMap<>();
-    private static ProcessOrchestratorImpl orchestrator; //when testing with TCP off
 
     /**
      * This method creates an instance of the SessionManager class, which listens to new connection/
@@ -33,10 +32,7 @@ public class MultiuserFrameworkContainer {
         if( null != mufs.get( id ) ){
             throw new MultiuserException(ErrorMessages.FRAMEWORK_ALREADY_EXIST, id );
         }
-
-        MultiuserFramework muf = config.isTCPon()
-                ? new MultiuserFramework( new SessionManager( modules, config, serviceInfo  ), id)
-                : new MultiuserFramework( modules, config, id );
+        MultiuserFramework muf = new MultiuserFramework( id, modules, config, serviceInfo );
         mufs.put( id, muf );
         muf.start();
         return muf;
