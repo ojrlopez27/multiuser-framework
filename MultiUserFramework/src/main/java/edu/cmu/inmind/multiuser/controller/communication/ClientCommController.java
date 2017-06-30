@@ -37,7 +37,7 @@ public class ClientCommController {
     private final ClientMessage clientMessage;
 
     //control
-    private boolean stop;
+    private boolean stop = false;
     private boolean checkNumSent = true;
     private int     difference = 10; //if sentMessages > receivedMessages + difference => stop
     private String release = Constants.CONNECTION_FINISHED;
@@ -48,45 +48,101 @@ public class ClientCommController {
     private boolean isTCPon;
     private MultiuserFramework muf;
 
-
-    public ClientCommController(String serverAddress, String serviceName, String requestType, boolean isTCPon) {
-        this(serverAddress, serviceName, null, requestType, new ZMsgWrapper(), new String[]{}, isTCPon );
-    }
-
-    public ClientCommController(String serverAddress, String serviceName, String clientAddress, String requestType) {
-        this(serverAddress, serviceName, clientAddress, requestType, new ZMsgWrapper() );
-        this.setShouldProcessReply( true );
-    }
-
-    public ClientCommController(String serverAddress, String serviceName, String clientAddress, String requestType,
-                                boolean shouldProcessReply) {
-        this(serverAddress, serviceName, clientAddress, requestType, new ZMsgWrapper() );
-        this.shouldProcessReply = shouldProcessReply;
-    }
-
-    public ClientCommController(String serverAddress, String serviceName, String clientAddress, String requestType,
-                                ZMsgWrapper msgWrapper){
-        this(serverAddress, serviceName, clientAddress, requestType, msgWrapper, new String[]{}, true );
-    }
-
-    public ClientCommController(String serverAddress, String serviceName, String clientAddress, String requestType,
-                                String[] msgSubscriptions){
-        this(serverAddress, serviceName, clientAddress, requestType, new ZMsgWrapper(), msgSubscriptions, true);
-    }
-
-    public ClientCommController(String serverAddress, String serviceName, String clientAddress, String requestType,
-                                ZMsgWrapper msgWrapper, String[] msgSubscriptions, boolean isTCPon){
-        this.isTCPon = isTCPon;
-        this.serviceName = serviceName;
-        this.sessionManagerService = Constants.SESSION_MANAGER_SERVICE;
-        this.serverAddress = serverAddress;
-        this.clientAddress = clientAddress;
-        this.msgTemplate = msgWrapper.duplicate();
-        this.requestType = requestType;
-        this.subscriptionMessages = msgSubscriptions;
+    public ClientCommController( Builder builder ){
+        this.isTCPon = builder.isTCPon;
+        this.serviceName = builder.serviceName;
+        this.serverAddress = builder.serverAddress;
+        this.clientAddress = builder.clientAddress;
+        this.msgTemplate = builder.msgTemplate != null? builder.msgTemplate.duplicate() : null;
+        this.requestType = builder.requestType;
+        this.subscriptionMessages = builder.subscriptionMessages;
+        this.muf = builder.muf;
+        this.shouldProcessReply = builder.shouldProcessReply;
+        this.responseListener = builder.responseListener;
+        this.sessionManagerService = builder.sessionManagerService;
         this.clientMessage = new ClientMessage();
         execute();
     }
+
+    public static class Builder{
+        private boolean isTCPon = true;
+        private String serviceName;
+        private String serverAddress = "tcp://127.0.0.1:5555";
+        private String clientAddress = "tcp://127.0.0.1:5555";
+        private ZMsgWrapper msgTemplate;
+        private String requestType;
+        private String [] subscriptionMessages;
+        private MultiuserFramework muf;
+        private boolean shouldProcessReply = true;
+        private ResponseListener responseListener;
+        private String sessionManagerService = Constants.SESSION_MANAGER_SERVICE;
+        private ClientMessage clientMessage;
+
+        public ClientCommController build(){
+            return new ClientCommController( this );
+        }
+
+        public Builder setTCPon(boolean TCPon) {
+            isTCPon = TCPon;
+            return this;
+        }
+
+        public Builder setServiceName(String serviceName) {
+            this.serviceName = serviceName;
+            return this;
+        }
+
+        public Builder setServerAddress(String serverAddress) {
+            this.serverAddress = serverAddress;
+            return this;
+        }
+
+        public Builder setClientAddress(String clientAddress) {
+            this.clientAddress = clientAddress;
+            return this;
+        }
+
+        public Builder setMsgTemplate(ZMsgWrapper msgTemplate) {
+            this.msgTemplate = msgTemplate;
+            return this;
+        }
+
+        public Builder setRequestType(String requestType) {
+            this.requestType = requestType;
+            return this;
+        }
+
+        public Builder setSubscriptionMessages(String[] subscriptionMessages) {
+            this.subscriptionMessages = subscriptionMessages;
+            return this;
+        }
+
+        public Builder setMuf(MultiuserFramework muf) {
+            this.muf = muf;
+            return this;
+        }
+
+        public Builder setShouldProcessReply(boolean shouldProcessReply) {
+            this.shouldProcessReply = shouldProcessReply;
+            return this;
+        }
+
+        public Builder setResponseListener(ResponseListener responseListener) {
+            this.responseListener = responseListener;
+            return this;
+        }
+
+        public Builder setSessionManagerService(String sessionManagerService) {
+            this.sessionManagerService = sessionManagerService;
+            return this;
+        }
+
+        public Builder setClientMessage(ClientMessage clientMessage) {
+            this.clientMessage = clientMessage;
+            return this;
+        }
+    }
+
 
     public void setShouldProcessReply(boolean shouldProcessReply) {
         this.shouldProcessReply = shouldProcessReply;

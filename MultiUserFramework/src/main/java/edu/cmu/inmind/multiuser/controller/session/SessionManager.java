@@ -246,14 +246,14 @@ public class SessionManager implements Runnable{
      * @param serviceInfo
      */
     private void createFrameworkAsService(ServiceInfo serviceInfo) {
-        ClientCommController clientCommController = new ClientCommController(
-                serviceInfo.getServerAddress(),
-                serviceInfo.getServiceName(),
-                serviceInfo.getClientAddress(),
-                Constants.REGISTER_REMOTE_SERVICE,
-                serviceInfo.getMsgWrapper(),
-                serviceInfo.getMsgSubscriptions(),
-                true);
+        ClientCommController clientCommController = new ClientCommController.Builder()
+                .setServerAddress(serviceInfo.getServerAddress())
+                .setServiceName(serviceInfo.getServiceName())
+                .setClientAddress( serviceInfo.getClientAddress() )
+                .setMsgTemplate( serviceInfo.getMsgWrapper() )
+                .setSubscriptionMessages( serviceInfo.getMsgSubscriptions() )
+                .setRequestType( Constants.REGISTER_REMOTE_SERVICE )
+                .build();
         Log4J.info(this, "Creating new service as a framework: " + serviceInfo.getServiceName());
 
         // let's process the response

@@ -21,9 +21,14 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
 
     public ExternalComponent(String serviceURL, String sessionId, ZMsgWrapper zMsgWrapper, String[] messages){
         try {
-            setClientCommController(new ClientCommController(serviceURL, sessionId, getSession().getFullAddress(),
-                    Constants.REQUEST_CONNECT, zMsgWrapper));
-
+            setClientCommController( new ClientCommController.Builder()
+                    .setServerAddress(serviceURL)
+                    .setServiceName(sessionId)
+                    .setClientAddress( getSession().getFullAddress() )
+                    .setMsgTemplate( zMsgWrapper )
+                    .setSubscriptionMessages( messages )
+                    .setRequestType( Constants.REQUEST_CONNECT )
+                    .build() );
             Utils.addOrChangeAnnotation(getClass().getAnnotation(BlackboardSubscription.class), "messages", messages);
             getClientCommController().receive(this);
         }catch (Throwable e){

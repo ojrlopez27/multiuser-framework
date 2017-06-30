@@ -73,9 +73,13 @@ public class ResourceLocator {
                 if (serviceComponent.getComponent() == null) {
                     serviceComponent.setComponent( component.getClass() );
                 }
-                component.setClientCommController(new ClientCommController(serviceComponent.getServiceURL(),
-                        sessionId, fullAddress, Constants.REQUEST_CONNECT,
-                        serviceComponent.getMsgTemplate()));
+                component.setClientCommController( new ClientCommController.Builder()
+                        .setServerAddress(serviceComponent.getServiceURL())
+                        .setServiceName(sessionId)
+                        .setClientAddress( fullAddress )
+                        .setMsgTemplate( serviceComponent.getMsgTemplate() )
+                        .setRequestType( Constants.REQUEST_CONNECT )
+                        .build() );
             }else {
                 throw new MultiuserException(ErrorMessages.SERVICE_NOT_REGISTERED, servideId );
             }

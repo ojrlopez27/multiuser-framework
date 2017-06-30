@@ -17,10 +17,11 @@ import static org.junit.Assert.*;
  */
 public class MUFTestSuite {
 
-    private long delay = 10000;
+    private long delay = 3000;
     private String serverAddress = "tcp://127.0.0.1:"; //use IP instead of 'localhost'
     private String clientAddress = "tcp://127.0.0.1:";
     private int[] ports = new int[]{5555, 5556, 5557, 5558};
+    private boolean checkAsyncCall = false;
 
 
     /**
@@ -71,30 +72,7 @@ public class MUFTestSuite {
      */
     @Test
     public void testMUFwithTCPIPoff() throws Throwable{
-
-        // let's add some dynamic subcriptions to the orchestrator
-        Utils.addOrChangeAnnotation(TestOrchestrator.class.getAnnotation(BlackboardSubscription.class), "messages",
-                new String[]{"MSG_RESPONSE"});
-        Utils.addOrChangeAnnotation(TestPluggableComponent.class.getAnnotation(BlackboardSubscription.class), "messages",
-                new String[]{"MSG_RESPONSE"});
-        // creates a MUF and set TCP to off
-        MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
-                TestUtils.getModules(TestOrchestrator.class ),
-                TestUtils.createConfig( serverAddress, ports[0] ).setTCPon(false), null );
-        assertNotNull(muf);
-        Utils.sleep(delay); //give some time to initialize the MUF
-        //let's create a client that sends messages to MUF and TCP is set to off
-        ClientCommController client = new ClientCommController( serverAddress, "client-1",
-                Constants.REQUEST_CONNECT, false);
-        //since communication is not through TCP, we need to explicitly tell the client who the MUF is
-        client.setMUF( muf );
-
-        client.receive(message -> assertSame( "This is a test", message));
-        SessionMessage message = new SessionMessage( "test", "This is a test" );
-        client.send( Constants.SESSION_MANAGER_SERVICE, message);
-
-        Utils.sleep( delay ); // we need time to process the orchestrator
-        MultiuserFrameworkContainer.stopFramework( muf );
+        testBasicServerClientCommunication( false );
     }
 
     /**
@@ -104,8 +82,14 @@ public class MUFTestSuite {
      */
     @Test
     public void testServerClientWithTCP() throws Throwable{
+        testBasicServerClientCommunication( true );
+    }
+
+    private void testBasicServerClientCommunication(boolean isTPCon ) throws Throwable{
         String sessionId = "session-1", messageId1 = "MSG_INITIAL_REQUEST", messageId2 = "MSG_COMPONENT_1",
                 messageId3 = "MSG_SEND_RESPONSE";
+        long uniqueMsgId = System.currentTimeMillis();
+        checkAsyncCall = false;
         // let's add some dynamic subcriptions to the orchestrator
         Utils.addOrChangeAnnotation(TestOrchestrator.class.getAnnotation(BlackboardSubscription.class), "messages",
                 new String[]{ messageId1, messageId3 });
@@ -114,20 +98,34 @@ public class MUFTestSuite {
         // creates a MUF and set TCP to off
         MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
                 TestUtils.getModules(TestOrchestrator.class ),
-                TestUtils.createConfig( serverAddress, ports[0] ), null );
+                TestUtils.createConfig( serverAddress, ports[0] ).setTCPon( isTPCon ), null );
         assertNotNull(muf);
         Utils.sleep(delay); //give some time to initialize the MUF
-        // let's create a client that sends messages to MUF and TCP is set to on
-        ClientCommController client = new ClientCommController( serverAddress + ports[0], sessionId
-                ,clientAddress + ports[0], Constants.REQUEST_CONNECT);
-        client.receive(message -> {
-            SessionMessage sessionMessage = Utils.fromJson( message, SessionMessage.class );
-            assertEquals("This is a test from MUF", sessionMessage.getPayload() );
-            Log4J.info(this, "expected and received messages are the same.");
-        });
-        SessionMessage message = new SessionMessage( messageId1, "This is a test", sessionId );
+        // let's create a client that sends messages to MUF
+        ClientCommController client =  new ClientCommController.Builder()
+                .setServerAddress(serverAddress + ports[0])
+                .setServiceName(sessionId)
+                .setClientAddress( clientAddress + ports[0] )
+                .setRequestType( Constants.REQUEST_CONNECT )
+                .setTCPon( isTPCon )
+                .setMuf( isTPCon? null : muf ) //when TCP is off, we need to explicitly tell the client who the MUF is
+                .build();
+        // this method will be executed asynchronuously, so we need to add a delay before stopping the MUF
+        client.receive(new ResponseListener() {
+                           @Override
+                           public void process(String message) {
+                               SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
+                               if( !sessionMessage.getRequestType().equals( Constants.SESSION_CLOSED ) ) {
+                                   assertEquals("Response from MUF : " + uniqueMsgId, sessionMessage.getPayload());
+                               }
+                               Log4J.info(this, "expected and received messages are the same");
+                               MUFTestSuite.this.checkAsyncCall = true;
+                           }
+                       });
+        SessionMessage message = new SessionMessage( messageId1, "Message from client : " + uniqueMsgId, sessionId );
         client.send( sessionId, message);
-        Utils.sleep( delay * 5 );
+        Utils.sleep( delay );
         MultiuserFrameworkContainer.stopFramework( muf );
+        assertTrue( checkAsyncCall );
     }
 }

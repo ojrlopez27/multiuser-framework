@@ -10,7 +10,7 @@ import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 /**
  * Created by oscarr on 6/27/17.
  */
-@BlackboardSubscription( messages = "SEND_RESPONSE" )
+@BlackboardSubscription( messages = "MSG_SEND_RESPONSE" )
 public class TestOrchestrator extends ProcessOrchestratorImpl {
 
     @Override
