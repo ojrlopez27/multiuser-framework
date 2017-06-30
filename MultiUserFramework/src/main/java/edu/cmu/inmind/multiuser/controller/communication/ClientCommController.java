@@ -55,6 +55,7 @@ public class ClientCommController {
 
     public ClientCommController(String serverAddress, String serviceName, String clientAddress, String requestType) {
         this(serverAddress, serviceName, clientAddress, requestType, new ZMsgWrapper() );
+        this.setShouldProcessReply( true );
     }
 
     public ClientCommController(String serverAddress, String serviceName, String clientAddress, String requestType,

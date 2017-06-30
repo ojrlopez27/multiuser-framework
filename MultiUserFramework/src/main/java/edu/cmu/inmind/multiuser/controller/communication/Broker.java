@@ -128,13 +128,13 @@ public class Broker extends Thread {
                 ZFrame header = msg.pop();
 
                 if (MDP.C_CLIENT.frameEquals(header)) {
-                    Log4J.debug(this, "received message " + msg.toString() + " for client and coming from " + sender.toString());
+                    //Log4J.debug(this, "received message " + msg.toString() + " for client and coming from " + sender.toString());
                     processClient(sender, msg);
                 } else if (MDP.S_ORCHESTRATOR.frameEquals(header)) {
-                    Log4J.debug(this, "received message " + msg.toString() + " is for orchestrator");
+                    //Log4J.debug(this, "received message " + msg.toString() + " is for orchestrator");
                     processWorker(sender, msg);
                 }else {
-                    Log4J.debug(this, "received message " + msg.toString() + " remains unhandled.");
+                    //Log4J.debug(this, "received message " + msg.toString() + " remains unhandled.");
                     msg.destroy();
                 }
 

@@ -95,35 +95,26 @@ public class SessionManager implements Runnable{
         Log4J.info(this, "Starting Multiuser framework...");
         try {
             reply = null;
-            Log4J.info(this, "run 1...");
             while (!Thread.currentThread().isInterrupted() && !stopped ) {
                 processRequest( );
             }
-            Log4J.info(this, "run 2...");
         }catch (Throwable e){
             ExceptionHandler.handle(e);
         }finally{
-            Log4J.info(this, "run 3...");
             boolean done = false;
             while( !done ) {
-                Log4J.info(this, "run 4...");
                 done = true;
                 for (ServiceManager serviceManager : ResourceLocator.getServiceManagers().keySet()) {
-                    Log4J.info(this, "run 5...");
                     // if the sever manager has stopped, we are done!
                     if( !ResourceLocator.getServiceManagers().get(serviceManager).equals(Constants.SERVICE_MANAGER_STOPPED) ){
                         done = false;
-                        Log4J.info(this, "run 6...");
                         break;
                     }
                 }
-                Log4J.info(this, "run 7...");
                 Utils.sleep(500);
             }
-            Log4J.info(this, "run 8...");
             Log4J.info(this, "Session Manager stopped. Bye bye!");
             if( config.executeExit() ) {
-                Log4J.info(this, "run 9...");
                 System.exit(0);
             }
         }
@@ -135,9 +126,7 @@ public class SessionManager implements Runnable{
      * and also requests from remote services.
      */
     private void processRequest( ) throws Throwable{
-        Log4J.info(this, "run 1.1..");
         if( !stopped ) {
-            Log4J.info(this, "run 1.2..");
             ZMsgWrapper msgRequest = null;
             SessionMessage request = null;
             if( config.isTCPon() ){
@@ -303,29 +292,20 @@ public class SessionManager implements Runnable{
     public void stop() throws Throwable{
         stopped = true;
         Log4J.info(this, "Start closing all sessions...");
-        Log4J.info(this, "1...");
         for( Session session : sessions.values() ){
-            Log4J.info(this, "1.1...");
             session.close();
         }
-        Log4J.info(this, "2...");
         SessionMessage sessionMessage = new SessionMessage();
         sessionMessage.setRequestType( Constants.REQUEST_SHUTDOWN_SYSTEM );
         sessionMessage.setMessageId( Constants.SESSION_MANAGER_SERVICE );
-        Log4J.info(this, "3...");
         for( ServiceComponent serviceComponent : ResourceLocator.getServiceRegistry().values() ){
-            Log4J.info(this, "3.1...");
             send( serviceComponent.getMsgTemplate(), sessionMessage );
         }
-        Log4J.info(this, "4...");
         if( config.isTCPon() ) {
             serverCommController.close();
-            Log4J.info(this, "5...");
             broker.close();
         }
-        Log4J.info(this, "6...");
         thread.interrupt();
-        Log4J.info(this, "7...");
     }
 
     /**

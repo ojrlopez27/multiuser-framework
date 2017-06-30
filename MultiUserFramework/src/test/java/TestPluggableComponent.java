@@ -1,5 +1,6 @@
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
+import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.StatelessComponent;
 
@@ -12,6 +13,7 @@ public class TestPluggableComponent  extends PluggableComponent {
 
     @Override
     public void onEvent(BlackboardEvent event) {
-        System.out.println("event: " + event.getElement() );
+        Log4J.info( this, "Received event: " + event.getElement() );
+        blackboard().post(this, "MSG_SEND_RESPONSE", event.getElement() + " from MUF" );
     }
 }

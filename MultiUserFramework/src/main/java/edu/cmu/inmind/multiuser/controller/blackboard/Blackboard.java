@@ -232,8 +232,8 @@ public class Blackboard {
             try {
                 List<BlackboardListener> listeners = subscriptions.get(key);
                 if (listeners != null) {
+                    BlackboardEvent event = new BlackboardEvent(status, key, element);
                     for (BlackboardListener subscriber : listeners) {
-                        BlackboardEvent event = new BlackboardEvent(status, key, element);
                         if (subscriber instanceof PluggableComponent) {
                             ((PluggableComponent) subscriber).setActiveSession(sender.getSessionId());
                         }

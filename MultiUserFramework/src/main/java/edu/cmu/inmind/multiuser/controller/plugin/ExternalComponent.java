@@ -24,7 +24,7 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
             setClientCommController(new ClientCommController(serviceURL, sessionId, getSession().getFullAddress(),
                     Constants.REQUEST_CONNECT, zMsgWrapper));
 
-            Utils.changeAnnotation(getClass().getAnnotation(BlackboardSubscription.class), "messages", messages);
+            Utils.addOrChangeAnnotation(getClass().getAnnotation(BlackboardSubscription.class), "messages", messages);
             getClientCommController().receive(this);
         }catch (Throwable e){
             ExceptionHandler.handle( e );

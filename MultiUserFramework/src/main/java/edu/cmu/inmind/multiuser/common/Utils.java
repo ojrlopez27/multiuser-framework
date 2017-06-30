@@ -329,7 +329,7 @@ public class Utils {
      * the previous value.
      */
     @SuppressWarnings("unchecked")
-    public static Object changeAnnotation(BlackboardSubscription annotation, String key, Object newValue) {
+    public static Object addOrChangeAnnotation(BlackboardSubscription annotation, String key, Object newValue) {
         Object handler = Proxy.getInvocationHandler(annotation);
         Field f;
         try {

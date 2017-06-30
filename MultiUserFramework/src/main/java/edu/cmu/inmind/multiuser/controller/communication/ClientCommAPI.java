@@ -58,7 +58,7 @@ public class ClientCommAPI {
         if (items.pollin(0)) {
             Log4J.debug(this, "attempting to receive ... ");
             ZMsg msg = ZMsg.recvMsg(clientSocket, ZMQ.DONTWAIT);
-            Log4J.debug(this, "received message " + msg.toString());
+//            Log4J.debug(this, "received message " + msg.toString());
 
             // Don't try to handle errors, just assert noisily
             assert (msg.size() >= 4);

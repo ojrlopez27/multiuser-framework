@@ -6,6 +6,7 @@ import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
+import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -72,9 +73,9 @@ public class MUFTestSuite {
     public void testMUFwithTCPIPoff() throws Throwable{
 
         // let's add some dynamic subcriptions to the orchestrator
-        Utils.changeAnnotation(TestOrchestrator.class.getAnnotation(BlackboardSubscription.class), "messages",
+        Utils.addOrChangeAnnotation(TestOrchestrator.class.getAnnotation(BlackboardSubscription.class), "messages",
                 new String[]{"MSG_RESPONSE"});
-        Utils.changeAnnotation(TestPluggableComponent.class.getAnnotation(BlackboardSubscription.class), "messages",
+        Utils.addOrChangeAnnotation(TestPluggableComponent.class.getAnnotation(BlackboardSubscription.class), "messages",
                 new String[]{"MSG_RESPONSE"});
         // creates a MUF and set TCP to off
         MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
@@ -92,13 +93,24 @@ public class MUFTestSuite {
         SessionMessage message = new SessionMessage( "test", "This is a test" );
         client.send( Constants.SESSION_MANAGER_SERVICE, message);
 
-        Utils.sleep( 3000 ); // we need time to process the orchestrator
+        Utils.sleep( delay ); // we need time to process the orchestrator
         MultiuserFrameworkContainer.stopFramework( muf );
     }
 
+    /**
+     * This method tests the communication between a single client and the MUF using TCP/IP connection.
+     * The client sends a message and the server must reply the same plus the sufix: "from MUF"
+     * @throws Throwable
+     */
     @Test
     public void testServerClientWithTCP() throws Throwable{
-        String sessionId = "session-1";
+        String sessionId = "session-1", messageId1 = "MSG_INITIAL_REQUEST", messageId2 = "MSG_COMPONENT_1",
+                messageId3 = "MSG_SEND_RESPONSE";
+        // let's add some dynamic subcriptions to the orchestrator
+        Utils.addOrChangeAnnotation(TestOrchestrator.class.getAnnotation(BlackboardSubscription.class), "messages",
+                new String[]{ messageId1, messageId3 });
+        Utils.addOrChangeAnnotation(TestPluggableComponent.class.getAnnotation(BlackboardSubscription.class), "messages",
+                new String[]{ messageId2 });
         // creates a MUF and set TCP to off
         MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
                 TestUtils.getModules(TestOrchestrator.class ),
@@ -108,9 +120,14 @@ public class MUFTestSuite {
         // let's create a client that sends messages to MUF and TCP is set to on
         ClientCommController client = new ClientCommController( serverAddress + ports[0], sessionId
                 ,clientAddress + ports[0], Constants.REQUEST_CONNECT);
-        client.receive(message -> assertSame( "This is a test", message));
-        SessionMessage message = new SessionMessage( "test", "test", sessionId );
+        client.receive(message -> {
+            SessionMessage sessionMessage = Utils.fromJson( message, SessionMessage.class );
+            assertEquals("This is a test from MUF", sessionMessage.getPayload() );
+            Log4J.info(this, "expected and received messages are the same.");
+        });
+        SessionMessage message = new SessionMessage( messageId1, "This is a test", sessionId );
         client.send( sessionId, message);
+        Utils.sleep( delay * 5 );
         MultiuserFrameworkContainer.stopFramework( muf );
     }
 }

@@ -63,19 +63,13 @@ public class MultiuserFramework{
     }
 
     void stop(){
-        Log4J.info(this, "1...");
         if( !stopping ) {
             stopping = true;
             try {
-                Log4J.info(this, "2...");
                 sessionManager.stop();
-                Log4J.info(this, "3...");
             } catch (Throwable e) {
-                Log4J.info(this, "4...");
                 ExceptionHandler.handle(e);
             }
-            Log4J.info(this, "5...");
         }
-        Log4J.info(this, "6...");
     }
 }
