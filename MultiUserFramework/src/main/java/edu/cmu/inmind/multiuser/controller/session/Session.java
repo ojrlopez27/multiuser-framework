@@ -2,6 +2,8 @@ package edu.cmu.inmind.multiuser.controller.session;
 
 import com.google.inject.Inject;
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.communication.ServerCommController;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
@@ -32,6 +34,7 @@ public class Session implements Runnable, OrchestratorListener{
     private ZMsgWrapper replyMsg = new ZMsgWrapper();
     private Config config;
     private String fullAddress;
+    private ClientCommController client;
 
     public Session() {
         this.timer = new InactivityTimer();
@@ -53,6 +56,14 @@ public class Session implements Runnable, OrchestratorListener{
         this.config = config;
     }
 
+    public ProcessOrchestrator getOrchestrator() {
+        return orchestrator;
+    }
+
+    public void setClient(ClientCommController client) {
+        this.client = client;
+    }
+
     /**
      * each session must have a unique id. A new thread is created for each new session
      * @param id
@@ -63,7 +74,7 @@ public class Session implements Runnable, OrchestratorListener{
             this.thread = new Thread( this, String.format("Session-%s-Thread", id ));
             Log4J.info(this, "A new session has been created with id: " + id);
             this.fullAddress = fullAddress;
-            this.sessionCommController = new ServerCommController( fullAddress, id, msg);
+            if(msg != null) this.sessionCommController = new ServerCommController( fullAddress, id, msg);
             this.thread.start();
         }
         this.id = id;
@@ -98,10 +109,12 @@ public class Session implements Runnable, OrchestratorListener{
             isClosed = true;
             status = Constants.SESSION_CLOSED;
             orchestrator.close();
-            sessionCommController.send(new SessionMessage(Constants.SESSION_CLOSED));
-            sessionCommController.close();
-            sessionCommController = null;
             orchestrator = null;
+            if( sessionCommController != null ) { // it is null when TCP is off
+                sessionCommController.send(new SessionMessage(Constants.SESSION_CLOSED));
+                sessionCommController.close();
+                sessionCommController = null;
+            }
             System.gc();
             thread.interrupt();
             thread = null;
@@ -132,16 +145,18 @@ public class Session implements Runnable, OrchestratorListener{
         try {
             initialize();
             while (!status.equals(Constants.SESSION_CLOSED) && !thread.isInterrupted()) {
-                ZMsgWrapper request = sessionCommController.receive( replyMsg.getMsg() );
-                if (request == null)
-                    break; //Interrupted
-                replyMsg = request; //  Echo is complex :-)
-                String message = replyMsg.getMsg().peekLast().toString();
-                stopTimer();
-                if (message.contains(Constants.REQUEST_DISCONNECT)) {
-                    status = Constants.SESSION_CLOSED;
-                } else {
-                    orchestrator.process(message);
+                if( sessionCommController != null ) { //sessionCommController is null when not using TCP
+                    ZMsgWrapper request = sessionCommController.receive(replyMsg.getMsg());
+                    if (request == null)
+                        break; //Interrupted
+                    replyMsg = request; //  Echo is complex :-)
+                    String message = replyMsg.getMsg().peekLast().toString();
+                    stopTimer();
+                    if (message.contains(Constants.REQUEST_DISCONNECT)) {
+                        status = Constants.SESSION_CLOSED;
+                    } else {
+                        orchestrator.process(message);
+                    }
                 }
             }
             close();
@@ -156,8 +171,12 @@ public class Session implements Runnable, OrchestratorListener{
      */
     @Override
     public void processOutput(SessionMessage output) {
-        sessionCommController.send(output);
-        Log4J.debug(this, "session timeout is " +  config.getSessionTimeout());
+        if( config.isTCPon() ) {
+            sessionCommController.send(output);
+        }else{
+            client.getResponseListener().process( Utils.toJson(output) );
+        }
+        Log4J.debug(this, "session timeout is " + config.getSessionTimeout());
         timer.schedule(new InactivityCheck(), config.getSessionTimeout());
     }
 

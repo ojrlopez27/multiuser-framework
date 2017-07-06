@@ -31,6 +31,15 @@ public class DependencyManager {
         instance.modules = modules;
     }
 
+    public static void reset(){
+        if( instance != null ) {
+            instance.injector = null;
+            instance.modules = null;
+            instance.orchestratorFactory = null;
+            instance = null;
+        }
+    }
+
     public static DependencyManager getInstance(){
         return instance;
     }
