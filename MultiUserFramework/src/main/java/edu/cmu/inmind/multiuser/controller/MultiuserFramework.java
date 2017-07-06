@@ -1,14 +1,15 @@
 package edu.cmu.inmind.multiuser.controller;
 
-import edu.cmu.inmind.multiuser.common.Constants;
+
+import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.communication.ServiceInfo;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
-import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
+import edu.cmu.inmind.multiuser.controller.session.Session;
 import edu.cmu.inmind.multiuser.controller.session.SessionManager;
 
 /**
@@ -19,8 +20,10 @@ public class MultiuserFramework{
     private String id;
     private SessionManager sessionManager;
     private boolean stopping;
-    private ProcessOrchestrator orchestrator;
+    private Session session;
     private Config config;
+    private DependencyManager dependencyManager;
+    private ClientCommController client;
 
     MultiuserFramework(String id, PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws Throwable{
         ClassLoader.getSystemClassLoader().setPackageAssertionStatus("zmq",false);
@@ -30,7 +33,10 @@ public class MultiuserFramework{
         if( config.isTCPon() ){
             this.sessionManager = new SessionManager(modules, config, serviceInfo);
         }else{
-            this.orchestrator = DependencyManager.getInstance( modules ).getOrchestrator();
+            dependencyManager = DependencyManager.getInstance( modules );
+            session = dependencyManager.getComponent(Session.class);
+            session.setConfig( config );
+            session.setId( config.getServerAddress(), null, null );
         }
     }
 
@@ -39,7 +45,16 @@ public class MultiuserFramework{
     }
 
     public ProcessOrchestrator getOrchestrator() {
-        return orchestrator;
+        return session.getOrchestrator();
+    }
+
+    public void setClient(ClientCommController client) {
+        this.client = client;
+        this.session.setClient( this.client );
+    }
+
+    public ClientCommController getClient() {
+        return client;
     }
 
     private void addShutDown() {
@@ -65,8 +80,13 @@ public class MultiuserFramework{
     void stop(){
         if( !stopping ) {
             stopping = true;
+            DependencyManager.reset();
             try {
-                sessionManager.stop();
+                if( config.isTCPon() ) {
+                    sessionManager.stop();
+                }else {
+                    session.close();
+                }
             } catch (Throwable e) {
                 ExceptionHandler.handle(e);
             }

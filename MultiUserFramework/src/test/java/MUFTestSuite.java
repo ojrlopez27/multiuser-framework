@@ -124,7 +124,7 @@ public class MUFTestSuite {
                        });
         SessionMessage message = new SessionMessage( messageId1, "Message from client : " + uniqueMsgId, sessionId );
         client.send( sessionId, message);
-        Utils.sleep( delay );
+        Utils.sleep( delay * 2 );
         MultiuserFrameworkContainer.stopFramework( muf );
         assertTrue( checkAsyncCall );
     }

@@ -56,11 +56,14 @@ public class ClientCommController {
         this.msgTemplate = builder.msgTemplate != null? builder.msgTemplate.duplicate() : null;
         this.requestType = builder.requestType;
         this.subscriptionMessages = builder.subscriptionMessages;
-        this.muf = builder.muf;
         this.shouldProcessReply = builder.shouldProcessReply;
         this.responseListener = builder.responseListener;
         this.sessionManagerService = builder.sessionManagerService;
         this.clientMessage = new ClientMessage();
+        this.muf = builder.muf;
+        if( this.muf != null ){
+            muf.setClient( this );
+        }
         execute();
     }
 
@@ -117,6 +120,12 @@ public class ClientCommController {
             return this;
         }
 
+        /**
+         * We use this method ONLY when TCP/IP is off, so we only test the orchestrator and pluggable components
+         * and therefore we only use one session and one client.
+         * @param muf
+         * @return
+         */
         public Builder setMuf(MultiuserFramework muf) {
             this.muf = muf;
             return this;
@@ -150,6 +159,10 @@ public class ClientCommController {
 
     public void setMUF(MultiuserFramework muf) {
         this.muf = muf;
+    }
+
+    public ResponseListener getResponseListener() {
+        return responseListener;
     }
 
     /********************************* MAIN THREAD **************************************/
@@ -242,9 +255,6 @@ public class ClientCommController {
                     while (!Thread.currentThread().isInterrupted() && !stop) {
                         try {
                             Pair<String, Object> message = clientMessage.get();
-                            if( message.snd.toString().contains("test") ){
-                                System.out.println("here");
-                            }
                             stop = (!sendToBroker(message) || checkNumSent) && (sentMessages > receivedMessages + difference);
                             if (stop) {
                                 continue;

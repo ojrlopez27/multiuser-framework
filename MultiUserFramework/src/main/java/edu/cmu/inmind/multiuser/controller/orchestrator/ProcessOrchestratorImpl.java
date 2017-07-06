@@ -188,11 +188,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         if( !isClosed ) {
             Log4J.info(this, String.format("Closing Process Orchestrator for session: %s", sessionId));
             isClosed = true;
-            try {
-                logger.store();
-            } catch (FileNotFoundException fnfe) {
-                fnfe.printStackTrace();
-            }
+            logger.store();
             status = Constants.ORCHESTRATOR_STOPPED;
             serviceManager.stopAsync().awaitStopped(5, TimeUnit.SECONDS);
             serviceManager.awaitStopped();
