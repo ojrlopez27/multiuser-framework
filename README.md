@@ -48,8 +48,8 @@ You can create as many instances of MUF as you want like this:
 
 ```java
 MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
-                TestUtils.getModules(YourOrchestrator.class ),
-                TestUtils.createConfig( "tcp://127.0.0.1", 5555 ), null );
+                getModules(YourOrchestrator.class ),
+                createConfig( "tcp://127.0.0.1", 5555 ), null );
 ```
 
 You can create a PluginModule which contains one orchestrator and one or multiple pluggin components like this:
@@ -86,3 +86,4 @@ public Config createConfig(String serverAddress, int port) {
 
 ## Examples
 
+Under folder Examples, you will find 4 projects that will be required to run the examples:
