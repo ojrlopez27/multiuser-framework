@@ -32,15 +32,27 @@ The MUF is a framework that allows developers to easily scale their mono-user ar
 
 * **Multiplatform and Multilanguage:** thanks to MUF uses a potent messaging and concurrency libraries such as ZMQ, you can easily communicate the MUF implementation (Java code) with clients written in almost any programming language with low extra effort (there is an example in the github repo of how to connect Java MUF with a Python MUF, but so many other languages may be supported). Also, you can communicate your MUF with another MUF which runs on another machine, that means that your MUF may behave as a server when receiving requests from clients (phones) or as a client when it sends or forwards messages to other MUF’s and waits for responses from them, so you can get a nested architecture of MUF’s.
 
+# How to use the MUF
 
+** Gradle Dependencie
+
+Currently the MUF is hosted on a CMU AFS (Andrew File System) space but it will be ported to AWS soon. You can add this gradle dependency to your build.gradle file:
+
+```gradle
+compile 'edu.cmu.inmind.framework:multiuser:2.7'
+```
+
+** Create an instance of MUF
+
+You can create as many instances of MUF as you want like this:
 
 ```java
 MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
-                TestUtils.getModules(TestOrchestrator.class ),
-                TestUtils.createConfig( serverAddress, ports[0] ).setTCPon( isTPCon ), null );
+                TestUtils.getModules(YourOrchestrator.class ),
+                TestUtils.createConfig( "tcp://127.0.0.1", 5555 ), null );
 ```
 
-You can create a PluginModule array like this:
+You can create a PluginModule which contains one orchestrator and one or multiple pluggin components like this:
 
 ```java
 public PluginModule[] getModules(Class<? extends ProcessOrchestratorImpl> orchestrator){
@@ -54,7 +66,7 @@ public PluginModule[] getModules(Class<? extends ProcessOrchestratorImpl> orches
 }
 ```
 
-And also you can create a Config object like this:
+Allso, you can create a Config object like this:
 
 ```java
 public Config createConfig(String serverAddress, int port) {
