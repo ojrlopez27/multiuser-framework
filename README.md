@@ -34,7 +34,7 @@ The MUF is a framework that allows developers to easily scale their mono-user ar
 
 # How to use the MUF
 
-** Gradle Dependencie
+## Gradle Dependency
 
 Currently the MUF is hosted on a CMU AFS (Andrew File System) space but it will be ported to AWS soon. You can add this gradle dependency to your build.gradle file:
 
@@ -42,7 +42,7 @@ Currently the MUF is hosted on a CMU AFS (Andrew File System) space but it will 
 compile 'edu.cmu.inmind.framework:multiuser:2.7'
 ```
 
-** Create an instance of MUF
+## Create an instance of MUF
 
 You can create as many instances of MUF as you want like this:
 
@@ -66,7 +66,7 @@ public PluginModule[] getModules(Class<? extends ProcessOrchestratorImpl> orches
 }
 ```
 
-Allso, you can create a Config object like this:
+Also, you can create a Config object like this:
 
 ```java
 public Config createConfig(String serverAddress, int port) {
@@ -83,3 +83,6 @@ public Config createConfig(String serverAddress, int port) {
             .build();
 }
 ```
+
+## Examples
+
