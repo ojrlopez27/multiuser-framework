@@ -39,12 +39,23 @@ The MUF is a framework that allows developers to easily scale their mono-user ar
 Currently the MUF is hosted on a CMU AFS (Andrew File System) space but it will be ported to AWS soon. You can add this gradle dependency to your build.gradle file:
 
 ```gradle
-compile 'edu.cmu.inmind.framework:multiuser:2.7'
+repositories{
+  maven {
+          credentials {
+              username 'inmind'
+              password 'askInMindAdminForAPassword...'
+          }
+          url "http://www.cs.cmu.edu/afs/cs/project/inmind-cmu-yahoo/www/maven2"
+      }
+}
+dependencies{
+  compile 'edu.cmu.inmind.framework:multiuser:2.7'
+}
 ```
 
 ## Create an instance of MUF
 
-You can create as many instances of MUF as you want like this:
+You can create as many instances of MUF as you want by calling the startFramework method of MultiuserFrameworkContainer:
 
 ```java
 MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
@@ -52,7 +63,13 @@ MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
                 createConfig( "tcp://127.0.0.1", 5555 ), null );
 ```
 
-You can create a PluginModule which contains one orchestrator and one or multiple pluggin components like this:
+startFramework method receives three parameters:
+
+* An array of PluginModule instances: each PluginModule must contain one orchestrator and at least one (or multiple) pluggin components.
+* A Config object with all the settings for the creation of the MUF
+* A ServiceInfo object that contains information about a MUF that runs as a service, that is, you can connect multiple MUF's, abd when you do that, you can define a master MUF which is the instance that will be listening to client requests, and a slave MUF which connects to the master MUF as a service. 
+
+Let's create the PluginModule and Config objects:
 
 ```java
 public PluginModule[] getModules(Class<? extends ProcessOrchestratorImpl> orchestrator){
@@ -64,11 +81,7 @@ public PluginModule[] getModules(Class<? extends ProcessOrchestratorImpl> orches
                       .build()
       };
 }
-```
 
-Also, you can create a Config object like this:
-
-```java
 public Config createConfig(String serverAddress, int port) {
     return new Config.Builder()
             // you can refer to values in your config.properties file:
@@ -84,6 +97,61 @@ public Config createConfig(String serverAddress, int port) {
 }
 ```
 
+## Create a Client
+
+Creating a client that connects to MUF is a simple as follows:
+
+```java
+int port = 5555;
+String serverAddress = "tcp//:xxx.xxx.xxx.xxx:"; //replace this line with your server address and port
+String clientAddress = "tcp//:xxx.xxx.xxx.xxx:";
+ClientCommController client =  new ClientCommController.Builder()
+      .setServerAddress(serverAddress + port)
+      .setClientAddress( clientAddress + port )
+      .setServiceName(sessionId)
+      .setRequestType( Constants.REQUEST_CONNECT )
+      .build();
+```
+Now, let's create a listener that will process the asynchronous responses sent by MUF:
+
+```java
+client.receive(new ResponseListener() {
+       @Override
+       public void process(String message) {
+           SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);          
+           Log4J.info(ResponseListener.class, "This is the response from MUF: " + sessionMessage.getPayload() );
+       }
+   });
+```
+Finally, we can send messages from client to MUF as simple as:
+
+```java
+// sessionId and messageId are unique ids. If using Android client, the sessionId must correst to the deviceId 
+SessionMessage message = new SessionMessage( messageId, "Message from client : hello world", sessionId );
+client.send( sessionId, message);
+```
+
+## Unit Tests
+
+Take a look at MUFTestSuite class for running a suite of unit tests for the MUF.
+
 ## Examples
 
-Under folder Examples, you will find 4 projects that will be required to run the examples:
+The exmaples illustrate how SARA (Socially-Aware Robotic Assistant) components communicate in the backed with an android client in the front end by using the MUF. Under folder Examples, you will find 5 projects that will be required to run the examples:
+
+* AndroidClient: this is the client that will be sending request messages to MUF
+* SaraProject: this is the main (master) MUF that will be listening to messages coming from client
+* DialogueSystem: this is a secondary (slave) MUF that register as a service with the master MUF. This MUF, written in java, forwards all the messages to the real dialogue system written in python.
+* DialoguePython: this is the dialogue system written in python and contains two modules: NLU and DM
+* SaraCommons: this module conly contains contracts (i.e., interfaces, constants, etc.) in order to reach an agreement between modules regarding to the name of variables, services, messages, etc.
+
+On SaraProject, you will find 15 examples that take you through the whole set of features of MUF. You can run each example under package edu.cmu.inmind.multiuser.sara.examples.
+
+* Ex01_MessageTranslation: You can programmatically control what to do with the message. For instance, you can translate the input that comes from android client into a known object (e.g., SaraInput object).
+* Ex02_ExtractMessage: this is a simple scenario that illustrates: 
+  * 1) how to use your own implementation of a Message Logger 
+  * 2) how to extract messages coming from the client; 3) how to respond to the client
+* Ex03_OneComponentActivation: MUF provides two approaches to process the messages that come from clients:
+ * 1) Event-oriented approach: every time that te blackboard is modified (e.g., insertion and deletion of elements) then all the Blackboard subscribers (those components that implements BlackboardListener interface, e.g., PluggableComponent components) are automatically updated through the onEvent method that receives as parameter a BlackboardEvent instance.
+ * 2) Direct-invocation approach: in this case, you are responsible of calling each component in the desired order (sync or async) by calling the execute() method of your ProcessOrchestrator implementation. If you are using the second approach and want to only activate the component that corresponds to a specific message (this message must correspond to any of the keys that you mapped to your PluginComponents -- see SaraCons.ID_NLU below) then call processMsg message as the example below. This message should start with 'MSG_' prefix)
+* Ex04_SyncExecution: You can execute each component in your system (e.g., NLUComponent, TR, SR, NLGComponent) synchronously. This is an example of how to execute your components sequentially and it assumes all components run synchronously (i.e., they do NOT run on separate threads):
