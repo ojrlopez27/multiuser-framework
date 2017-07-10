@@ -1,4 +1,4 @@
-# What MUF is?
+# What the MUF is?
 
 The MUF is a framework that allows developers to easily scale their mono-user architectures to multi-user architectures with little effort. The MUF is written in Java (but it supports interaction with almost any programming language thanks to its communication layer that uses ZeroMQ). The most relevant features of the MUF are:
 
@@ -53,7 +53,7 @@ dependencies{
 }
 ```
 
-## Create an instance of MUF
+## Create, start and stop an instance of MUF
 
 You can create as many instances of MUF as you want by calling the startFramework method of MultiuserFrameworkContainer:
 
@@ -97,7 +97,13 @@ public Config createConfig(String serverAddress, int port) {
 }
 ```
 
-## Create a Client
+And finally, you can stop the MUF like this:
+
+```java
+MultiuserFrameworkContainer.stopFramework( muf );
+```
+
+## Create a Client and send and receive messages from MUF
 
 Creating a client that connects to MUF is a simple as follows:
 
@@ -137,7 +143,7 @@ Take a look at MUFTestSuite class for running a suite of unit tests for the MUF.
 
 ## Examples
 
-The exmaples illustrate how SARA (Socially-Aware Robotic Assistant) components communicate in the backed with an android client in the front end by using the MUF. Under folder Examples, you will find 5 projects that will be required to run the examples:
+The examples illustrate how SARA (Socially-Aware Robotic Assistant) components communicate in the backed with an android client in the front end by using the MUF. Under folder Examples, you will find 5 projects that will be required to run the examples:
 
 * AndroidClient: this is the client that will be sending request messages to MUF
 * SaraProject: this is the main (master) MUF that will be listening to messages coming from client
@@ -155,8 +161,7 @@ On SaraProject, you will find 15 examples that take you through the whole set of
   - 1. Event-oriented approach: every time that te blackboard is modified (e.g., insertion and deletion of elements) then all the Blackboard subscribers (those components that implements BlackboardListener interface, e.g., PluggableComponent components) are automatically updated through the onEvent method that receives as parameter a BlackboardEvent instance.
   - 2. Direct-invocation approach: in this case, you are responsible of calling each component in the desired order (sync or async) by calling the execute() method of your ProcessOrchestrator implementation. If you are using the second approach and want to only activate the component that corresponds to a specific message (this message must correspond to any of the keys that you mapped to your PluginComponents -- see SaraCons.ID_NLU below) then call processMsg message as the example below. This message should start with 'MSG_' prefix)
 - **Ex04_SyncExecution:** You can execute each component in your system (e.g., NLUComponent, TR, SR, NLGComponent) synchronously. This is an example of how to execute your components sequentially and it assumes all components run synchronously (i.e., they do NOT run on separate threads)
-- **Ex05_AsyncExecution:** You can also execute a set of components in parallel and asynchronously (that is, in
- * separate threads)
+- **Ex05_AsyncExecution:** You can also execute a set of components in parallel and asynchronously (that is, in separate threads)
 - **Ex06_ForceSync:** If your components are asynchronous by nature (that is, they run on their own separate threads) or you run them in parallel (i.e., you use executeAsync) you can force them to sync by calling forceSync method. Let's assume you have a list of 10 async components, however, this is just for illustration purposes since you MUST register your components in advance when you start the MultiuserFramework. Take a look at the implementation of AsyncComponent and you will realize the presence of two key elements:
   - 1. You have to use the @ForceSync annotation and add an arbitrary unique id to it (e.g., id = "sync-example"), this id will be necessary to sync your components.
   - 2. You have to call the notifyNext method in the specific point you want to sync your async components.
