@@ -35,14 +35,11 @@ class Session(threading.Thread):
         request_data = json.loads(str(request[2], "UTF-8"))
         if 'ASRinput' in request_data:
             asr = request_data['ASRinput']
-            print("**---- asr out: " + asr)
-            nlu_out = self.nlu.process(asr)
-            print(nlu_out)
-            dm_out = self.dm.process(self.session_id, nlu_out)
+            user_intent = self.nlu.process(asr)
+            system_intent = self.dm.process(user_intent)
             # you have to build a proper json here:
-            request[2] = bytes(json.dumps(dm_out), "UTF-8")
-
-            print(request[2])
+            request[2] = bytes("{systemIntent: '" + system_intent + "', userIntent: {userIntent: '"
+                               + user_intent+ "'}}", "UTF-8")
             self.server.send(request)
 
 
