@@ -45,12 +45,7 @@ class SessionManager(threading.Thread):
         session.start()
         reply[2] = bytes(str(reply[2], "UTF-8").replace("REQUEST_CONNECT", "SESSION_INITIATED"), "UTF-8")
         self.server.send(reply)
-        
-        # # yulun: test if greeting workds
-        # time.sleep(10.0/1000.0)
-        # g = {"frame": {"ask_stack": ["genres", "directors", "actors", "recommend"], "frame": {"directors": {"dislike": [], "like": []}, "genres": {"dislike": [], "like": []}, "movies": {"history": [], "dislike": [], "like": []}, "actors": {"dislike": [], "like": []}}, "universals": ["help", "start_over"]}, "action": "greeting", "entities": [], "recommendation": {"rexplanations": [{"explanations": [], "recommendation": ""}]}}
-        # reply[2] = bytes(json.dumps(g), "UTF-8")
-        # self.server.send(reply)
+
 
     def destroy_session(self, session_id, reply):
         print('destroy session: %s' % session_id)
