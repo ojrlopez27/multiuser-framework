@@ -95,7 +95,7 @@ public class MUFTestSuite {
                 new String[]{ messageId1, messageId3 });
         Utils.addOrChangeAnnotation(TestPluggableComponent.class.getAnnotation(BlackboardSubscription.class), "messages",
                 new String[]{ messageId2 });
-        // creates a MUF and set TCP to off
+        // creates a MUF and set TCP to on or off
         MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
                 TestUtils.getModules(TestOrchestrator.class ),
                 TestUtils.createConfig( serverAddress, ports[0] ).setTCPon( isTPCon ), null );
@@ -118,7 +118,7 @@ public class MUFTestSuite {
                                if( !sessionMessage.getRequestType().equals( Constants.SESSION_CLOSED ) ) {
                                    assertEquals("Response from MUF : " + uniqueMsgId, sessionMessage.getPayload());
                                }
-                               Log4J.info(this, "expected and received messages are the same");
+                               Log4J.info(ResponseListener.class, "expected and received messages are the same");
                                MUFTestSuite.this.checkAsyncCall = true;
                            }
                        });

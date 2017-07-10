@@ -1,0 +1,68 @@
+group 'edu.cmu.inmind.multiuser.framework'
+version '2.0'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
+
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs 'libs'
+    }
+
+}
+
+configurations {
+    deployerJars
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    deployerJars 'org.apache.maven.wagon:wagon-ssh:2.9'
+}
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+    classifier "sources"
+}
+
+
+apply plugin: 'maven'
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            configuration = configurations.deployerJars
+            repository(url: "scp://linux.gp.cs.cmu.edu:/afs/cs/project/inmind-cmu-yahoo/www/maven2/") {
+                //http://stackoverflow.com/questions/12749225/where-to-put-gradle-configuration-i-e-credentials-that-should-not-be-committe
+                authentication(userName: mavenUser, password: mavenPassword)
+            }
+
+            pom.project {
+                name 'SaraCommons'
+                packaging 'jar'
+                description 'Sara Common Catalog'
+                pom.version = '1.0'
+                pom.artifactId = 'saracommons'
+                pom.groupId = "edu.cmu.inmind.framework"
+
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        distribution 'repo'
+                    }
+                }
+
+                developers {
+                    developer {
+                        name 'Oscar Romero'
+                        email 'oscarr@andrew.cmu.edu'
+                    }
+                }
+            }
+        }
+    }
+}

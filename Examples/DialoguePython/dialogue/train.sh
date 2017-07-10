@@ -1,0 +1,1 @@
+python -m nlu.train -c config.json

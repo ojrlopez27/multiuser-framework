@@ -1,0 +1,101 @@
+gavin o'connor	o'connor__gavin_i
+michael almereyda	almereyda__michael
+olivier assayas	assayas__olivier
+noah baumbach	baumbach__noah
+danny boyle	boyle__danny
+xavier dolan	dolan__xavier
+stephen frears	frears__stephen
+david gordon green	green__david_gordon
+jean-pierre jeunet	jeunet__jean-pierre
+barry levinson	levinson__barry_i
+hans petter moland	moland__hans_petter
+patricia riggen	riggen__patricia_i
+eli roth	roth__eli_i
+sabu	sabu
+sabu	sabu
+akiva schaffer	schaffer__akiva
+orson welles	welles__orson
+wim wenders	wenders__wim
+marcello daciano	daciano__marcello
+david farrier	farrier__david
+brett haley	haley__brett_i
+james ivory	ivory__james
+shunji iwai	iwai__shunji
+ross katz	katz__ross
+john mcnaughton	mcnaughton__john
+jay oliva	oliva__jay
+alex ross perry	perry__alex_ross
+ariel schulman	schulman__ariel_i
+ridley scott	scott__ridley
+ding sheng	sheng__ding
+bryan singer	singer__bryan
+thomas vinterberg	vinterberg__thomas
+jon watts	watts__jon_ii
+ben wheatley	wheatley__ben_i
+alex winter	winter__alex_i
+fred wolf	wolf__fred_ii
+boaz yakin	yakin__boaz
+frank d'angelo	d'angelo__frank_i
+patrick brice	brice__patrick
+james cameron	cameron__james_i
+pou-soi cheang	cheang__pou-soi
+jon m. chu	chu__jon_m.
+joel coen	coen__joel
+flying lotus	flying_lotus
+flying lotus	flying_lotus
+jean-luc godard	godard__jean-luc
+ron howard	howard__ron_i
+karan johar	johar__karan
+henry joost	joost__henry
+radu jude	jude__radu
+kabir khan	khan__kabir_i
+spike lee	lee__spike
+david leitch	leitch__david_i
+sam liu	liu__sam_i
+tony palmer	palmer__tony_i
+brad peyton	peyton__brad
+peyton reed	reed__peyton_i
+jon shenk	shenk__jon_i
+lev l. spiro	spiro__lev_l.
+taika waititi	waititi__taika
+bill condon	condon__bill
+anne fontaine	fontaine__anne_i
+alex gibney	gibney__alex_i
+luca guadagnino	guadagnino__luca
+werner herzog	herzog__werner
+julian jarrold	jarrold__julian
+ken loach	loach__ken
+dito montiel	montiel__dito
+cary murnion	murnion__cary
+morgan neville	neville__morgan_ii
+satyajit ray	ray__satyajit
+dylan reeve	reeve__dylan
+martin scorsese	scorsese__martin_i
+michael showalter	showalter__michael_i
+todd solondz	solondz__todd
+upendra	upendra_i
+upendra	upendra_i
+robert zemeckis	zemeckis__robert
+edward zwick	zwick__edward
+evgeny afineevsky	afineevsky__evgeny
+woody allen	allen__woody
+peter berg	berg__peter_i
+brad bird	bird__brad_i
+bonni cohen	cohen__bonni
+asghar farhadi	farhadi__asghar
+james franco	franco__james
+william friedkin	friedkin__william
+antoine fuqua	fuqua__antoine
+alfonso gomez-rejon	gomez-rejon__alfonso
+anurag kashyap	kashyap__anurag
+barbara kopple	kopple__barbara
+fritz lang	lang__fritz_i
+ang lee	lee__ang_i
+george lucas	lucas__george_i
+greg mclean	mclean__greg
+steven c. miller	miller__steven_c.
+alastair orr	orr__alastair
+david o. russell	russell__david_o.
+luke scott	scott__luke_i
+steven spielberg	spielberg__steven
+isao takahata	takahata__isao

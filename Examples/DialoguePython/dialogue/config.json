@@ -1,0 +1,9 @@
+{
+  "pipeline": "spacy_sklearn",
+  "path" : "./dialogue/models",
+  "data" : "./data/data.json",
+  "server_model_dirs": {
+    "model_old": "./model_old",
+    "default": "./model_newest"
+  }
+}

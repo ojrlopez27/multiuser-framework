@@ -1,0 +1,16 @@
+{
+    "pipeline": [
+        "init_spacy",
+        "ner_spacy",
+        "ner_synonyms",
+        "intent_featurizer_spacy",
+        "intent_classifier_sklearn"
+    ],
+    "intent_classifier": "intent_classifier.pkl",
+    "fine_tune_spacy_ner": false,
+    "training_data": "training_data.json",
+    "entity_synonyms": null,
+    "entity_extractor": "ner",
+    "trained_at": "20170427-164845",
+    "language": "en"
+}

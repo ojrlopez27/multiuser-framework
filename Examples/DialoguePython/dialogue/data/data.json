@@ -1,0 +1,1197 @@
+{
+  "nlu_data": {
+    "intent_examples": [
+      {
+        "text": "hey",
+        "intent": "greet",
+        "entities": [],
+        "updatetime": 1491218505300
+      },
+      {
+        "text": "howdy",
+        "intent": "greet",
+        "entities": [],
+        "updatetime": 1491218505300
+      },
+      {
+        "text": "hey there",
+        "intent": "greet",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "hello",
+        "intent": "greet",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "hi",
+        "intent": "greet",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "how are you",
+        "intent": "greet",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "i am fine",
+        "intent": "greet",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "my name is",
+        "intent": "greet",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "yes",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "yep",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "yup",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "yeah",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "yes please",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "indeed",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "that's right",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "you are great",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "you are very helpful",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "that is helpful",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "that is a great idea",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "superb",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "ok",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "great",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "sure",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "help",
+        "intent": "help",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "i need help",
+        "intent": "help",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "could you please help me",
+        "intent": "help",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "bye",
+        "intent": "goodbye",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "goodbye",
+        "intent": "goodbye",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "good bye",
+        "intent": "goodbye",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "stop",
+        "intent": "goodbye",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "end",
+        "intent": "goodbye",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "no",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "No I don't have any favorite actor",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "No I don't have any favorite director",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "No I don't have any favorite genre",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I definitely would not watch that movie",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Nope",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "no, I don't",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I don't like it",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I don't have any",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I don't have preference",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I don't have any",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "sorry I don't",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "don't",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "do not",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "wrong",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "that movie sucks",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "nope that movie sucks",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "that is not a movie",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "restart",
+        "intent": "start_over",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "start over",
+        "intent": "start_over",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "reboot",
+        "intent": "start_over",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "go back",
+        "intent": "start_over",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+
+      {
+        "text": "Can you suggest an alternative",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Any other suggestions",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Do you know anything else",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Is there more of them",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Can I have more movie recommendations",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Can I have other movie recommendations",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Can you suggest another one",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I already watched that one",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "no not that one",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "another one",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "how about another movie",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "tell me another one",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "what about another movie",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "anything else",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "tell me another one",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Thanks",
+        "intent": "thank",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Thank you",
+        "intent": "thank",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Thank you very much",
+        "intent": "thank",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Thanks a lot",
+        "intent": "thank",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "appreciate it",
+        "intent": "thank",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I really like Tom Cruise",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "i think Tom Cruise is the best actor ever",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "i think Steven Spielberg is the best director ever",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "i think Anthony Hopkins is the best actor ever",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "i think James Cameron is the best director ever",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "could you recommend a Sci-Fi movie instead",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "could please give me a romantic movie",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Tom Cruise is a great actor",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I really like Chris Evans",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I really like Jennifer Lawrence",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I prefer Tom Cruise",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I prefer Chris Evans",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I prefer Jennifer Lawrence",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I fancy Tom Cruise",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I fancy Chris Evans",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I fancy Jennifer Lawrence",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+
+      {
+        "text": "I like action movie",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I like comedy movie",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I like drama movie",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I usually watch action movie",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I usually watch comedy movie",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I usually watch drama movie",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I like christopher nolan",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I like steven spielberg",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I like george lucas",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I love christopher nolan",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I love steven spielberg",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I love george lucas",
+        "intent": "inform",
+        "entities": [],
+        "updatetime": 1491218505301
+      }
+
+      
+
+    ],
+
+
+
+    "common_examples": [
+      {
+        "text": "hey",
+        "intent": "greet",
+        "entities": [],
+        "updatetime": 1491218505300
+      },
+      {
+        "text": "howdy",
+        "intent": "greet",
+        "entities": [],
+        "updatetime": 1491218505300
+      },
+      {
+        "text": "hey there",
+        "intent": "greet",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "hello",
+        "intent": "greet",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "hi",
+        "intent": "greet",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "how are you",
+        "intent": "greet",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "i am fine",
+        "intent": "greet",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "yes",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "yep",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "yup",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "yeah",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "yes please",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "indeed",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "that's right",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "ok",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "great",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "sure",
+        "intent": "yes",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "help",
+        "intent": "help",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "i need help",
+        "intent": "help",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "could you please help me",
+        "intent": "help",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "bye",
+        "intent": "goodbye",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "goodbye",
+        "intent": "goodbye",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "good bye",
+        "intent": "goodbye",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "stop",
+        "intent": "goodbye",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "end",
+        "intent": "goodbye",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "no",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "don't",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "do not",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "wrong",
+        "intent": "no",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "restart",
+        "intent": "start_over",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "start over",
+        "intent": "start_over",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "reboot",
+        "intent": "start_over",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "go back",
+        "intent": "start_over",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+
+      {
+        "text": "Can you suggest an alternative",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Any other suggestions",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Do you know anything else",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Is there more of them",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Can I have more movie recommendations",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Can I have other movie recommendations",
+        "intent": "request_more",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Thanks",
+        "intent": "thank",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Thank you",
+        "intent": "thank",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "Thanks a lot",
+        "intent": "thank",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "appreciate it",
+        "intent": "thank",
+        "entities": [],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I really like Tom Cruise",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 14,
+            "end": 24, 
+            "value": "Tom Cruise", 
+            "entity": "actors"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I really like Chris Evans",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 14,
+            "end": 25, 
+            "value": "Chris Evans", 
+            "entity": "actors"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I really like Jennifer Lawrence",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 14,
+            "end": 31, 
+            "value": "Jennifer Lawrence", 
+            "entity": "actors"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I prefer Tom Cruise",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 9,
+            "end": 19, 
+            "value": "Tom Cruise", 
+            "entity": "actors"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I prefer Chris Evans",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 9,
+            "end": 20, 
+            "value": "Chris Evans", 
+            "entity": "actors"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I prefer Jennifer Lawrence",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 9,
+            "end": 26, 
+            "value": "Jennifer Lawrence", 
+            "entity": "actors"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I fancy Tom Cruise",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 8,
+            "end": 18, 
+            "value": "Tom Cruise", 
+            "entity": "actors"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I fancy Chris Evans",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 8,
+            "end": 19, 
+            "value": "Chris Evans", 
+            "entity": "actors"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I fancy Jennifer Lawrence",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 8,
+            "end": 25, 
+            "value": "Jennifer Lawrence", 
+            "entity": "actors"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+
+      {
+        "text": "I like action movie",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 7,
+            "end": 13, 
+            "value": "action", 
+            "entity": "genres"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I like comedy movie",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 7,
+            "end": 13, 
+            "value": "comedy", 
+            "entity": "genres"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I like drama movie",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 7,
+            "end": 12, 
+            "value": "drama", 
+            "entity": "genres"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I usually watch action movie",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 16,
+            "end": 22, 
+            "value": "action", 
+            "entity": "genres"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I usually watch comedy movie",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 16,
+            "end": 22, 
+            "value": "comedy", 
+            "entity": "genres"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I usually watch drama movie",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 16,
+            "end": 21, 
+            "value": "drama", 
+            "entity": "genres"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I like christopher nolan",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 7,
+            "end": 24, 
+            "value": "christopher nolan", 
+            "entity": "directors"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I like steven spielberg",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 7,
+            "end": 23, 
+            "value": "steven spielberg", 
+            "entity": "directors"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I like george lucas",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 7,
+            "end": 19, 
+            "value": "george lucas", 
+            "entity": "directors"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I love christopher nolan",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 7,
+            "end": 24, 
+            "value": "christopher nolan", 
+            "entity": "directors"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I love steven spielberg",
+        "intent": "inform",
+        "entities": [
+          {
+            "start": 7,
+            "end": 23, 
+            "value": "steven spielberg", 
+            "entity": "directors"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "I love george lucas",
+        "intent": "inform",
+        "entities": [
+        {
+            "start": 7,
+            "end": 19, 
+            "value": "george lucas", 
+            "entity": "directors"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "could you recommend a Sci-Fi movie instead",
+        "intent": "inform",
+        "entities": [
+        {
+            "start": 22,
+            "end": 28, 
+            "value": "Sci-Fi", 
+            "entity": "genres"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "could please give me a romantic movie",
+        "intent": "inform",
+        "entities": [
+        {
+            "start": 23,
+            "end": 31, 
+            "value": "romantic", 
+            "entity": "genres"
+          }
+        ],
+        "updatetime": 1491218505301
+      },
+      {
+        "text": "i think that Tom Cruise is the best actor ever",
+        "intent": "inform",
+        "entities": [
+        {
+            "start": 13,
+            "end": 23, 
+            "value": "Tom Cruise", 
+            "entity": "actors"
+          }
+        ],
+        "updatetime": 1491218505301
+      }
+
+      
+
+    ]
+  }
+}
