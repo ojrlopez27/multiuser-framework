@@ -118,7 +118,7 @@ public class MUFTestSuite {
                                if( !sessionMessage.getRequestType().equals( Constants.SESSION_CLOSED ) ) {
                                    assertEquals("Response from MUF : " + uniqueMsgId, sessionMessage.getPayload());
                                }
-                               Log4J.info(this, "expected and received messages are the same");
+                               Log4J.info(ResponseListener.class, "expected and received messages are the same");
                                MUFTestSuite.this.checkAsyncCall = true;
                            }
                        });
