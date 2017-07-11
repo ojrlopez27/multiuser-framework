@@ -12,8 +12,7 @@ public class TestUtils {
 
     public static PluginModule[] getModules(Class<? extends ProcessOrchestratorImpl> orchestrator){
         return new PluginModule[]{
-                new PluginModule.Builder( orchestrator )
-                        .addPlugin(TestPluggableComponent.class, "test")
+                new PluginModule.Builder( orchestrator, TestPluggableComponent.class, "test")
                         .build()
         };
     }

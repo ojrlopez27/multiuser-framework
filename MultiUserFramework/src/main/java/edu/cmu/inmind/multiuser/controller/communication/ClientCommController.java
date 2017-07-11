@@ -69,17 +69,16 @@ public class ClientCommController {
 
     public static class Builder{
         private boolean isTCPon = true;
-        private String serviceName;
+        private String serviceName = String.format("client-%s", Math.random() );
         private String serverAddress = "tcp://127.0.0.1:5555";
         private String clientAddress = "tcp://127.0.0.1:5555";
         private ZMsgWrapper msgTemplate;
-        private String requestType;
+        private String requestType = Constants.REQUEST_CONNECT;
         private String [] subscriptionMessages;
         private MultiuserFramework muf;
         private boolean shouldProcessReply = true;
         private ResponseListener responseListener;
         private String sessionManagerService = Constants.SESSION_MANAGER_SERVICE;
-        private ClientMessage clientMessage;
 
         public ClientCommController build(){
             return new ClientCommController( this );
@@ -143,11 +142,6 @@ public class ClientCommController {
 
         public Builder setSessionManagerService(String sessionManagerService) {
             this.sessionManagerService = sessionManagerService;
-            return this;
-        }
-
-        public Builder setClientMessage(ClientMessage clientMessage) {
-            this.clientMessage = clientMessage;
             return this;
         }
     }
