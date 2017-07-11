@@ -1,10 +1,10 @@
 # What the MUF is?
 
-The MUF is a framework that allows developers to easily scale their mono-user architectures to multi-user architectures with little effort. The MUF is written in Java (but it supports interaction with almost any programming language thanks to its communication layer that uses ZeroMQ). The most relevant features of the MUF are:
+The MUF is a framework that allows developers to easily scale their mono-user architectures to multi-user architectures with little effort. The MUF is a plugin-based architecture written in Java (though it supports interaction with almost any programming language thanks to its communication layer that uses ZeroMQ). The most relevant features of the MUF are:
 
 * **Session Management:** a Session Manager automatically creates a new session every time a client connects and then manages its lifecycle (i.e., connection, disconnection, control of inactivity, resources management, etc.) 
 
-* **Low latency:** a whole communication action (i.e., to send a message from the client and receive a response from the server) takes around 10-13 ms in total. This test was made using my own computer (MacBook Pro 2.5 GHz Intel core i7, 16 GB 1600 MHz DDR) but it could be improved if you use an AWS instance. These latency range were the same even when the framework was tested with 1,000 clients. 
+* **Low latency:** a whole communication action (i.e., to send a message from the client and receive a response from the server) takes around 10-13 ms in total. This test was made using a MacBook Pro 2.5 GHz Intel core i7, 16 GB 1600 MHz DDR, but it could be improved if you use an AWS instance. These latency range were the same even when the framework was tested with 1,000 clients. 
 
 * **Robustness and Reliability:** the MUF supports error handling (e.g., crash errors trigger specific system recovery actions), disconnection and automatic reconnection (if network fails or communication freezes or gets locked), management of queue overflows and memory leaks, data loss prevention (when a client disconnects due to an unexpected reason, the system will keep messages in memory until the client reconnects or a timeout is met), gracefully shutdown (if system crashes and cannot be restarted, all resources such as sockets, queues, shared objects, DB, etc. are closed and released before the system exits). 
 
@@ -53,28 +53,32 @@ dependencies{
 }
 ```
 
-## Create, start and stop an instance of MUF
+## Create, start and stop a MUF instance
 
-You can create as many instances of MUF as you want by calling the startFramework method of MultiuserFrameworkContainer:
-
-```java
-MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
-                getModules(YourOrchestrator.class ),
-                createConfig( "tcp://127.0.0.1", 5555 ), null );
-```
-
-startFramework method receives three parameters:
+You can create as many instances of MUF as you want by calling the startFramework method of MultiuserFrameworkContainer class. The startFramework method receives three parameters:
 
 * An array of PluginModule instances: each PluginModule must contain one orchestrator and at least one (or multiple) pluggin components.
 * A Config object with all the settings for the creation of the MUF
-* A ServiceInfo object that contains information about a MUF that runs as a service, that is, you can connect multiple MUF's, abd when you do that, you can define a master MUF which is the instance that will be listening to client requests, and a slave MUF which connects to the master MUF as a service. 
+* A ServiceInfo object that contains information about a MUF that runs as a service, that is, you can connect multiple MUF's, abd when you do that, you can define a master MUF which is the instance that will be listening to client requests, and a slave MUF which connects to the master MUF as a service.
 
-Let's create the PluginModule and Config objects:
+The simplest way to create a MUF is using the default configuration (i.e., both MUF and clients will connect to localhost on port 5555, the session timeout is 5 minutes, etc.) as follows:
 
 ```java
-public PluginModule[] getModules(Class<? extends ProcessOrchestratorImpl> orchestrator){
+MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
+                new PluginModule[]{new PluginModule.Builder( orchestrator, TestPluggableComponent.class, "test").build()}
+                new Config.Builder().build() );
+```
+
+Now, you can create a MUF by specifying a detailed configuration as follows:
+
+```java
+MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
+                getModules(), createConfig() );
+...
+
+public PluginModule[] getModules(){
       return new PluginModule[]{
-              new PluginModule.Builder( orchestrator )
+              new PluginModule.Builder( TestOrchestrator.class )
                       .addPlugin(YourPluggableComponent1.class, "id_comp_1")
                       .addPlugin(YourPluggableComponent2.class, "id_comp_2")
                       //.addPlugin....
@@ -87,10 +91,10 @@ public Config createConfig(String serverAddress, int port) {
             // you can refer to values in your config.properties file:
             setPathLogs(Utils.getProperty("pathLogs"))
             // or you can add values directly like this:
-            .setServerAddress(serverAddress)
-            .setSessionManagerPort(port)
+            .setServerAddress("tcp://192.168.123.98")
+            .setSessionManagerPort(5566)
             .setDefaultNumOfPoolInstances(10)           
-            .setSessionTimeout(5, TimeUnit.MINUTES)
+            .setSessionTimeout(10, TimeUnit.MINUTES)
             .setExceptionTraceLevel(Constants.SHOW_ALL_EXCEPTIONS)
             //.set...
             .build();
@@ -98,19 +102,25 @@ public Config createConfig(String serverAddress, int port) {
 ```
 
 And finally, you can stop the MUF like this:
-
 ```java
 MultiuserFrameworkContainer.stopFramework( muf );
 ```
+Or stop all MUF's instances like this:
+```java
+MultiuserFrameworkContainer.stopFrameworks( );
+```
 
-## Create a Client and send and receive messages from MUF
+## Create a Client, send and receive messages to/from MUF
 
-Creating a client that connects to MUF is a simple as follows:
-
+Creating a client that connects to MUF is a simple as follows (using the default configuration):
+```java
+ClientCommController client =  new ClientCommController.Builder().build();
+```
+or you can also specify a detailed configuration:
 ```java
 int port = 5555;
-String serverAddress = "tcp//:xxx.xxx.xxx.xxx:"; //replace this line with your server address and port
-String clientAddress = "tcp//:xxx.xxx.xxx.xxx:";
+String serverAddress = "tcp//:xxx.xxx.xxx.xxx:"; //replace this line with your server address
+String clientAddress = "tcp//:xxx.xxx.xxx.xxx:"; //replace this line with your client address
 ClientCommController client =  new ClientCommController.Builder()
       .setServerAddress(serverAddress + port)
       .setClientAddress( clientAddress + port )
@@ -153,32 +163,35 @@ The examples illustrate how SARA (Socially-Aware Robotic Assistant) components c
 
 On SaraProject, you will find 15 examples that take you through the whole set of features of MUF. You can run each example under package edu.cmu.inmind.multiuser.sara.examples.
 
-- **Ex01_MessageTranslation:** You can programmatically control what to do with the message. For instance, you can translate the input that comes from android client into a known object (e.g., SaraInput object).
-- **Ex02_ExtractMessage:** this is a simple scenario that illustrates: 
+- [**Ex01_MessageTranslation:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex01_MessageTranslation.java) You can programmatically control what to do with the message. For instance, you can translate the input that comes from android client into a known object (e.g., SaraInput object).
+- [**Ex02_ExtractMessage:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex02_ExtractMessage.java) this is a simple scenario that illustrates: 
   - 1. how to use your own implementation of a Message Logger 
-  - 2. how to extract messages coming from the client; 3) how to respond to the client
-- **Ex03_OneComponentActivation:** MUF provides two approaches to process the messages that come from clients:
+  - 2. how to extract messages coming from the client
+  - 3. how to respond to the client
+- [**Ex03_OneComponentActivation:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex03_OneComponentActivation.java) MUF provides two approaches to process the messages that come from clients:
   - 1. Event-oriented approach: every time that te blackboard is modified (e.g., insertion and deletion of elements) then all the Blackboard subscribers (those components that implements BlackboardListener interface, e.g., PluggableComponent components) are automatically updated through the onEvent method that receives as parameter a BlackboardEvent instance.
   - 2. Direct-invocation approach: in this case, you are responsible of calling each component in the desired order (sync or async) by calling the execute() method of your ProcessOrchestrator implementation. If you are using the second approach and want to only activate the component that corresponds to a specific message (this message must correspond to any of the keys that you mapped to your PluginComponents -- see SaraCons.ID_NLU below) then call processMsg message as the example below. This message should start with 'MSG_' prefix)
-- **Ex04_SyncExecution:** You can execute each component in your system (e.g., NLUComponent, TR, SR, NLGComponent) synchronously. This is an example of how to execute your components sequentially and it assumes all components run synchronously (i.e., they do NOT run on separate threads)
-- **Ex05_AsyncExecution:** You can also execute a set of components in parallel and asynchronously (that is, in separate threads)
-- **Ex06_ForceSync:** If your components are asynchronous by nature (that is, they run on their own separate threads) or you run them in parallel (i.e., you use executeAsync) you can force them to sync by calling forceSync method. Let's assume you have a list of 10 async components, however, this is just for illustration purposes since you MUST register your components in advance when you start the MultiuserFramework. Take a look at the implementation of AsyncComponent and you will realize the presence of two key elements:
+- [**Ex04_SyncExecution:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex04_SyncExecution.java) You can execute each component in your system (e.g., NLUComponent, TR, SR, NLGComponent) synchronously. This is an example of how to execute your components sequentially and it assumes all components run synchronously (i.e., they do NOT run on separate threads)
+- [**Ex05_AsyncExecution:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex05_AsyncExecution.java) You can also execute a set of components in parallel and asynchronously (that is, in separate threads)
+- [**Ex06_ForceSync:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex06_ForceSync.java) If your components are asynchronous by nature (that is, they run on their own separate threads) or you run them in parallel (i.e., you use executeAsync) you can force them to sync by calling forceSync method. Let's assume you have a list of 10 async components, however, this is just for illustration purposes since you MUST register your components in advance when you start the MultiuserFramework. Take a look at the implementation of AsyncComponent and you will realize the presence of two key elements:
   - 1. You have to use the @ForceSync annotation and add an arbitrary unique id to it (e.g., id = "sync-example"), this id will be necessary to sync your components.
   - 2. You have to call the notifyNext method in the specific point you want to sync your async components.
-- **Ex07_ForceSyncWithAdditionalLogic:** This is a variation of Ex06_ForceSync. If you want (besides to sync your async components) to add any logic after synchronizing each of your async components and before calling the next one (i.e., at the notifyNext method) you have to pass a list of SynchronizableEvent objects (and add your logic inside these events) along with your async components.
-- **Ex08_RemoteService:** ou can create local components that communicate with remote services. This example illustrates how SARA can communicate with a external (remote or local) NLU system. The main idea behind this example is to demonstrate how you can intercept messages (in this case MSG_ASR messages), process them, and finally forward them to the remote service. Take a lok at RemoteNLUComponent to see the different ways you can communicate with your remote service:
+- [**Ex07_ForceSyncWithAdditionalLogic:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex07_ForceSyncWithAdditionalLogic.java) This is a variation of Ex06_ForceSync. If you want (besides to sync your async components) to add any logic after synchronizing each of your async components and before calling the next one (i.e., at the notifyNext method) you have to pass a list of SynchronizableEvent objects (and add your logic inside these events) along with your async components.
+- [**Ex08_RemoteService:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex08_RemoteService.java) ou can create local components that communicate with remote services. This example illustrates how SARA can communicate with a external (remote or local) NLU system. The main idea behind this example is to demonstrate how you can intercept messages (in this case MSG_ASR messages), process them, and finally forward them to the remote service. Take a lok at RemoteNLUComponent to see the different ways you can communicate with your remote service:
   - 1. explicitly by calling sendAndReceive method anywhere in your PluggableComponent code
   - 2. implicitly in the onEvent method.
+ 
   It is also important to notice that the service provider (remote NLU) must be running and be registered before clients (phones) connect to the framework, take a look at the DialogueSystem project that is included in the examples folder. So, run the projects in this order:
   - 1. Run SaraProject
   - 2. Run DialogueSystem: look at Main and uncomment the corresponding lines for this example
   - 3. Run Android Client
- - **Ex09_RemoteServiceAutomaticSubscription:** This example is an extension of Ex08_RemoteService. Basically, a remote service subscribes to SARA server but this time you don't need to create an intermediary component (RemoteNLUComponent) because the Blackboard will automatically update the remote service. The only thing you need to do is to uncomment the corresponding code in Main at DialogueSystem project.
-- **Ex10_BlackboardStateless:** By default, the Blackboard keeps a state of all messages that are posted by components, however, you can tell the blackboard to not store the state, just notify the subscribers. Note that you won't be able to get any object from the Blackboard, of course. For this example do not run DialogueSystem, you won't need it. 
-- **Ex12_Loggers:** This example illustrates how to log all the messages and events passed through the framework.
-- **Ex13_UserModel:** This example illustrates how easy is to create a User Model. Take a look at UserModelComponent. Basically this component is subscribed to NLU messages and when it receives a new update, it extracts the user intent, and then the corresponding entities (this is useful, for instance, for extracting preferences and interests from entities). Note: you will have to uncomment some code on NLUComponent.onEvent() in order to run this example.
-- **Ex14_PoolComponent:** Your components (PluggableComponents) may behave as stateful or stateless components just by adding a class annotation. An intermediate state is a pool component, that is, it behaves as a stateless component in the sense that it shouldn't keep any state of the system and behaves as a stateful component in the sense that you can have multiple instances of the same class. Therefore, the purpose of a pool component is to load balance since a unique instance (stateless) may collapse any moment if the process it does is heavy. Take a look at PoolExComponent and see that the only thing you have to do is add a PoolComponent annotation. Note: we have defined a small pool of 2 instances (see below in createConfig method). Now you will have to run at least 3 clients (e.g., 3 different phones) and you will realize that:
+ - [**Ex09_RemoteServiceAutomaticSubscription:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex09_RemoteServiceAutomaticSubscription.java) This example is an extension of Ex08_RemoteService. Basically, a remote service subscribes to SARA server but this time you don't need to create an intermediary component (RemoteNLUComponent) because the Blackboard will automatically update the remote service. The only thing you need to do is to uncomment the corresponding code in Main at DialogueSystem project.
+- [**Ex10_BlackboardStateless:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex10_BlackboardStateless.java) By default, the Blackboard keeps a state of all messages that are posted by components, however, you can tell the blackboard to not store the state, just notify the subscribers. Note that you won't be able to get any object from the Blackboard, of course. For this example do not run DialogueSystem, you won't need it. 
+- [**Ex11_GuavaService:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex11_GuavaService.java) Every PluggableComponent you create (NLGComponent, NLUComponent, etc.) behaves as a Guava Service: (https://github.com/google/guava/wiki/ServiceExplained). The lifecyle of a Guava Service has the following states: NEW -> STARTING -> RUNNING -> STOPPING -> TERMINATED and FAILED (anytime). If you need to wait for service transitions to complete then you can implement several methods as explained in this example. Also, your guava service may behave async or synchronuously.
+- [**Ex12_Loggers:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex12_Loggers.java) This example illustrates how to log all the messages and events passed through the framework.
+- [**Ex13_UserModel:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex13_UserModel.java) This example illustrates how easy is to create a User Model. Take a look at UserModelComponent. Basically this component is subscribed to NLU messages and when it receives a new update, it extracts the user intent, and then the corresponding entities (this is useful, for instance, for extracting preferences and interests from entities). Note: you will have to uncomment some code on NLUComponent.onEvent() in order to run this example.
+- [**Ex14_PoolComponent:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex14_PoolComponent.java) Your components (PluggableComponents) may behave as stateful or stateless components just by adding a class annotation. An intermediate state is a pool component, that is, it behaves as a stateless component in the sense that it shouldn't keep any state of the system and behaves as a stateful component in the sense that you can have multiple instances of the same class. Therefore, the purpose of a pool component is to load balance since a unique instance (stateless) may collapse any moment if the process it does is heavy. Take a look at PoolExComponent and see that the only thing you have to do is add a PoolComponent annotation. Note: we have defined a small pool of 2 instances (see below in createConfig method). Now you will have to run at least 3 clients (e.g., 3 different phones) and you will realize that:
   - 1. Client1 will be assigned PoolComponent1
   - 2. Client2 will be assigned PoolComponent2
   - 3. Client3 will be assigned PoolComponent1 (this time, PoolComponent1 is shared by clients 1 and 3)
-- **Ex15_WholePipeline:** This example illustrates the whole pipeline: AndroidClient (ASR) -> DialogueSystem (NLU) -> TaskReasoner -> SocialReasoner -> NLG -> AndroidClient. Note: this time you will have to run DialogueSystem and uncomment
+- [**Ex15_WholePipeline:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex15_WholePipeline.java) This example illustrates the whole pipeline: AndroidClient (ASR) -> DialogueSystem (NLU) -> TaskReasoner -> SocialReasoner -> NLG -> AndroidClient. Note: this time you will have to run DialogueSystem and uncomment
