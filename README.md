@@ -1,6 +1,10 @@
 # What the MUF is?
 
-The MUF is a framework that allows developers to easily scale their mono-user architectures to multi-user architectures with little effort. The MUF is a plugin-based architecture written in Java (though it supports interaction with almost any programming language thanks to its communication layer that uses ZeroMQ). The most relevant features of the MUF are:
+The MUF is a framework that allows developers to easily scale their mono-user architectures to multi-user architectures with little effort. The MUF is a plugin-based architecture written in Java (though it supports interaction with almost any programming language thanks to its communication layer that uses ZeroMQ). 
+
+![Alt text](/MUF.png?raw=true "MUF Architecture")
+
+The most relevant features of the MUF are:
 
 * **Session Management:** a Session Manager automatically creates a new session every time a client connects and then manages its lifecycle (i.e., connection, disconnection, control of inactivity, resources management, etc.) 
 
@@ -31,9 +35,6 @@ The MUF is a framework that allows developers to easily scale their mono-user ar
 * **API's:** the MUF provides different API’s that encapsulate natural patterns for communication, parsing json, serialization, common utils, etc. 
 
 * **Multiplatform and Multilanguage:** thanks to MUF uses a potent messaging and concurrency libraries such as ZMQ, you can easily communicate the MUF implementation (Java code) with clients written in almost any programming language with low extra effort (there is an example in the github repo of how to connect Java MUF with a Python MUF, but so many other languages may be supported). Also, you can communicate your MUF with another MUF which runs on another machine, that means that your MUF may behave as a server when receiving requests from clients (phones) or as a client when it sends or forwards messages to other MUF’s and waits for responses from them, so you can get a nested architecture of MUF’s.
-
-![Alt text](/MUF.png?raw=true "MUF Architecture")
-
 
 
 # How to use the MUF
