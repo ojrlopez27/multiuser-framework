@@ -32,7 +32,7 @@ public class MUFTestSuite {
     public void testStartAndStopOneMUF() throws Throwable{
         MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
                 TestUtils.getModules( TestOrchestrator.class ),
-                TestUtils.createConfig( serverAddress, ports[0] ), null );
+                TestUtils.createConfig( serverAddress, ports[0] ) );
         assertNotNull(muf);
         Utils.sleep(delay); //give some time to initialize the MUF
         MultiuserFrameworkContainer.stopFramework( muf );
@@ -48,11 +48,11 @@ public class MUFTestSuite {
     public void tesStartAndStopTwoMUFs() throws Throwable{
         MultiuserFramework muf1 = MultiuserFrameworkContainer.startFramework(
                 TestUtils.getModules(TestOrchestrator.class ),
-                TestUtils.createConfig( serverAddress, ports[0] ), null );
+                TestUtils.createConfig( serverAddress, ports[0] ) );
         assertNotNull(muf1);
         MultiuserFramework muf2 = MultiuserFrameworkContainer.startFramework(
                 TestUtils.getModules(TestOrchestrator.class ),
-                TestUtils.createConfig( serverAddress, ports[1] ), null );
+                TestUtils.createConfig( serverAddress, ports[1] ) );
         assertNotNull(muf2);
         assertNotSame( muf1, muf2 );
         Utils.sleep(delay); //give some time to initialize the MUF
@@ -98,7 +98,7 @@ public class MUFTestSuite {
         // creates a MUF and set TCP to on or off
         MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
                 TestUtils.getModules(TestOrchestrator.class ),
-                TestUtils.createConfig( serverAddress, ports[0] ).setTCPon( isTPCon ), null );
+                TestUtils.createConfig( serverAddress, ports[0] ).setTCPon( isTPCon ) );
         assertNotNull(muf);
         Utils.sleep(delay); //give some time to initialize the MUF
         // let's create a client that sends messages to MUF
