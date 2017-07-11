@@ -53,28 +53,32 @@ dependencies{
 }
 ```
 
-## Create, start and stop an instance of MUF
+## Create, start and stop a MUF instance
 
-You can create as many instances of MUF as you want by calling the startFramework method of MultiuserFrameworkContainer:
-
-```java
-MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
-                getModules(YourOrchestrator.class ),
-                createConfig( "tcp://127.0.0.1", 5555 ), null );
-```
-
-startFramework method receives three parameters:
+You can create as many instances of MUF as you want by calling the startFramework method of MultiuserFrameworkContainer class. The startFramework method receives three parameters:
 
 * An array of PluginModule instances: each PluginModule must contain one orchestrator and at least one (or multiple) pluggin components.
 * A Config object with all the settings for the creation of the MUF
-* A ServiceInfo object that contains information about a MUF that runs as a service, that is, you can connect multiple MUF's, abd when you do that, you can define a master MUF which is the instance that will be listening to client requests, and a slave MUF which connects to the master MUF as a service. 
+* A ServiceInfo object that contains information about a MUF that runs as a service, that is, you can connect multiple MUF's, abd when you do that, you can define a master MUF which is the instance that will be listening to client requests, and a slave MUF which connects to the master MUF as a service.
 
-Let's create the PluginModule and Config objects:
+The simplest way to create a MUF is using the default configuration (i.e., both MUF and clients will connect to localhost on port 5555, the session timeout is 5 minutes, etc.) as follows:
+
+````java
+MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
+                new PluginModule[]{new PluginModule.Builder( orchestrator, TestPluggableComponent.class, "test").build()}
+                new Config.Builder().build() );
+```
+
+Now, you can create a MUF by specifying a dedetailed configuration as follows:
 
 ```java
-public PluginModule[] getModules(Class<? extends ProcessOrchestratorImpl> orchestrator){
+MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
+                getModules(), createConfig() );
+...
+
+public PluginModule[] getModules(){
       return new PluginModule[]{
-              new PluginModule.Builder( orchestrator )
+              new PluginModule.Builder( TestOrchestrator.class )
                       .addPlugin(YourPluggableComponent1.class, "id_comp_1")
                       .addPlugin(YourPluggableComponent2.class, "id_comp_2")
                       //.addPlugin....
@@ -87,10 +91,10 @@ public Config createConfig(String serverAddress, int port) {
             // you can refer to values in your config.properties file:
             setPathLogs(Utils.getProperty("pathLogs"))
             // or you can add values directly like this:
-            .setServerAddress(serverAddress)
-            .setSessionManagerPort(port)
+            .setServerAddress("tcp://192.168.123.98")
+            .setSessionManagerPort(5566)
             .setDefaultNumOfPoolInstances(10)           
-            .setSessionTimeout(5, TimeUnit.MINUTES)
+            .setSessionTimeout(10, TimeUnit.MINUTES)
             .setExceptionTraceLevel(Constants.SHOW_ALL_EXCEPTIONS)
             //.set...
             .build();
@@ -98,19 +102,25 @@ public Config createConfig(String serverAddress, int port) {
 ```
 
 And finally, you can stop the MUF like this:
-
 ```java
 MultiuserFrameworkContainer.stopFramework( muf );
 ```
+Or stop all MUF's like this:
+```java
+MultiuserFrameworkContainer.stopFrameworks( );
+```
 
-## Create a Client and send and receive messages from MUF
+## Create a Client, send and receive messages to/from MUF
 
-Creating a client that connects to MUF is a simple as follows:
-
+Creating a client that connects to MUF is a simple as follows (using the default configuration):
+```java
+ClientCommController client =  new ClientCommController.Builder().build();
+```
+or you can also specify a detailed configuration:
 ```java
 int port = 5555;
-String serverAddress = "tcp//:xxx.xxx.xxx.xxx:"; //replace this line with your server address and port
-String clientAddress = "tcp//:xxx.xxx.xxx.xxx:";
+String serverAddress = "tcp//:xxx.xxx.xxx.xxx:"; //replace this line with your server address
+String clientAddress = "tcp//:xxx.xxx.xxx.xxx:"; //replace this line with your client address
 ClientCommController client =  new ClientCommController.Builder()
       .setServerAddress(serverAddress + port)
       .setClientAddress( clientAddress + port )
@@ -153,7 +163,7 @@ The examples illustrate how SARA (Socially-Aware Robotic Assistant) components c
 
 On SaraProject, you will find 15 examples that take you through the whole set of features of MUF. You can run each example under package edu.cmu.inmind.multiuser.sara.examples.
 
-- **Ex01_MessageTranslation:** You can programmatically control what to do with the message. For instance, you can translate the input that comes from android client into a known object (e.g., SaraInput object).
+- [**Ex01_MessageTranslation:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex01_MessageTranslation.java) You can programmatically control what to do with the message. For instance, you can translate the input that comes from android client into a known object (e.g., SaraInput object).
 - **Ex02_ExtractMessage:** this is a simple scenario that illustrates: 
   - 1. how to use your own implementation of a Message Logger 
   - 2. how to extract messages coming from the client; 3) how to respond to the client
