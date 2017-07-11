@@ -69,7 +69,7 @@ MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
                 new Config.Builder().build() );
 ```
 
-Now, you can create a MUF by specifying a dedetailed configuration as follows:
+Now, you can create a MUF by specifying a detailed configuration as follows:
 
 ```java
 MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
@@ -105,7 +105,7 @@ And finally, you can stop the MUF like this:
 ```java
 MultiuserFrameworkContainer.stopFramework( muf );
 ```
-Or stop all MUF's like this:
+Or stop all MUF's instances like this:
 ```java
 MultiuserFrameworkContainer.stopFrameworks( );
 ```
@@ -166,7 +166,8 @@ On SaraProject, you will find 15 examples that take you through the whole set of
 - [**Ex01_MessageTranslation:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex01_MessageTranslation.java) You can programmatically control what to do with the message. For instance, you can translate the input that comes from android client into a known object (e.g., SaraInput object).
 - [**Ex02_ExtractMessage:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex02_ExtractMessage.java) this is a simple scenario that illustrates: 
   - 1. how to use your own implementation of a Message Logger 
-  - 2. how to extract messages coming from the client; 3) how to respond to the client
+  - 2. how to extract messages coming from the client
+  - 3. how to respond to the client
 - [**Ex03_OneComponentActivation:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex03_OneComponentActivation.java) MUF provides two approaches to process the messages that come from clients:
   - 1. Event-oriented approach: every time that te blackboard is modified (e.g., insertion and deletion of elements) then all the Blackboard subscribers (those components that implements BlackboardListener interface, e.g., PluggableComponent components) are automatically updated through the onEvent method that receives as parameter a BlackboardEvent instance.
   - 2. Direct-invocation approach: in this case, you are responsible of calling each component in the desired order (sync or async) by calling the execute() method of your ProcessOrchestrator implementation. If you are using the second approach and want to only activate the component that corresponds to a specific message (this message must correspond to any of the keys that you mapped to your PluginComponents -- see SaraCons.ID_NLU below) then call processMsg message as the example below. This message should start with 'MSG_' prefix)
@@ -179,13 +180,14 @@ On SaraProject, you will find 15 examples that take you through the whole set of
 - [**Ex08_RemoteService:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex08_RemoteService.java) ou can create local components that communicate with remote services. This example illustrates how SARA can communicate with a external (remote or local) NLU system. The main idea behind this example is to demonstrate how you can intercept messages (in this case MSG_ASR messages), process them, and finally forward them to the remote service. Take a lok at RemoteNLUComponent to see the different ways you can communicate with your remote service:
   - 1. explicitly by calling sendAndReceive method anywhere in your PluggableComponent code
   - 2. implicitly in the onEvent method.
-  It is also important to notice that the service provider (remote NLU) must be running and be registered before clients (phones) connect to the framework, take a look at the DialogueSystem project that is included in the examples folder. So, run the projects in this order:
+ 
+It is also important to notice that the service provider (remote NLU) must be running and be registered before clients (phones) connect to the framework, take a look at the DialogueSystem project that is included in the examples folder. So, run the projects in this order:
   - 1. Run SaraProject
   - 2. Run DialogueSystem: look at Main and uncomment the corresponding lines for this example
   - 3. Run Android Client
  - [**Ex09_RemoteServiceAutomaticSubscription:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex09_RemoteServiceAutomaticSubscription.java) This example is an extension of Ex08_RemoteService. Basically, a remote service subscribes to SARA server but this time you don't need to create an intermediary component (RemoteNLUComponent) because the Blackboard will automatically update the remote service. The only thing you need to do is to uncomment the corresponding code in Main at DialogueSystem project.
 - [**Ex10_BlackboardStateless:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex10_BlackboardStateless.java) By default, the Blackboard keeps a state of all messages that are posted by components, however, you can tell the blackboard to not store the state, just notify the subscribers. Note that you won't be able to get any object from the Blackboard, of course. For this example do not run DialogueSystem, you won't need it. 
-- [**Ex11_GuavaService:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex11_GuavaService.java) Every PluggableComponent you create (NLGComponent, NLUComponent, etc.) behaves as a Guava Service: (@https://github.com/google/guava/wiki/ServiceExplained). The lifecyle of a Guava Service has the following states: NEW -> STARTING -> RUNNING -> STOPPING -> TERMINATED and FAILED (anytime). If you need to wait for service transitions to complete then you can implement several methods as explained in this example. Also, your guava service may behave async or synchronuously.
+- [**Ex11_GuavaService:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex11_GuavaService.java) Every PluggableComponent you create (NLGComponent, NLUComponent, etc.) behaves as a Guava Service: (https://github.com/google/guava/wiki/ServiceExplained). The lifecyle of a Guava Service has the following states: NEW -> STARTING -> RUNNING -> STOPPING -> TERMINATED and FAILED (anytime). If you need to wait for service transitions to complete then you can implement several methods as explained in this example. Also, your guava service may behave async or synchronuously.
 - [**Ex12_Loggers:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex12_Loggers.java) This example illustrates how to log all the messages and events passed through the framework.
 - [**Ex13_UserModel:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex13_UserModel.java) This example illustrates how easy is to create a User Model. Take a look at UserModelComponent. Basically this component is subscribed to NLU messages and when it receives a new update, it extracts the user intent, and then the corresponding entities (this is useful, for instance, for extracting preferences and interests from entities). Note: you will have to uncomment some code on NLUComponent.onEvent() in order to run this example.
 - [**Ex14_PoolComponent:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex14_PoolComponent.java) Your components (PluggableComponents) may behave as stateful or stateless components just by adding a class annotation. An intermediate state is a pool component, that is, it behaves as a stateless component in the sense that it shouldn't keep any state of the system and behaves as a stateful component in the sense that you can have multiple instances of the same class. Therefore, the purpose of a pool component is to load balance since a unique instance (stateless) may collapse any moment if the process it does is heavy. Take a look at PoolExComponent and see that the only thing you have to do is add a PoolComponent annotation. Note: we have defined a small pool of 2 instances (see below in createConfig method). Now you will have to run at least 3 clients (e.g., 3 different phones) and you will realize that:
