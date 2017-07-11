@@ -181,7 +181,7 @@ On SaraProject, you will find 15 examples that take you through the whole set of
   - 1. explicitly by calling sendAndReceive method anywhere in your PluggableComponent code
   - 2. implicitly in the onEvent method.
  
-It is also important to notice that the service provider (remote NLU) must be running and be registered before clients (phones) connect to the framework, take a look at the DialogueSystem project that is included in the examples folder. So, run the projects in this order:
+  It is also important to notice that the service provider (remote NLU) must be running and be registered before clients (phones) connect to the framework, take a look at the DialogueSystem project that is included in the examples folder. So, run the projects in this order:
   - 1. Run SaraProject
   - 2. Run DialogueSystem: look at Main and uncomment the corresponding lines for this example
   - 3. Run Android Client
