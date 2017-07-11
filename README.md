@@ -2,16 +2,9 @@
 
 The MUF is a framework that allows developers to easily scale their mono-user architectures to multi-user architectures with little effort. The MUF is a plugin-based architecture written in Java (though it supports interaction with almost any programming language thanks to its communication layer that uses ZeroMQ). 
 
-
 <div align="center">
-    <img width="45%" src="MUF.png" alt="About screen" title="About screen"</img>
-    <img height="0" width="8px">
-    <img width="45%" src="MUF.png" alt="List screen" title="List screen"></img>
+    <img width="45%" src="MUF.png" alt="MUF Architecture" title="MUF Architecture"</img>   
 </div>
-
-
-
-
 
 The most relevant features of the MUF are:
 
