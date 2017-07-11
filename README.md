@@ -32,6 +32,10 @@ The MUF is a framework that allows developers to easily scale their mono-user ar
 
 * **Multiplatform and Multilanguage:** thanks to MUF uses a potent messaging and concurrency libraries such as ZMQ, you can easily communicate the MUF implementation (Java code) with clients written in almost any programming language with low extra effort (there is an example in the github repo of how to connect Java MUF with a Python MUF, but so many other languages may be supported). Also, you can communicate your MUF with another MUF which runs on another machine, that means that your MUF may behave as a server when receiving requests from clients (phones) or as a client when it sends or forwards messages to other MUF’s and waits for responses from them, so you can get a nested architecture of MUF’s.
 
+![Alt text](/MUF.png?raw=true "MUF Architecture")
+
+
+
 # How to use the MUF
 
 ## Gradle Dependency
