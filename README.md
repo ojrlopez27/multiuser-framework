@@ -4,7 +4,7 @@ The MUF is a framework that allows developers to easily scale their mono-user ar
 
 * **Session Management:** a Session Manager automatically creates a new session every time a client connects and then manages its lifecycle (i.e., connection, disconnection, control of inactivity, resources management, etc.) 
 
-* **Low latency:** a whole communication action (i.e., to send a message from the client and receive a response from the server) takes around 10-13 ms in total. This test was made using my own computer (MacBook Pro 2.5 GHz Intel core i7, 16 GB 1600 MHz DDR) but it could be improved if you use an AWS instance. These latency range were the same even when the framework was tested with 1,000 clients. 
+* **Low latency:** a whole communication action (i.e., to send a message from the client and receive a response from the server) takes around 10-13 ms in total. This test was made using a MacBook Pro 2.5 GHz Intel core i7, 16 GB 1600 MHz DDR, but it could be improved if you use an AWS instance. These latency range were the same even when the framework was tested with 1,000 clients. 
 
 * **Robustness and Reliability:** the MUF supports error handling (e.g., crash errors trigger specific system recovery actions), disconnection and automatic reconnection (if network fails or communication freezes or gets locked), management of queue overflows and memory leaks, data loss prevention (when a client disconnects due to an unexpected reason, the system will keep messages in memory until the client reconnects or a timeout is met), gracefully shutdown (if system crashes and cannot be restarted, all resources such as sockets, queues, shared objects, DB, etc. are closed and released before the system exits). 
 
