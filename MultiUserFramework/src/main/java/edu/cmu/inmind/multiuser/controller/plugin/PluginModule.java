@@ -97,8 +97,21 @@ public class PluginModule extends AbstractModule {
         private int defaultNumOfInstances = 100;
         private Class<? extends ProcessOrchestrator> orchestrator;
 
+
+        /**
+         * You need to specify at least one plugabble component. Use Builder(ProcessOrchestrator, PluggableComponent,
+         * String) instead
+         * @param orchestrator
+         */
+        @Deprecated
         public Builder(Class<? extends ProcessOrchestrator> orchestrator) {
             this.orchestrator = orchestrator;
+        }
+
+        public Builder(Class<? extends ProcessOrchestrator> orchestrator, Class<? extends PluggableComponent> component,
+                       String message) {
+            this.orchestrator = orchestrator;
+            addPlugin( component, message );
         }
 
         public Builder addPlugin(Class<? extends PluggableComponent> component, int numOfInstances, String message ){

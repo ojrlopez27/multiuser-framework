@@ -43,12 +43,18 @@ public class MultiuserFrameworkContainer {
      * @param modules
      * @param config
      */
-    public static void startFramework( PluginModule[] modules, Config config ) throws Throwable{
-        startFramework( modules, config, null);
+    public static MultiuserFramework startFramework( PluginModule[] modules, Config config ) throws Throwable{
+       return startFramework( modules, config, null);
     }
 
     public static void stopFramework( MultiuserFramework muf ){
         mufs.remove( muf.getId() ).stop();
+    }
+
+    public static void stopFrameworks(){
+        for( String key : mufs.keySet() ){
+            mufs.remove( key ).stop();
+        }
     }
 
     public static Object get(String id) {
