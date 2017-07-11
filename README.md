@@ -63,7 +63,7 @@ You can create as many instances of MUF as you want by calling the startFramewor
 
 The simplest way to create a MUF is using the default configuration (i.e., both MUF and clients will connect to localhost on port 5555, the session timeout is 5 minutes, etc.) as follows:
 
-````java
+```java
 MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
                 new PluginModule[]{new PluginModule.Builder( orchestrator, TestPluggableComponent.class, "test").build()}
                 new Config.Builder().build() );
