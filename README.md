@@ -1,6 +1,6 @@
 # What the MUF is?
 
-The MUF is a framework that allows developers to easily scale their mono-user architectures to multi-user architectures with little effort. The MUF is written in Java (but it supports interaction with almost any programming language thanks to its communication layer that uses ZeroMQ). The most relevant features of the MUF are:
+The MUF is a framework that allows developers to easily scale their mono-user architectures to multi-user architectures with little effort. The MUF is a plugin-based architecture written in Java (though it supports interaction with almost any programming language thanks to its communication layer that uses ZeroMQ). The most relevant features of the MUF are:
 
 * **Session Management:** a Session Manager automatically creates a new session every time a client connects and then manages its lifecycle (i.e., connection, disconnection, control of inactivity, resources management, etc.) 
 
