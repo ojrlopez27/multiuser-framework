@@ -165,7 +165,7 @@ The examples illustrate how SARA (Socially-Aware Robotic Assistant) components c
 * AndroidClient: this is the client that will be sending request messages to MUF
 * SaraProject: this is the main (master) MUF that will be listening to messages coming from client
 * DialogueSystem: this is a secondary (slave) MUF that register as a service with the master MUF. This MUF, written in java, forwards all the messages to the real dialogue system written in python.
-* DialoguePython: this is the dialogue system written in python and contains two modules: NLU and DM
+* PythonDM: this is the dialogue system written in python and contains two modules: NLU and DM
 * SaraCommons: this module conly contains contracts (i.e., interfaces, constants, etc.) in order to reach an agreement between modules regarding to the name of variables, services, messages, etc.
 
 On SaraProject, you will find 15 examples that take you through the whole set of features of MUF. You can run each example under package edu.cmu.inmind.multiuser.sara.examples.
