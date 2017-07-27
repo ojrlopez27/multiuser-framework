@@ -1,14 +1,15 @@
 package edu.cmu.inmind.multiuser.sara.component;
 
+import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.log.Loggable;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
-import edu.cmu.inmind.multiuser.controller.plugin.StatelessComponent;
+import edu.cmu.inmind.multiuser.controller.plugin.StateType;
 
 /**
  * Created by oscarr on 3/22/17.
  */
-@StatelessComponent
+@StateType(state = Constants.STATELESS )
 public class HowToLogComponent extends PluggableComponent {
     @Override
     public void execute() {

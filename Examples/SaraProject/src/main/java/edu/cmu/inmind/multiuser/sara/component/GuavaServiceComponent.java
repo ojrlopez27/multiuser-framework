@@ -1,14 +1,15 @@
 package edu.cmu.inmind.multiuser.sara.component;
 
+import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
-import edu.cmu.inmind.multiuser.controller.plugin.StatefulComponent;
+import edu.cmu.inmind.multiuser.controller.plugin.StateType;
 
 /**
  * Created by oscarr on 3/17/17.
  */
-@StatefulComponent
+@StateType(state = Constants.STATEFULL )
 public class GuavaServiceComponent extends PluggableComponent {
     private boolean flagStart = false;
     private int step = 0;
