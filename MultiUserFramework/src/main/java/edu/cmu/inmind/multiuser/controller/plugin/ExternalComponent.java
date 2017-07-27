@@ -15,8 +15,8 @@ import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
  * This component communicate with external services automatically, that is, external service subscribe to a list
  * of messages and this component sends and receives changes on Blackboard.
  */
-@StatefulComponent
 @BlackboardSubscription( messages = {} )
+@StateType( state = Constants.STATEFULL )
 public class ExternalComponent extends PluggableComponent implements ResponseListener{
 
     public ExternalComponent(String serviceURL, String sessionId, ZMsgWrapper zMsgWrapper, String[] messages){
@@ -71,8 +71,8 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
     }
 
     @Override
-    public void close() throws Throwable{
-        super.close();
+    public void close( String sessionId ) throws Throwable{
+        super.close( getSessionId() );
     }
 
     @Override

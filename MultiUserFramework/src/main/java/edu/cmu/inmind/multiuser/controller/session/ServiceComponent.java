@@ -5,6 +5,9 @@ import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 
 /**
  * Created by oscarr on 3/14/17.
+ * This class is used to control a remote service that connects to the MUF. Usually, this remote service
+ * behaves as a local components, that's the reason why it has a PluggableComponent instance.
+ *
  */
 public class ServiceComponent{
     private Class<? extends PluggableComponent> component;

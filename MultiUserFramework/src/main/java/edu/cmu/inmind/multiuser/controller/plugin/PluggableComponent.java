@@ -23,13 +23,21 @@ import java.util.Map;
 /**
  * Created by oscarr on 3/16/17.
  */
+@StateType( state = Constants.STATEFULL )
 public abstract class PluggableComponent extends AbstractIdleService implements BlackboardListener, Pluggable {
-    private Map<String, Blackboard> blackboards = new HashMap<>();
-    protected Map<String, MessageLog> messageLoggers = new HashMap<>();
-    protected Map<String, Session> sessions = new HashMap<>();//a component may be shared by several sessions (Stateless)
+    private Map<String, Blackboard> blackboards;
+    protected Map<String, MessageLog> messageLoggers;
+    protected Map<String, Session> sessions;
     private Session activeSession;
-    private boolean isShutDown = false;
+    private boolean isShutDown;
     private ClientCommController clientCommController;
+
+    public PluggableComponent(){
+        blackboards = new HashMap<>();
+        messageLoggers = new HashMap<>();
+        sessions = new HashMap<>();//a component may be shared by several sessions (Stateless)
+        isShutDown = false;
+    }
 
 
     public void addBlackboard(String sessionId, Blackboard blackboard) {
@@ -126,15 +134,22 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         //do nothing
     }
 
-    public void close() throws Throwable{
-        if( clientCommController != null ){
-            for(Session session : sessions.values() ) {
-                clientCommController.send(session.getId(), new SessionMessage(Constants.SESSION_CLOSED));
+    public void close(String sessionId) throws Throwable{
+        sessions.remove( sessionId );
+
+        // if this is a stateless component, we can only close it if all sessions have stopped
+        String state = this.getClass().getAnnotation( StateType.class ).state();
+        if( (state.equals(Constants.STATEFULL)) || ( (state.equals( Constants.STATELESS )
+                || state.equals( Constants.POOL)) && sessions.isEmpty() ) ) {
+            if (clientCommController != null) {
+                for (Session session : sessions.values()) {
+                    clientCommController.send(session.getId(), new SessionMessage(Constants.SESSION_CLOSED));
+                }
+                clientCommController.close();
             }
-            clientCommController.close();
-        }
-        if( !isShutDown ){
-            shutDown();
+            if (!isShutDown) {
+                shutDown();
+            }
         }
     }
 

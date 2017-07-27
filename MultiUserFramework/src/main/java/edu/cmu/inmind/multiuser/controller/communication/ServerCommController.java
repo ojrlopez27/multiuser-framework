@@ -20,7 +20,7 @@ public class ServerCommController {
     private ZContext ctx;
     private String service;
 
-    private ZMQ.Socket worker; // Socket to broker
+    private ZMQ.Socket workerSocket; // Socket to broker
     private long heartbeatAt;// When to send HEARTBEAT
     private int liveness;// How many attempts left
     private int heartbeat = 2500;// Heartbeat delay, msecs
@@ -64,18 +64,18 @@ public class ServerCommController {
         msg.addFirst(command.newFrame());
         msg.addFirst(MDP.S_ORCHESTRATOR.newFrame());
         msg.addFirst(new ZFrame(new byte[0]));
-        msg.send(worker);
+        msg.send(workerSocket);
     }
 
     /**
      * Connect or reconnect to broker
      */
     void reconnectToBroker() {
-        if (worker != null) {
-            ctx.destroySocket(worker);
+        if (workerSocket != null) {
+            ctx.destroySocket(workerSocket);
         }
-        worker = ctx.createSocket(ZMQ.DEALER);
-        worker.connect(serverAddress);
+        workerSocket = ctx.createSocket(ZMQ.DEALER);
+        workerSocket.connect(serverAddress);
 
         // Register service with broker
         sendToBroker(MDP.S_READY, service, null);
@@ -97,12 +97,12 @@ public class ServerCommController {
             try {
                 // Poll socket for a reply, with timeout
                 ZMQ.Poller items = new ZMQ.Poller(1);
-                items.register(worker, ZMQ.Poller.POLLIN);
+                items.register(workerSocket, ZMQ.Poller.POLLIN);
                 if (items.poll(timeout) == -1)
                     break; // Interrupted
 
                 if (items.pollin(0)) {
-                    ZMsg msg = ZMsg.recvMsg(worker);
+                    ZMsg msg = ZMsg.recvMsg(workerSocket);
                     if (msg == null)
                         break; // Interrupted
                     liveness = HEARTBEAT_LIVENESS;
@@ -153,7 +153,7 @@ public class ServerCommController {
                 break;
             }
             if (Thread.currentThread().isInterrupted())
-                Log4J.warn(this, "interrupt received, killing worker");
+                Log4J.warn(this, "interrupt received, killing workerSocket");
         }
         return null;
     }

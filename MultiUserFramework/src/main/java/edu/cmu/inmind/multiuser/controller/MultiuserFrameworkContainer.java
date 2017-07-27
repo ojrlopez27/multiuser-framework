@@ -28,7 +28,7 @@ public class MultiuserFrameworkContainer {
      */
     public static MultiuserFramework startFramework(PluginModule[] modules, Config config, ServiceInfo serviceInfo )
             throws Throwable{
-        String id = config.getServerAddress() + ":" + config.getSessionManagerPort();
+        String id = config.getServerAddress() + config.getSessionManagerPort();
         if( null != mufs.get( id ) ){
             throw new MultiuserException(ErrorMessages.FRAMEWORK_ALREADY_EXIST, id );
         }

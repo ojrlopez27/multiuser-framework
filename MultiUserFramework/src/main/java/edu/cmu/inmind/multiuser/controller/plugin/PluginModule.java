@@ -4,6 +4,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.multibindings.Multibinder;
+import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
@@ -43,17 +44,20 @@ public class PluginModule extends AbstractModule {
             ResourceLocator.addMsgMapping(message, component);
         }
 
-        if (component.isAnnotationPresent(StatelessComponent.class)) {
-            pluginBinder.addBinding().to(component).in(Singleton.class);
-            numBonds++;
-        }
-        if (component.isAnnotationPresent(StatefulComponent.class)) {
-            pluginBinder.addBinding().to(component);
-            numBonds++;
-        }
-        if (component.isAnnotationPresent(PoolComponent.class)) {
-            pluginBinder.addBinding().toProvider(new ComponentPoolProvider(component, numOfInstances));
-            numBonds++;
+        if (component.isAnnotationPresent(StateType.class)) {
+            String state = component.getAnnotation(StateType.class).state();
+            if ( state.equals(Constants.STATELESS) ){
+                pluginBinder.addBinding().to(component).in(Singleton.class);
+                numBonds++;
+            }
+            else if ( state.equals(Constants.STATEFULL ) ){
+                pluginBinder.addBinding().to(component);
+                numBonds++;
+            }
+            else if ( state.equals(Constants.POOL ) ){
+                pluginBinder.addBinding().toProvider(new ComponentPoolProvider(component, numOfInstances));
+                numBonds++;
+            }
         }
         if( numBonds == 1 ){
             return;

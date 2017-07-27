@@ -193,7 +193,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
             serviceManager.stopAsync().awaitStopped(5, TimeUnit.SECONDS);
             serviceManager.awaitStopped();
             for(PluggableComponent component : components ){
-                component.close();
+                component.close( sessionId );
             }
             orchestratorListeners.forEach(this::unsubscribe);
             blackboard.remove(this, Constants.REMOVE_ALL);

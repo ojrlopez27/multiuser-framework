@@ -36,7 +36,7 @@ public class MultiuserFramework{
             dependencyManager = DependencyManager.getInstance( modules );
             session = dependencyManager.getComponent(Session.class);
             session.setConfig( config );
-            session.setId( config.getServerAddress(), null, null );
+            session.setId( "session-with-tcp-off", null, null );
         }
     }
 

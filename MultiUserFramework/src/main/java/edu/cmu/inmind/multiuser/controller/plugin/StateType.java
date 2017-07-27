@@ -6,12 +6,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Created by oscarr on 3/10/17.
- * This annotation should be used by those stateless components that can setId multiple instances of itself (a pool of
- * instances)
+ * Created by oscarr on 7/17/17.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface PoolComponent {
-
+public @interface StateType {
+    String state();
 }

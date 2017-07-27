@@ -57,7 +57,7 @@ uploadArchives {
                 name 'MultiuserFramework'
                 packaging 'jar'
                 description 'Multiuser Framework for Plugable Components'
-                pom.version = '2.5.2_test'
+                pom.version = '2.7'
                 pom.artifactId = 'multiuser'
                 pom.groupId = "edu.cmu.inmind.framework"
 

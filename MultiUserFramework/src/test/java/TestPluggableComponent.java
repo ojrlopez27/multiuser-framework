@@ -1,14 +1,15 @@
+import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
-import edu.cmu.inmind.multiuser.controller.plugin.StatelessComponent;
+import edu.cmu.inmind.multiuser.controller.plugin.StateType;
 
 /**
  * Created by oscarr on 6/27/17.
  */
-@StatelessComponent
 @BlackboardSubscription( messages = "" )
+@StateType( state = Constants.STATELESS )
 public class TestPluggableComponent  extends PluggableComponent {
 
     @Override
