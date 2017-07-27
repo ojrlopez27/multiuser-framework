@@ -1,5 +1,6 @@
 package edu.cmu.inmind.multiuser.sara.component;
 
+import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.SaraCons;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.common.model.SaraInput;
@@ -10,7 +11,7 @@ import edu.cmu.inmind.multiuser.controller.communication.ConnectRemoteService;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
-import edu.cmu.inmind.multiuser.controller.plugin.StatelessComponent;
+import edu.cmu.inmind.multiuser.controller.plugin.StateType;
 
 
 /**
@@ -23,7 +24,7 @@ import edu.cmu.inmind.multiuser.controller.plugin.StatelessComponent;
  * The BlackboardSubscription annotation will tell the blackboard which messages should be
  * delivered to this component when the onEvent method is called.
  */
-@StatelessComponent
+@StateType(state = Constants.STATELESS )
 @BlackboardSubscription( messages = {SaraCons.MSG_ASR})
 @ConnectRemoteService( remoteService = SaraCons.NLU_SERVICE )
 public class RemoteNLUComponent extends PluggableComponent {
