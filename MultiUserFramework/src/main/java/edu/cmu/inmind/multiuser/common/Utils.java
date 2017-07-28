@@ -6,6 +6,7 @@ import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 
 import java.io.*;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
@@ -384,4 +385,28 @@ public class Utils {
             }
         }
     }
+
+    public static <T extends Annotation> T getAnnotation(Class<?> clazz, Class<T> annotationType)
+    {
+        T result;
+        boolean isAnnotationPresent = clazz.isAnnotationPresent(annotationType);
+        if(!isAnnotationPresent)
+        {
+            Class<?> superClazz = clazz.getSuperclass();
+            if(superClazz!=null)
+            {
+                return getAnnotation(superClazz, annotationType);
+            }
+            else
+            {
+                return null;
+            }
+        }
+        else
+        {
+            result = clazz.getAnnotation(annotationType);
+            return result;
+        }
+    }
+
 }

@@ -3,6 +3,7 @@ package edu.cmu.inmind.multiuser.controller.plugin;
 import com.google.common.util.concurrent.AbstractIdleService;
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
+import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardListener;
@@ -138,7 +139,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         sessions.remove( sessionId );
 
         // if this is a stateless component, we can only close it if all sessions have stopped
-        String state = this.getClass().getAnnotation( StateType.class ).state();
+        String state = (Utils.getAnnotation( this.getClass(), StateType.class )).state();
         if( (state.equals(Constants.STATEFULL)) || ( (state.equals( Constants.STATELESS )
                 || state.equals( Constants.POOL)) && sessions.isEmpty() ) ) {
             if (clientCommController != null) {
