@@ -7,6 +7,7 @@ import edu.cmu.inmind.multiuser.controller.communication.ServiceInfoContainer;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 
 import java.io.*;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
@@ -411,6 +412,29 @@ public class Utils {
             Files.move(yourFile, yourFile.resolveSibling(nameFinalFile), REPLACE_EXISTING);
         }catch (Exception e){
             e.printStackTrace();
+        }
+    }
+
+    public static <T extends Annotation> T getAnnotation(Class<?> clazz, Class<T> annotationType)
+    {
+        T result;
+        boolean isAnnotationPresent = clazz.isAnnotationPresent(annotationType);
+        if(!isAnnotationPresent)
+        {
+            Class<?> superClazz = clazz.getSuperclass();
+            if(superClazz!=null)
+            {
+                return getAnnotation(superClazz, annotationType);
+            }
+            else
+            {
+                return null;
+            }
+        }
+        else
+        {
+            result = clazz.getAnnotation(annotationType);
+            return result;
         }
     }
 }
