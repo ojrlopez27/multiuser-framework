@@ -73,7 +73,7 @@ public class Main{
                 .setPathLogs(Utils.getProperty("pathLogs"))
                 .setSessionTimeout(5, TimeUnit.MINUTES)
                 .setServerAddress("127.0.0.1") //use IP instead of 'localhost'
-                .setExceptionTraceLevel( Constants.SHOW_NO_EXCEPTIONS )
+                .setExceptionTraceLevel( Constants.SHOW_ALL_EXCEPTIONS)
                 .build();
     }
 

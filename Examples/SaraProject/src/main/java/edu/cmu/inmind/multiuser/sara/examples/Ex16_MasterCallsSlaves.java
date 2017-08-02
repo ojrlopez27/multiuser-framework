@@ -5,6 +5,7 @@ import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.MultiuserFramework;
 import edu.cmu.inmind.multiuser.controller.ShutdownHook;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
+import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.sara.component.*;
 import edu.cmu.inmind.multiuser.sara.orchestrator.SaraOrchestratorEx15;
 
@@ -18,21 +19,19 @@ import java.util.List;
  * AndroidClient (ASR) -> DialogueSystem (NLU) -> TaskReasoner -> SocialReasoner -> NLG -> AndroidClient
  * This example is pretty similar to EX15_Wholepipeline, however, unlike Ex15_WholePipeline, in this example
  * the master MUF (Sara MUF) calls its slaves MUF's (i.e., Dialogue MUF, etc.). In order to run this example,
- * you have to define the connection information of your slaves MUF's into the file services.json (i.e.,
- * replace 'services[_remove_this].json' by 'services.json'.
+ * you have to define the connection information of your slaves MUF's into a json file (e.g., services.json)
+ * and set it to the config object.
  */
 public class Ex16_MasterCallsSlaves extends Main {
 
     public static void main(String args[]) throws Throwable{
-        // MUF will look for the file 'services.json' so we need to rename the file
-        Utils.renameFile( "services[remove_this].json", "services.json");
         List<ShutdownHook> hooks = new ArrayList<>();
         // we add a hook that will reset the state of the system, that is, it will rename the json file to
         // its original name
         hooks.add( new ShutdownHook() {
             @Override
             public void execute() {
-                Utils.renameFile("services.json", "services[remove_this].json");
+                //TODO: do something
             }
         });
         new Ex16_MasterCallsSlaves().execute( hooks );
@@ -50,5 +49,11 @@ public class Ex16_MasterCallsSlaves extends Main {
                         .addPlugin(UserModelComponent.class, SaraCons.ID_UM)
                         .build()
         };
+    }
+
+    @Override
+    protected Config createConfig() {
+        return super.createConfig()
+                .setJsonServicesConfig("services1.json");
     }
 }

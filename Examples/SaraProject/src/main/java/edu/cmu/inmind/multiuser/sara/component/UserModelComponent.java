@@ -1,12 +1,15 @@
 package edu.cmu.inmind.multiuser.sara.component;
 
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.SaraCons;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.common.model.SaraOutput;
 import edu.cmu.inmind.multiuser.common.model.UserIntent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
+import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.StateType;
 
@@ -29,10 +32,15 @@ public class UserModelComponent extends PluggableComponent {
 
     @Override
     public void startUp(){
-        super.startUp();
-        // TODO: add code to initialize this component
-        userModel = Utils.fromJsonFile( PATH + FILE_NAME, HashMap.class);
-        if( userModel == null ) userModel = new HashMap<>();
+        try{
+            super.startUp();
+            // TODO: add code to initialize this component
+            userModel = Utils.fromJsonFile( PATH + FILE_NAME, HashMap.class);
+            if( userModel == null ) userModel = new HashMap<>();
+        }catch(Exception e){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.FILE_NOT_EXISTS, "User Model") );
+        }
+
     }
 
     @Override
