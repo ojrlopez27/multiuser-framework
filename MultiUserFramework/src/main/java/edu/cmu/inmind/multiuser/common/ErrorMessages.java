@@ -20,4 +20,5 @@ public class ErrorMessages {
     public static final String USE_TCP_INSTEAD = "TCP is on so you should use method %s";
     public static final String NO_RESPONSE_FROM_SERVER = "Server %s is not responding to connection request after %s " +
             "millisenconds";
+    public static final java.lang.String FILE_NOT_EXISTS = "%s does not exist or path is incorrect";
 }

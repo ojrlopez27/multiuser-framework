@@ -17,6 +17,7 @@ public class Config {
     private static int exceptionTraceLevel;
     private boolean executeExit;
     private boolean isTCPon;
+    private String serviceConfigPath;
     private Class<? extends ProcessOrchestratorImpl> orchestrator;
 
     private Config( Builder builder) {
@@ -29,6 +30,7 @@ public class Config {
         this.executeExit = builder.executeExit;
         this.isTCPon = builder.isTCPon;
         this.orchestrator = builder.orchestrator;
+        this.serviceConfigPath = builder.serviceConfigPath;
     }
 
     public int getSessionManagerPort() {
@@ -53,6 +55,10 @@ public class Config {
 
     public static int getExceptionTraceLevel() {
         return exceptionTraceLevel;
+    }
+
+    public String getServiceConfigPath() {
+        return serviceConfigPath;
     }
 
     public boolean executeExit() {
@@ -111,6 +117,11 @@ public class Config {
         return this;
     }
 
+    public Config setJsonServicesConfig(String path) {
+        this.serviceConfigPath = path;
+        return this;
+    }
+
     public Config setTCPon(boolean TCPon) {
         isTCPon = TCPon;
         return this;
@@ -125,6 +136,7 @@ public class Config {
         private boolean executeExit;
         private boolean isTCPon = true;
         private String serverAddress = "127.0.0.1";
+        private String serviceConfigPath;
         private Class<? extends ProcessOrchestratorImpl> orchestrator;
 
         public Builder setSessionManagerPort(int sessionManagerPort) {
@@ -178,6 +190,11 @@ public class Config {
 
         public Builder setOrchestrator(Class<? extends ProcessOrchestratorImpl> orchestrator) {
             this.orchestrator = orchestrator;
+            return this;
+        }
+
+        public Builder setJsonServicesConfig(String path) {
+            this.serviceConfigPath = path;
             return this;
         }
     }

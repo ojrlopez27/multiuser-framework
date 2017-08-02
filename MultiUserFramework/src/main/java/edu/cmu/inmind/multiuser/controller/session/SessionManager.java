@@ -167,12 +167,17 @@ public class SessionManager implements Runnable{
     }
 
     private void loadRemoteServices(){
-        ServiceInfoContainer container = Utils.fromJsonFile( "services.json", ServiceInfoContainer.class );
-        if( container != null ){
-            Log4J.debug(this, "services.json is not empty");
-            for( ServiceInfo serviceInfo : container.getServices() ) {
-                registerRemoteService(serviceInfo);
+        try {
+            ServiceInfoContainer container = Utils.fromJsonFile(config.getServiceConfigPath(), ServiceInfoContainer.class);
+            if (container != null) {
+                for (ServiceInfo serviceInfo : container.getServices()) {
+                    registerRemoteService(serviceInfo);
+                }
             }
+        }catch (Exception e){
+            ExceptionHandler.handle( new MultiuserException( ErrorMessages.FILE_NOT_EXISTS,
+                    "Json Service Configuration (e.g., 'services.json')") );
+            e.printStackTrace();
         }
     }
 
