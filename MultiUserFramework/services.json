@@ -1,0 +1,12 @@
+{
+  "services": [
+    {
+      "serviceName": "NLU_SERVICE",
+      "clientAddress": "tcp://127.0.0.1:5580",
+      "msgSubscriptions": [
+        "MSG_ASR",
+        "MSG_TR"
+      ]
+    }
+  ]
+}

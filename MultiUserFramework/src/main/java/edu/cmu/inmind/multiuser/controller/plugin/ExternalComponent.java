@@ -9,6 +9,7 @@ import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.log.Log4J;
 
 /**
  * Created by oscarr on 4/4/17.
@@ -19,17 +20,18 @@ import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 @StateType( state = Constants.STATEFULL )
 public class ExternalComponent extends PluggableComponent implements ResponseListener{
 
-    public ExternalComponent(String serviceURL, String sessionId, ZMsgWrapper zMsgWrapper, String[] messages){
+    public ExternalComponent(String serviceURL, String clientAddress, String sessionId, ZMsgWrapper zMsgWrapper,
+                             String[] messages){
         try {
+            Utils.addOrChangeAnnotation(getClass().getAnnotation(BlackboardSubscription.class), "messages", messages);
             setClientCommController( new ClientCommController.Builder()
                     .setServerAddress(serviceURL)
                     .setServiceName(sessionId)
-                    .setClientAddress( getSession().getFullAddress() )
+                    .setClientAddress( clientAddress )
                     .setMsgTemplate( zMsgWrapper )
                     .setSubscriptionMessages( messages )
                     .setRequestType( Constants.REQUEST_CONNECT )
                     .build() );
-            Utils.addOrChangeAnnotation(getClass().getAnnotation(BlackboardSubscription.class), "messages", messages);
             getClientCommController().receive(this);
         }catch (Throwable e){
             ExceptionHandler.handle( e );

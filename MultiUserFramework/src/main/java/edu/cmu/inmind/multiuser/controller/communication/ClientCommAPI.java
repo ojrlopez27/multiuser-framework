@@ -52,7 +52,8 @@ public class ClientCommAPI {
      */
     public ZMsg recv() throws Throwable{
         ZMsg reply = null;
-        if (items.poll(timeout * 1000) == -1)
+
+        if( items.poll(timeout * 1000 ) == -1 )
             return null; // Interrupted
 
         if (items.pollin(0)) {
@@ -105,4 +106,5 @@ public class ClientCommAPI {
     public void destroy() throws Throwable{
         ctx.destroy();
     }
+
 }

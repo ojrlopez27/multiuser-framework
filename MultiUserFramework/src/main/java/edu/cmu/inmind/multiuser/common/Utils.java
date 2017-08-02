@@ -3,14 +3,20 @@ package edu.cmu.inmind.multiuser.common;
 import com.google.gson.Gson;
 import com.rits.cloning.Cloner;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
+import edu.cmu.inmind.multiuser.controller.communication.ServiceInfoContainer;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
+
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * Created by oscarr on 4/20/16.
@@ -283,6 +289,18 @@ public class Utils {
         return value;
     }
 
+    public static Properties loadProperties(String pathName){
+        Properties prop = null;
+        try {
+            prop = new Properties();
+            FileInputStream inputStream = new FileInputStream(pathName);
+            prop.load( new FileInputStream(pathName) );
+            inputStream.close();
+        }catch (Exception e){
+        }
+        return prop;
+    }
+
     public static void checkAssert(boolean expression) {
         if( !expression ){
             ExceptionHandler.handle( new Exception("Assertion error.") );
@@ -352,22 +370,7 @@ public class Utils {
         return oldValue;
     }
 
-    public static <T> T readObjectFromJsonFile(String path, Class<T> clazz) {
-        try {
-            File file = new File( path );
-            if( file.exists() ) {
-                String text = new Scanner(file, "UTF-8").useDelimiter("\\A").next();
-                return fromJson(text, clazz);
-            }else{
-                return null;
-            }
-        } catch (Throwable e) {
-            //e.printStackTrace();
-        }
-        return null;
-    }
-
-    public static void writeObjectToJsonFile(Object obj, String directory, String fileName) {
+    public static void toJsonFile(Object obj, String directory, String fileName) {
         if( obj != null ) {
             try {
                 File dir = new File(directory);
@@ -382,6 +385,32 @@ public class Utils {
             } catch (Throwable e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    public static <T> T fromJsonFile(String fileName, Class<T> clazz) {
+        try {
+            File file = new File( fileName );
+            if( file.exists() ) {
+                String text = new Scanner(file, "UTF-8").useDelimiter("\\A").next();
+                return fromJson(text, clazz);
+            }else{
+                return null;
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+
+    public static void renameFile(String pathAndNameOriginalFile, String nameFinalFile){
+        try {
+            Path yourFile = Paths.get(pathAndNameOriginalFile);
+            Files.move(yourFile, yourFile.resolveSibling(nameFinalFile), REPLACE_EXISTING);
+        }catch (Exception e){
+            e.printStackTrace();
         }
     }
 }

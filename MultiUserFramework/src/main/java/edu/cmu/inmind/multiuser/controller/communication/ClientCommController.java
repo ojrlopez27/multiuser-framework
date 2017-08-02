@@ -2,14 +2,20 @@
 package edu.cmu.inmind.multiuser.controller.communication;
 
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Pair;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.MultiuserFramework;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
+import edu.cmu.inmind.multiuser.controller.log.Log4J;
+import edu.cmu.inmind.multiuser.controller.session.Session;
 import org.zeromq.ZMsg;
 
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -30,6 +36,8 @@ public class ClientCommController {
     private ZMsgWrapper msgTemplate;
     private Thread sendThread;
     private Thread receiveThread;
+    private ResponseTimer timer;
+    private long timeout = 5000; //we should receive a response from server within 5 seconds
 
     //we need to keep the state in case of failure and reconnection
     private int sentMessages = 0;
@@ -61,6 +69,7 @@ public class ClientCommController {
         this.sessionManagerService = builder.sessionManagerService;
         this.clientMessage = new ClientMessage();
         this.muf = builder.muf;
+        this.timer = new ResponseTimer();
         if( this.muf != null ){
             muf.setClient( this );
         }
@@ -189,9 +198,11 @@ public class ClientCommController {
                 sessionMessage.setRequestType(requestType);
                 sessionMessage.setUrl(clientAddress);
                 sessionMessage.setPayload(Arrays.toString(subscriptionMessages));
+                timer.schedule(new ResponseCheck(), timeout);
                 stop = !sendToBroker(new Pair<>(sessionManagerService, sessionMessage));
                 if (!stop) {
                     SessionMessage reply = Utils.fromJson(receive(), SessionMessage.class);
+                    timer.stopTimer();
                     if (reply != null) {
                         if (reply.getRequestType().equals(Constants.RESPONSE_ALREADY_CONNECTED)
                                 || reply.getRequestType().equals(Constants.RESPONSE_NOT_VALID_OPERATION)
@@ -213,6 +224,8 @@ public class ClientCommController {
             stop = true;
             clientCommAPI.destroy();
             clientCommAPI = null;
+            timer.cancel();
+            timer.purge();
         }catch (Throwable e) {
             ExceptionHandler.handle(e);
         }
@@ -367,6 +380,29 @@ public class ClientCommController {
             return newState;
         }
         return currentState;
+    }
+
+    class ResponseCheck extends TimerTask{
+        @Override
+        public void run() {
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.NO_RESPONSE_FROM_SERVER, serverAddress, timeout));
+        }
+    }
+
+    class ResponseTimer extends Timer {
+        private TimerTask responseCheck;
+
+        @Override
+        public void schedule(TimerTask task, long delay) {
+            responseCheck = task;
+            super.schedule(task, delay);
+        }
+
+        public void stopTimer(){
+            if( responseCheck != null ) {
+                responseCheck.cancel();
+            }
+        }
     }
 }
 

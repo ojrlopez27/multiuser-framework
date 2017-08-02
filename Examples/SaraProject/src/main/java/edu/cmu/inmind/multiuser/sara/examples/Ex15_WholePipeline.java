@@ -21,9 +21,9 @@ public class Ex15_WholePipeline extends Main {
     @Override
     protected PluginModule[] createModules() {
         return new PluginModule[]{
-                new PluginModule.Builder(SaraOrchestratorEx15.class)
+                new PluginModule.Builder(SaraOrchestratorEx15.class,
                         //comment out the line below if you want to use remote DialogueSystem
-                        .addPlugin(NLUComponent.class, SaraCons.ID_NLU)
+                        NLUComponent.class, SaraCons.ID_NLU)
                         .addPlugin(TaskReasonerComponent.class, SaraCons.ID_TR)
                         .addPlugin(SocialReasonerComponent.class, SaraCons.ID_SR)
                         .addPlugin(NLGComponent.class, SaraCons.ID_NLG)

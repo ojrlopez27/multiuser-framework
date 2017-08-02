@@ -51,6 +51,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     private boolean isClosed;
     private Config config;
     private String fullAddress;
+    private boolean initialized = false;
 
     public ProcessOrchestratorImpl(){
         blackboard = new Blackboard( );
@@ -107,12 +108,12 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     @Override
     public void initialize( Session session ) throws Throwable{
         this.session = session;
+        this.config = session.getConfig();
         this.fullAddress = session.getFullAddress();
         sessionId = session.getId();
         Log4J.info(this, String.format("Creating Process Orchestrator for session: %s", sessionId));
         components.addAll(componentsSet);
         components.addAll( createExternalComponents() );
-        config = session.getConfig();
         //by default we use a file messageLogger
         if( logger == null ){
             logger = new FileLogger();
@@ -129,6 +130,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         }
         blackboard.setLogger( logger );
         initServiceManager();
+        initialized = true;
     }
 
     private void initServiceManager() {
@@ -185,7 +187,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
 
     @Override
     public void close() throws Throwable{
-        if( !isClosed ) {
+        if( !isClosed && initialized ) {
             Log4J.info(this, String.format("Closing Process Orchestrator for session: %s", sessionId));
             isClosed = true;
             logger.store();
@@ -371,11 +373,12 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
      * it will be responsibility of developer to decide when to send messages to remote service.
      */
     private List<ExternalComponent> createExternalComponents(){
+        Log4J.debug(this, "createExternalComponents");
         List<ExternalComponent> externalComponents = new ArrayList<>();
         for(ServiceComponent service : ResourceLocator.getServiceRegistry().values() ) {
             if( service.getSubMessages() != null && service.getSubMessages().length > 0 ) {
-                externalComponents.add(new ExternalComponent(service.getServiceURL(), sessionId, service.getMsgTemplate(),
-                        service.getSubMessages()));
+                externalComponents.add(new ExternalComponent(service.getServiceURL(), fullAddress, sessionId,
+                        service.getMsgTemplate(), service.getSubMessages()));
             }
         }
         return externalComponents;

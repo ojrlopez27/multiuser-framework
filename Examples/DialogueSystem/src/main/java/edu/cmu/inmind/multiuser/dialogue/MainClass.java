@@ -23,12 +23,14 @@ public class MainClass {
     private static String saraServerAddress = Utils.getProperty("saraServerAddress");
     private static String dialogueAddress = Utils.getProperty("dialogueAddress");
     private static MultiuserFramework muf;
+    private static boolean isMasterMUFCallingMe = true;
 
     /**
      * This method controls the whole app. If shutdown is entered, it will completely stop the system.
      */
     public static void main(String args[]) throws Throwable{
-        muf = MultiuserFrameworkContainer.startFramework(createModules(), createConfig(), createServiceInfo() );
+        muf = MultiuserFrameworkContainer.startFramework(createModules(), createConfig(),
+                isMasterMUFCallingMe? null : createServiceInfo() );
 
         // just in case you force the system to close or an unexpected error happen.
         Runtime.getRuntime().addShutdownHook(new Thread() {

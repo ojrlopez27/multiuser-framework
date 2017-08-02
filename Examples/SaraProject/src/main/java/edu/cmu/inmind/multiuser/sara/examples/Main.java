@@ -5,9 +5,11 @@ import edu.cmu.inmind.multiuser.common.SaraCons;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.MultiuserFramework;
 import edu.cmu.inmind.multiuser.controller.MultiuserFrameworkContainer;
+import edu.cmu.inmind.multiuser.controller.ShutdownHook;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
@@ -25,9 +27,18 @@ public class Main{
     }
 
     protected void execute() throws Throwable{
+         execute( null );
+    }
+
+    protected void execute(List<ShutdownHook> hooks) throws Throwable{
         // starting the Multiuser framework
         muf = MultiuserFrameworkContainer.startFramework(
                 createModules(), createConfig(), null );
+        if( hooks != null ){
+            for( ShutdownHook hook : hooks ){
+                muf.addShutDownHook( hook );
+            }
+        }
 
         // just in case you force the system to close or an unexpected error happen.
         Runtime.getRuntime().addShutdownHook(new Thread("ShutdownThread") {

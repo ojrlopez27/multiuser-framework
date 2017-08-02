@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.controller;
 
 
+import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.communication.ServiceInfo;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
@@ -11,6 +12,9 @@ import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import edu.cmu.inmind.multiuser.controller.session.Session;
 import edu.cmu.inmind.multiuser.controller.session.SessionManager;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by oscarr on 3/20/17.
@@ -24,6 +28,7 @@ public class MultiuserFramework{
     private Config config;
     private DependencyManager dependencyManager;
     private ClientCommController client;
+    private List<ShutdownHook> hooks;
 
     MultiuserFramework(String id, PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws Throwable{
         ClassLoader.getSystemClassLoader().setPackageAssertionStatus("zmq",false);
@@ -69,6 +74,14 @@ public class MultiuserFramework{
         });
     }
 
+    public MultiuserFramework addShutDownHook(ShutdownHook shutdownHook){
+        if( hooks == null ){
+            hooks = new ArrayList<>();
+        }
+        hooks.add( shutdownHook );
+        return this;
+    }
+
     void start( ){
         if( config.isTCPon() ) {
             sessionManager.start();
@@ -79,6 +92,11 @@ public class MultiuserFramework{
 
     void stop(){
         if( !stopping ) {
+            if( hooks != null ){
+                for( ShutdownHook hook : hooks ){
+                    hook.execute();
+                }
+            }
             stopping = true;
             DependencyManager.reset();
             try {
