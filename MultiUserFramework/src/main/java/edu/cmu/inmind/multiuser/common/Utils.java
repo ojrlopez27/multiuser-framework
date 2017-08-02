@@ -389,19 +389,19 @@ public class Utils {
         }
     }
 
-    public static <T> T fromJsonFile(String fileName, Class<T> clazz) {
+    public static <T> T fromJsonFile(String fileName, Class<T> clazz) throws Exception{
+        if( fileName == null ) return null;
         try {
             File file = new File( fileName );
             if( file.exists() ) {
                 String text = new Scanner(file, "UTF-8").useDelimiter("\\A").next();
                 return fromJson(text, clazz);
             }else{
-                return null;
+                throw new FileNotFoundException();
             }
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            throw e;
         }
-        return null;
     }
 
 
