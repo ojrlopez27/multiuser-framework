@@ -18,4 +18,6 @@ public class ErrorMessages {
     public static final String FRAMEWORK_ALREADY_EXIST = "Framework with address: %s has been already created. Stop it " +
             "before trying to start it again.";
     public static final String USE_TCP_INSTEAD = "TCP is on so you should use method %s";
+    public static final String NO_RESPONSE_FROM_SERVER = "Server %s is not responding to connection request after %s " +
+            "millisenconds";
 }

@@ -2,6 +2,7 @@ import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.MultiuserFramework;
 import edu.cmu.inmind.multiuser.controller.MultiuserFrameworkContainer;
+import edu.cmu.inmind.multiuser.controller.ShutdownHook;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
@@ -111,21 +112,43 @@ public class MUFTestSuite {
                 .setMuf( isTPCon? null : muf ) //when TCP is off, we need to explicitly tell the client who the MUF is
                 .build();
         // this method will be executed asynchronuously, so we need to add a delay before stopping the MUF
-        client.receive(new ResponseListener() {
-                           @Override
-                           public void process(String message) {
-                               SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
-                               if( !sessionMessage.getRequestType().equals( Constants.SESSION_CLOSED ) ) {
-                                   assertEquals("Response from MUF : " + uniqueMsgId, sessionMessage.getPayload());
-                               }
-                               Log4J.info(ResponseListener.class, "expected and received messages are the same");
-                               MUFTestSuite.this.checkAsyncCall = true;
-                           }
-                       });
+        client.receive(message -> {
+            SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
+            if( !sessionMessage.getRequestType().equals( Constants.SESSION_CLOSED ) ) {
+                assertEquals("Response from MUF : " + uniqueMsgId, sessionMessage.getPayload());
+            }
+            Log4J.info(ResponseListener.class, "expected and received messages are the same");
+            MUFTestSuite.this.checkAsyncCall = true;
+        });
         SessionMessage message = new SessionMessage( messageId1, "Message from client : " + uniqueMsgId, sessionId );
         client.send( sessionId, message);
         Utils.sleep( delay * 2 );
         MultiuserFrameworkContainer.stopFramework( muf );
         assertTrue( checkAsyncCall );
+    }
+
+
+
+    //@Test
+    public void testOnlyClient(){
+        ClientCommController client =  new ClientCommController.Builder()
+                .setServerAddress(serverAddress + ports[0])
+                .setServiceName("session-1")
+                .setClientAddress( clientAddress + ports[0] )
+                .setRequestType( Constants.REQUEST_CONNECT )
+                .setTCPon( true )
+                .setMuf( null )
+                .build();
+        // this method will be executed asynchronuously, so we need to add a delay before stopping the MUF
+        client.receive(message -> {
+            SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
+            if( !sessionMessage.getRequestType().equals( Constants.SESSION_CLOSED ) ) {
+                assertEquals("Response from MUF : " + "uniqueMsgId", sessionMessage.getPayload());
+            }
+            Log4J.info(ResponseListener.class, "expected and received messages are the same");
+            MUFTestSuite.this.checkAsyncCall = true;
+        });
+        SessionMessage message = new SessionMessage( "MSG_ASR", "Message from client : " + "uniqueMsgId", "session-1");
+        client.send( "session-1", message);
     }
 }

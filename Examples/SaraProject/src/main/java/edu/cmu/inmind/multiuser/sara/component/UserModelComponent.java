@@ -31,7 +31,7 @@ public class UserModelComponent extends PluggableComponent {
     public void startUp(){
         super.startUp();
         // TODO: add code to initialize this component
-        userModel = Utils.readObjectFromJsonFile( PATH + FILE_NAME, HashMap.class);
+        userModel = Utils.fromJsonFile( PATH + FILE_NAME, HashMap.class);
         if( userModel == null ) userModel = new HashMap<>();
     }
 
@@ -64,6 +64,6 @@ public class UserModelComponent extends PluggableComponent {
         super.shutDown();
         // TODO: add code to release resources
         // you can store the User Model on disk (DB, File, Json, etc).
-         Utils.writeObjectToJsonFile( userModel, PATH, FILE_NAME);
+         Utils.toJsonFile( userModel, PATH, FILE_NAME);
     }
 }

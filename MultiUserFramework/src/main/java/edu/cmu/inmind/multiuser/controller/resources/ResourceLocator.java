@@ -4,11 +4,9 @@ package edu.cmu.inmind.multiuser.controller.resources;
 import com.google.common.util.concurrent.ServiceManager;
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
-import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
-import edu.cmu.inmind.multiuser.controller.communication.ConnectRemoteService;
-import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
-import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
+import edu.cmu.inmind.multiuser.controller.communication.*;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
+import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.session.ServiceComponent;
 import org.apache.logging.log4j.Logger;
@@ -39,6 +37,18 @@ public class ResourceLocator {
             serviceComponent.setSubMessages(payload.substring(1, payload.length() - 1).split(", "));
         }
         serviceRegistry.put(request.getSessionId(), serviceComponent);
+    }
+
+
+    public static void registerService(ServiceInfo serviceInfo) {
+        ServiceComponent serviceComponent = serviceRegistry.get( serviceInfo.getServiceName() );
+        serviceComponent = serviceComponent != null ? serviceComponent.setServiceURL( serviceInfo.getClientAddress())
+                : new ServiceComponent(null, serviceInfo.getClientAddress(), null);
+        if( serviceInfo.getMsgSubscriptions() != null ){
+            serviceComponent.setSubMessages( serviceInfo.getMsgSubscriptions() );
+        }
+        Log4J.debug("ResourceLocator", "registerService");
+        serviceRegistry.put(serviceInfo.getServiceName() , serviceComponent);
     }
 
     public static void unregisterService(SessionMessage request) {

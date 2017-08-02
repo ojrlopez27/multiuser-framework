@@ -15,8 +15,10 @@ import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.zeromq.ZMsg;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Created by oscarr on 3/3/17.
@@ -77,7 +79,9 @@ public class SessionManager implements Runnable{
     private void extractConfig(){
         port = config.getSessionManagerPort();
         address = config.getServerAddress(); //"tcp://*";
-        fullAddress = address + port;
+        fullAddress = (address.startsWith("tcp:")? address : "tcp://" + address )
+                + (address.lastIndexOf(":") == address.length() -1? port : ":" + port);
+
         // ...
     }
 
@@ -95,6 +99,7 @@ public class SessionManager implements Runnable{
         Log4J.info(this, "Starting Multiuser framework...");
         try {
             reply = null;
+            loadRemoteServices();
             while (!Thread.currentThread().isInterrupted() && !stopped ) {
                 processRequest( );
             }
@@ -161,6 +166,16 @@ public class SessionManager implements Runnable{
         }
     }
 
+    private void loadRemoteServices(){
+        ServiceInfoContainer container = Utils.fromJsonFile( "services.json", ServiceInfoContainer.class );
+        if( container != null ){
+            Log4J.debug(this, "services.json is not empty");
+            for( ServiceInfo serviceInfo : container.getServices() ) {
+                registerRemoteService(serviceInfo);
+            }
+        }
+    }
+
     private SessionMessage getClientMessage() {
         Pair<String, Object> message = clientMessage.get();
         return (SessionMessage) message.snd;
@@ -205,7 +220,13 @@ public class SessionManager implements Runnable{
     private void registerRemoteService(SessionMessage request, ZMsgWrapper msgRequest) {
         Log4J.info(this, "Registering service: " + request.getSessionId());
         ResourceLocator.registerService(request, msgRequest, request.getPayload());
-        send( msgRequest, new SessionMessage(Constants.RESPONSE_REMOTE_REGISTERED) );
+        if(msgRequest != null) send( msgRequest, new SessionMessage(Constants.RESPONSE_REMOTE_REGISTERED) );
+    }
+
+
+    private void registerRemoteService(ServiceInfo serviceInfo) {
+        Log4J.info(this, "Registering service: " + serviceInfo.getServiceName());
+        ResourceLocator.registerService(serviceInfo);
     }
 
     private void unregisterRemoteService(SessionMessage request, ZMsgWrapper msgRequest) {

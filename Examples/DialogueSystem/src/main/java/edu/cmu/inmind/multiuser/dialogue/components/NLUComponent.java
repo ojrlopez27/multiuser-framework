@@ -11,18 +11,17 @@ import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
-import edu.cmu.inmind.multiuser.controller.plugin.StatefulComponent;
+import edu.cmu.inmind.multiuser.controller.plugin.StateType;
 
 /**
  * Created by oscarr on 3/14/17.
  */
-@StatefulComponent
+@StateType(state = Constants.STATEFULL)
 @BlackboardSubscription( messages = {SaraCons.MSG_ASR} )
 public class NLUComponent extends PluggableComponent {
     private ClientCommController commController;
     private String pythonDialogueAddress;
     private String serviceName;
-
     @Override
     public void postCreate(){
         serviceName = getSessionId();
