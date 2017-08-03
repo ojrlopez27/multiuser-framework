@@ -48,7 +48,8 @@ public class MultiuserFrameworkContainer {
     }
 
     public static void stopFramework( MultiuserFramework muf ){
-        mufs.remove( muf.getId() ).stop();
+        mufs.remove( muf.getId() );
+        muf.stop();
     }
 
     public static void stopFrameworks(){
