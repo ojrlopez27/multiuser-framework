@@ -26,8 +26,7 @@ public class Ex16_MasterCallsSlaves extends Main {
 
     public static void main(String args[]) throws Throwable{
         List<ShutdownHook> hooks = new ArrayList<>();
-        // we add a hook that will reset the state of the system, that is, it will rename the json file to
-        // its original name
+        // You can add hooks that will be executed when the MUF is stopped
         hooks.add( new ShutdownHook() {
             @Override
             public void execute() {
@@ -54,6 +53,6 @@ public class Ex16_MasterCallsSlaves extends Main {
     @Override
     protected Config createConfig() {
         return super.createConfig()
-                .setJsonServicesConfig("services1.json");
+                .setJsonServicesConfig("services.json");
     }
 }
