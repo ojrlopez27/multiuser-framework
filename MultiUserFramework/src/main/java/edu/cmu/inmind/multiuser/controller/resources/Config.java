@@ -15,6 +15,7 @@ public class Config {
     private long sessionTimeout;
     private String serverAddress;
     private static int exceptionTraceLevel;
+    private String pathExceptionLogger;
     private boolean executeExit;
     private boolean isTCPon;
     private String serviceConfigPath;
@@ -27,6 +28,7 @@ public class Config {
         this.sessionTimeout = builder.sessionTimeout;
         this.serverAddress = builder.serverAddress;
         this.exceptionTraceLevel = builder.exceptionTraceLevel;
+        this.pathExceptionLogger = builder.pathExceptionLogger;
         this.executeExit = builder.executeExit;
         this.isTCPon = builder.isTCPon;
         this.orchestrator = builder.orchestrator;
@@ -55,6 +57,10 @@ public class Config {
 
     public static int getExceptionTraceLevel() {
         return exceptionTraceLevel;
+    }
+
+    public String getPathExceptionLogger() {
+        return pathExceptionLogger;
     }
 
     public String getServiceConfigPath() {
@@ -112,6 +118,11 @@ public class Config {
         return this;
     }
 
+    public Config setPathExceptionLogger(String pathExceptionLogger) {
+        this.pathExceptionLogger = pathExceptionLogger;
+        return this;
+    }
+
     public Config setExecuteExit(boolean executeExit) {
         this.executeExit = executeExit;
         return this;
@@ -133,6 +144,7 @@ public class Config {
         private int defaultNumOfPoolInstances = 10;
         private long sessionTimeout = 1000 * 60 * 5; // set to 5 minutes by default
         private int exceptionTraceLevel = Constants.SHOW_ALL_EXCEPTIONS;
+        private String pathExceptionLogger;
         private boolean executeExit;
         private boolean isTCPon = true;
         private String serverAddress = "127.0.0.1";
@@ -175,6 +187,11 @@ public class Config {
 
         public Builder setExceptionTraceLevel(int exceptionTraceLevel) {
             this.exceptionTraceLevel = exceptionTraceLevel;
+            return this;
+        }
+
+        public Builder setPathExceptionLogger(String pathExceptionLogger) {
+            this.pathExceptionLogger = pathExceptionLogger;
             return this;
         }
 

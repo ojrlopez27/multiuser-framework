@@ -136,8 +136,6 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
     }
 
     public void close(String sessionId) throws Throwable{
-        sessions.remove( sessionId );
-
         // if this is a stateless component, we can only close it if all sessions have stopped
         String state = (Utils.getAnnotation( this.getClass(), StateType.class )).state();
         if( (state.equals(Constants.STATEFULL)) || ( (state.equals( Constants.STATELESS )
@@ -152,6 +150,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
                 shutDown();
             }
         }
+        sessions.remove( sessionId );
     }
 
     /** METHODS OF BlackboardListener INTERFACE **/

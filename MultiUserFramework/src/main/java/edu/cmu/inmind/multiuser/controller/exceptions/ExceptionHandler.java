@@ -1,14 +1,41 @@
 package edu.cmu.inmind.multiuser.controller.exceptions;
 
+import com.google.common.base.Throwables;
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.controller.log.FileLogger;
+import edu.cmu.inmind.multiuser.controller.log.MessageLog;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 
 /**
  * Created by oscarr on 3/24/17.
  */
 public class ExceptionHandler {
-    public static void handle(Throwable e){
+    private static MessageLog logger;
+    private static boolean loggerOn = false;
 
+    public static void setLog(String path ){
+        loggerOn = path != null;
+        if( loggerOn ) {
+            logger = new FileLogger();
+            logger.setPath(path);
+            logger.setId("exception-handler");
+        }
+    }
+
+    public static void storeLog(){
+        try {
+            if (loggerOn && logger != null) {
+                logger.store();
+            }
+        }catch(Throwable e){
+            e.printStackTrace();
+        }
+    }
+
+    public static void handle(Throwable e){
+        if( loggerOn ){
+            logger.add( "ExceptionHandler", Throwables.getStackTraceAsString( e ) );
+        }
         switch ( Config.getExceptionTraceLevel() ){
             case Constants.SHOW_ALL_EXCEPTIONS:
                 e.printStackTrace();

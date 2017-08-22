@@ -118,6 +118,7 @@ public class SessionManager implements Runnable{
                 }
                 Utils.sleep(500);
             }
+            ExceptionHandler.storeLog();
             Log4J.info(this, "Session Manager stopped. Bye bye!");
             if( config.executeExit() ) {
                 System.exit(0);
