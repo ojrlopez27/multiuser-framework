@@ -6,6 +6,8 @@ import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.MultiuserFramework;
 import edu.cmu.inmind.multiuser.controller.MultiuserFrameworkContainer;
 import edu.cmu.inmind.multiuser.controller.ShutdownHook;
+import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 
@@ -74,6 +76,7 @@ public class Main{
                 .setSessionTimeout(5, TimeUnit.MINUTES)
                 .setServerAddress("127.0.0.1") //use IP instead of 'localhost'
                 .setExceptionTraceLevel( Constants.SHOW_MUF_EXCEPTIONS)
+                .setPathExceptionLogger(Utils.getProperty("pathLogs"))
                 .build();
     }
 
