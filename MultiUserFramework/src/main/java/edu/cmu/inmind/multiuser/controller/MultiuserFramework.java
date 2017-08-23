@@ -37,6 +37,8 @@ public class MultiuserFramework{
         addShutDown();
         if( config.getPathExceptionLogger() != null ){
             ExceptionHandler.setLog( config.getPathExceptionLogger() );
+        }else if( config.getExceptionLogger() != null ){
+            ExceptionHandler.setLog( config.getExceptionLogger() );
         }
         if( config.isTCPon() ){
             this.sessionManager = new SessionManager(modules, config, serviceInfo);
