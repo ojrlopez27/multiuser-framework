@@ -192,7 +192,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
             isClosed = true;
             logger.store();
             status = Constants.ORCHESTRATOR_STOPPED;
-            serviceManager.stopAsync().awaitStopped(5, TimeUnit.SECONDS);
+            serviceManager.stopAsync().awaitStopped(20, TimeUnit.SECONDS);
             serviceManager.awaitStopped();
             for(PluggableComponent component : components ){
                 component.close( sessionId );

@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.resources;
 
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.controller.log.MessageLog;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 
 import java.util.concurrent.TimeUnit;
@@ -16,6 +17,7 @@ public class Config {
     private String serverAddress;
     private static int exceptionTraceLevel;
     private String pathExceptionLogger;
+    private MessageLog exceptionLogger;
     private boolean executeExit;
     private boolean isTCPon;
     private String serviceConfigPath;
@@ -29,6 +31,7 @@ public class Config {
         this.serverAddress = builder.serverAddress;
         this.exceptionTraceLevel = builder.exceptionTraceLevel;
         this.pathExceptionLogger = builder.pathExceptionLogger;
+        this.exceptionLogger = builder.exceptionLogger;
         this.executeExit = builder.executeExit;
         this.isTCPon = builder.isTCPon;
         this.orchestrator = builder.orchestrator;
@@ -61,6 +64,10 @@ public class Config {
 
     public String getPathExceptionLogger() {
         return pathExceptionLogger;
+    }
+
+    public MessageLog getExceptionLogger() {
+        return exceptionLogger;
     }
 
     public String getServiceConfigPath() {
@@ -123,6 +130,11 @@ public class Config {
         return this;
     }
 
+    public Config setExceptionLogger(MessageLog exceptionLogger) {
+        this.exceptionLogger = exceptionLogger;
+        return this;
+    }
+
     public Config setExecuteExit(boolean executeExit) {
         this.executeExit = executeExit;
         return this;
@@ -145,6 +157,7 @@ public class Config {
         private long sessionTimeout = 1000 * 60 * 5; // set to 5 minutes by default
         private int exceptionTraceLevel = Constants.SHOW_ALL_EXCEPTIONS;
         private String pathExceptionLogger;
+        private MessageLog exceptionLogger;
         private boolean executeExit;
         private boolean isTCPon = true;
         private String serverAddress = "127.0.0.1";
@@ -192,6 +205,11 @@ public class Config {
 
         public Builder setPathExceptionLogger(String pathExceptionLogger) {
             this.pathExceptionLogger = pathExceptionLogger;
+            return this;
+        }
+
+        public Builder setExceptionLogger(MessageLog exceptionLogger) {
+            this.exceptionLogger = exceptionLogger;
             return this;
         }
 

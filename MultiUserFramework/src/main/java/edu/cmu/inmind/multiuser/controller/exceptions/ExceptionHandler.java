@@ -13,12 +13,19 @@ public class ExceptionHandler {
     private static MessageLog logger;
     private static boolean loggerOn = false;
 
-    public static void setLog(String path ){
+    public static void setLog(String path){
         loggerOn = path != null;
         if( loggerOn ) {
             logger = new FileLogger();
             logger.setPath(path);
             logger.setId("exception-handler");
+        }
+    }
+
+    public static void setLog( MessageLog log ){
+        loggerOn = log != null;
+        if( loggerOn ) {
+            logger = log;
         }
     }
 
