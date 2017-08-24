@@ -6,11 +6,13 @@ import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.MultiuserFramework;
 import edu.cmu.inmind.multiuser.controller.MultiuserFrameworkContainer;
 import edu.cmu.inmind.multiuser.controller.ShutdownHook;
+import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.sara.log.ExceptionLogger;
 
+import java.io.File;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
@@ -86,7 +88,7 @@ public class Main{
     protected MessageLog getExceptionLogger(){
         MessageLog log =  new ExceptionLogger();
         log.setId( "any-arbitrary-id" );
-        log.setPath( Utils.getProperty("pathExceptionLog") );
+        log.setPath( Utils.getProperty("pathExceptionLog").replace('/', File.separatorChar) );
         return log;
     }
 
