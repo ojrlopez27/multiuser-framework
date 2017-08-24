@@ -241,6 +241,7 @@ public class Blackboard {
                             public void run(){
                                 try {
                                     subscriber.onEvent(event);
+                                    System.gc();
                                 }catch (Throwable e){
                                     ExceptionHandler.handle( e );
                                 }

@@ -391,7 +391,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     }
 
     @Override
-    public void onEvent(BlackboardEvent event){
+    public void onEvent(BlackboardEvent event) throws Throwable{
         //do nothing
     }
 

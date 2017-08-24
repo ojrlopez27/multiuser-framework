@@ -155,7 +155,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
 
     /** METHODS OF BlackboardListener INTERFACE **/
     @Override
-    public abstract void onEvent(BlackboardEvent event);
+    public abstract void onEvent(BlackboardEvent event) throws Throwable;
 
 
     /** METHODS OF AbstractExecutionThreadService class (GUAVA) **/

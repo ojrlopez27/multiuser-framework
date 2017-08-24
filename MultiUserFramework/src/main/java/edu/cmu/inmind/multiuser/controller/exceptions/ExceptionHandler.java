@@ -42,6 +42,7 @@ public class ExceptionHandler {
     public static void handle(Throwable e){
         if( loggerOn ){
             logger.add( "ExceptionHandler", Throwables.getStackTraceAsString( e ) );
+            storeLog();
         }
         switch ( Config.getExceptionTraceLevel() ){
             case Constants.SHOW_ALL_EXCEPTIONS:
@@ -63,19 +64,6 @@ public class ExceptionHandler {
             default:
                 break;
         }
-
-//        if( !Config.isShowAllExceptions() ) {
-//            // We only execute errors different to a shutdown error
-//            if (!(e instanceof ZMQException && ((ZMQException) e).getErrorCode() == 156384765) &&
-//                    !(e instanceof ZError.IOException) && !(e instanceof MissingFormatArgumentException) &&
-//                    !(e instanceof CancelledKeyException) &&
-//                    !(e instanceof NullPointerException) &&
-//                    !(e instanceof IllegalStateException)) {
-//                e.printStackTrace();
-//            }
-//        }else{
-//            e.printStackTrace();
-//        }
     }
 
     public static void checkAssert(boolean expression) {

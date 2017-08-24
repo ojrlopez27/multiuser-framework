@@ -19,7 +19,7 @@ public class ExceptionLogger implements MessageLog {
 
     @Override
     public void setId(String id) {
-        this.id = id;
+        this.id = id + "-" + Utils.getDateString();
         log = new StringBuffer();
     }
 
@@ -38,7 +38,7 @@ public class ExceptionLogger implements MessageLog {
     @Override
     public void store() throws Throwable{
         if( turnedOn && !log.toString().isEmpty() ) {
-            File file = new File(path + id + "-" + Utils.getDateString() + ".log");
+            File file = new File(path + id + ".log");
             PrintWriter printWriter = new PrintWriter(file);
             printWriter.write(log.toString());
             printWriter.flush();

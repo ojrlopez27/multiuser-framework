@@ -270,6 +270,7 @@ public class ClientCommController {
                         } catch (Throwable e) {
                             ExceptionHandler.handle(e);
                         }
+                        System.gc();
                     }
                     if (receiveThread.isAlive()) {
                         receiveThread.interrupt();
@@ -327,6 +328,7 @@ public class ClientCommController {
                         } catch (Throwable e) {
                             ExceptionHandler.handle(e);
                         }
+                        System.gc();
                     }
                     if (sendThread.isAlive()) {
                         sendThread.interrupt();
