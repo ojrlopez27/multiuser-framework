@@ -12,6 +12,7 @@ import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.session.Session;
 import org.zeromq.ZMsg;
 
+import java.nio.channels.ClosedByInterruptException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Timer;
@@ -290,15 +291,17 @@ public class ClientCommController {
 
 
     private String receive() throws Throwable{
-        if( isTCPon ) {
+        try {
             ZMsg reply = clientCommAPI.recv();
             if (reply != null && reply.peekLast() != null) {
                 String response = reply.peekLast().toString();
                 reply.destroy();
                 return response;
             }
-        }else{
-            Pair<String, Object> message = clientMessage.get();
+        }catch (Throwable e){
+            if(!(e instanceof ClosedByInterruptException)){
+                throw e;
+            }
         }
         return null;
     }
