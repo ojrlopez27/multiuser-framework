@@ -113,11 +113,5 @@ public class ExceptionHandler {
         long presumableFreeMemory = Runtime.getRuntime().maxMemory() - allocatedMemory;
 
         logger.add( messageId, "Presumable free memory: " + presumableFreeMemory );
-
-
-
-
     }
-
-
 }
