@@ -5,6 +5,9 @@ import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
+import zmq.ZError;
+
+import java.nio.channels.ClosedByInterruptException;
 
 /**
  * Created by oscarr on 3/29/17.
@@ -52,32 +55,39 @@ public class ClientCommAPI {
      */
     public ZMsg recv() throws Throwable{
         ZMsg reply = null;
+        try {
+            if (items.poll(timeout * 1000) == -1)
+                return null; // Interrupted
 
-        if( items.poll(timeout * 1000 ) == -1 )
-            return null; // Interrupted
+            if (items.pollin(0)) {
+                Log4J.debug(this, "attempting to receive ... ");
+                ZMsg msg = ZMsg.recvMsg(clientSocket, ZMQ.DONTWAIT);
+                //            Log4J.debug(this, "received message " + msg.toString());
 
-        if (items.pollin(0)) {
-            Log4J.debug(this, "attempting to receive ... ");
-            ZMsg msg = ZMsg.recvMsg(clientSocket, ZMQ.DONTWAIT);
-//            Log4J.debug(this, "received message " + msg.toString());
+                // Don't try to handle errors, just assert noisily
+                assert (msg.size() >= 4);
 
-            // Don't try to handle errors, just assert noisily
-            assert (msg.size() >= 4);
+                ZFrame empty = msg.pop();
+                assert (empty.getData().length == 0);
+                empty.destroy();
 
-            ZFrame empty = msg.pop();
-            assert (empty.getData().length == 0);
-            empty.destroy();
+                ZFrame header = msg.pop();
+                assert (MDP.C_CLIENT.toString().equals(header.toString())) : header.toString() + " vs. " + MDP.C_CLIENT;
+                header.destroy();
 
-            ZFrame header = msg.pop();
-            assert (MDP.C_CLIENT.toString().equals(header.toString())) : header.toString() + " vs. " + MDP.C_CLIENT;
-            header.destroy();
+                ZFrame replyService = msg.pop();
+                replyService.destroy();
 
-            ZFrame replyService = msg.pop();
-            replyService.destroy();
-
-            reply = msg;
+                reply = msg;
+            }
+            return reply;
+        }catch (Exception e){
+            if( e instanceof ZError.IOException){
+                return null;
+            }else{
+                throw e;
+            }
         }
-        return reply;
     }
 
     /**

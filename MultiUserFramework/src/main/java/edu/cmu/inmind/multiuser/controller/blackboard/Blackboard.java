@@ -6,6 +6,7 @@ import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ConnectRemoteService;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.sync.ForceSync;
@@ -15,9 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-//import java.util.concurrent.locks.Condition;
-//import java.util.concurrent.locks.Lock;
-//import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by oscarr on 4/29/16.
@@ -26,13 +24,6 @@ public class Blackboard {
     private ConcurrentHashMap<String, Object> model;
     private ConcurrentHashMap<String, List<BlackboardListener>> subscriptions;
     private List<BlackboardListener> subscribers;
-//    private Lock lock;
-//    private Condition canAdd;
-//    private Condition canRetrieve;
-//    private Condition canRemove;
-    private boolean isInserting;
-    private boolean isRetrieving;
-    private boolean isRemoving;
     private MessageLog logger;
     private boolean loggerOn = true;
     private boolean keepModel = true;
@@ -42,10 +33,6 @@ public class Blackboard {
         subscribers = new ArrayList<>();
         model = new ConcurrentHashMap<>();
         subscriptions = new ConcurrentHashMap<>();
-//        lock = new ReentrantLock();
-//        canAdd = lock.newCondition();
-//        canRetrieve = lock.newCondition();
-//        canRemove = lock.newCondition();
     }
 
     public Blackboard(Set<PluggableComponent> components, String sessionId) {
@@ -99,33 +86,21 @@ public class Blackboard {
     }
 
     private void post(BlackboardListener sender, String key, Object element, boolean shouldClone){
-//        boolean isLocked = false;
         try {
-//            isLocked = lock.tryLock( 10, TimeUnit.MILLISECONDS);
-//            if( isLocked ) {
-//                while (isRetrieving || isRemoving) {
-//                    canAdd.await();
-//                }
-//                isInserting = true;
-                Object clone = shouldClone ? Utils.clone(element) : element;
-                if (keepModel) model.put(key, clone);
-//                isInserting = false;
-//                canRetrieve.signalAll();
-//                canRemove.signalAll();
-                if (loggerOn) {
-                    logger.add(key, clone.toString());
-                }
-                notifySubscribers(sender, Constants.ELEMENT_ADDED, key, clone);
-//            }
+            Log4J.debug(this, String.format( "this is the message-id and message: (%s, $) send by: %s", key,
+                    element, sender.getClass().getName() ));
+            Object clone = shouldClone ? Utils.clone(element) : element;
+            Log4J.debug(this, "cloned element: " + clone);
+            if (keepModel && clone != null) model.put(key, clone);
+            if (loggerOn) {
+                logger.add(key, clone == null? "element is null" : clone.toString());
+            }
+            notifySubscribers(sender, Constants.ELEMENT_ADDED, key, clone);
         }
         catch (NoClassDefFoundError e){
             post( sender, key, element, false);
         }catch(Throwable e){
             ExceptionHandler.handle( e );
-        }finally {
-//            if( isLocked ) {
-//                lock.unlock();
-//            }
         }
     }
 
@@ -134,34 +109,19 @@ public class Blackboard {
     }
 
     private void remove(BlackboardListener sender, String key, boolean shouldClone){
-//        boolean isLocked = false;
         try {
-//            isLocked = lock.tryLock( 10, TimeUnit.MILLISECONDS);
-//            if( isLocked ) {
-//                while (isRetrieving || isInserting) {
-//                    canAdd.await();
-//                }
-//                isRemoving = true;
-                Object clone = Utils.clone(model.get(key));
-                if (key.contains(Constants.REMOVE_ALL)) {
-                    model.clear();
-                } else {
-                    if (keepModel) model.remove(key);
-                }
-//                isRemoving = false;
-//                canAdd.signalAll();
-//                canRetrieve.signalAll();
-                notifySubscribers(sender, Constants.ELEMENT_REMOVED, key, clone);
-//            }
+            Object clone = Utils.clone(model.get(key));
+            if (key.contains(Constants.REMOVE_ALL)) {
+                model.clear();
+            } else {
+                if (keepModel) model.remove(key);
+            }
+            notifySubscribers(sender, Constants.ELEMENT_REMOVED, key, clone);
         }catch( NoClassDefFoundError e){
             remove(sender, key, false);
         }
         catch (Throwable e){
             ExceptionHandler.handle( e );
-        }finally {
-//            if( isLocked ) {
-//                lock.unlock();
-//            }
         }
     }
 
@@ -171,27 +131,12 @@ public class Blackboard {
 
     private Object get(String key, boolean shouldClone) {
         Object value = null;
-//        boolean isLocked = false;
         try {
-//            isLocked = lock.tryLock( 10, TimeUnit.MILLISECONDS);
-//            if( isLocked ) {
-//                while (isInserting || isRemoving) {
-//                    canRetrieve.await();
-//                }
-//                isRetrieving = true;
-//                lock.lock();
-                value = shouldClone ? Utils.clone(model.get(key)) : model.get(key);
-//                isRetrieving = false;
-//                canAdd.signalAll();
-//                canRemove.signalAll();
-//            }
+            value = shouldClone ? Utils.clone(model.get(key)) : model.get(key);
         }catch (NoClassDefFoundError e){
             value = get(key, false);
         }catch (Throwable e) {
-        }finally {
-//            if( isLocked ) {
-//                lock.unlock();
-//            }
+            ExceptionHandler.handle( e );
         }
         return value;
     }
@@ -271,15 +216,10 @@ public class Blackboard {
     public void reset(){
         new Thread("BlackboardResetThread"){
             public void run(){
-//                boolean isLocked = false;
                 try {
-//                    isLocked = lock.tryLock( 10, TimeUnit.MILLISECONDS);
-//                    if( isLocked )
-                        model.clear();
+                    model.clear();
                 }catch (Throwable e){
                     ExceptionHandler.handle(e);
-                }finally {
-//                    if( isLocked ) lock.unlock();
                 }
             }
         }.start();
@@ -293,7 +233,6 @@ public class Blackboard {
     private SynchronizableEvent getSyncEvent(PluggableComponent keyElement, boolean shouldClone) {
         Object value = null;
         try {
-//            lock.lock();
             if (keyElement.getClass().isAnnotationPresent(ForceSync.class)) {
                 ForceSync annotation = keyElement.getClass().getAnnotation(ForceSync.class);
                 value = shouldClone? Utils.clone(model.get( annotation.id() )) : model.get(annotation.id());
@@ -303,7 +242,6 @@ public class Blackboard {
         }catch(Throwable e) {
             ExceptionHandler.handle( e );
         } finally {
-//            lock.unlock();
             return (SynchronizableEvent) value;
         }
     }
