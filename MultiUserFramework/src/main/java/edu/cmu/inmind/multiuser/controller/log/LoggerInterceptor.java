@@ -16,8 +16,11 @@ public class LoggerInterceptor implements MethodInterceptor {
             ((ProcessOrchestratorImpl) thisObj).getLogger().add( methodInvocation.getMethod().getName(),
                     argsToString(methodInvocation) );
         }else if( thisObj instanceof PluggableComponent){
-            ((PluggableComponent) thisObj).getMessageLogger().add( methodInvocation.getMethod().getName(),
-                    argsToString(methodInvocation) );
+            MessageLog log = ((PluggableComponent) thisObj).getMessageLogger();
+            if( log != null ) {
+                log.add(methodInvocation.getMethod().getName(),
+                        argsToString(methodInvocation));
+            }
         }
         return methodInvocation.proceed();
     }

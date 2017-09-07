@@ -13,6 +13,7 @@ import edu.cmu.inmind.multiuser.controller.session.Session;
 import org.zeromq.ZMsg;
 
 import java.nio.channels.ClosedByInterruptException;
+import java.nio.channels.ClosedChannelException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Timer;
@@ -292,15 +293,21 @@ public class ClientCommController {
 
     private String receive() throws Throwable{
         try {
-            ZMsg reply = clientCommAPI.recv();
-            if (reply != null && reply.peekLast() != null) {
-                String response = reply.peekLast().toString();
-                reply.destroy();
-                return response;
+            //TODO: why clientAPI is null?
+            if( clientCommAPI != null ) {
+                ZMsg reply = clientCommAPI.recv();
+                if (reply != null && reply.peekLast() != null) {
+                    String response = reply.peekLast().toString();
+                    reply.destroy();
+                    return response;
+                }
             }
         }catch (Throwable e){
-            if(!(e instanceof ClosedByInterruptException)){
-                throw e;
+            if( e instanceof ClosedByInterruptException || e instanceof ClosedChannelException){
+                Log4J.debug("ClientCommController.receive", "Exception 1");
+            }else{
+                Log4J.debug("ClientCommController.receive", "Exception 2. Exception: " + e.getMessage());
+                ExceptionHandler.handle( e );
             }
         }
         return null;
