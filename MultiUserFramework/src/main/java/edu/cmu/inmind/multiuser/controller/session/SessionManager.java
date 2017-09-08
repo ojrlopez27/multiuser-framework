@@ -46,7 +46,6 @@ public class SessionManager implements Runnable{
     private String address;
     private String fullAddress;
     private boolean stopped;
-    private ClientMessage clientMessage;
 
 
     public SessionManager(PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws Throwable{
@@ -67,8 +66,6 @@ public class SessionManager implements Runnable{
         if( config.isTCPon() ) {
             initializeBroker();
             serverCommController = new ServerCommController(fullAddress, serviceId, null);
-        }else{
-            clientMessage = new ClientMessage();
         }
         DependencyManager.getInstance(modules);
     }
@@ -134,12 +131,12 @@ public class SessionManager implements Runnable{
     private void processRequest( ) throws Throwable{
         if( !stopped ) {
             ZMsgWrapper msgRequest = null;
-            SessionMessage request = null;
+            SessionMessage request;
             if( config.isTCPon() ){
                 msgRequest = serverCommController.receive(reply);
                 request = getServerRequest(msgRequest);
             }else{
-                request = getClientMessage();
+                request = new SessionMessage();
             }
             Session session = sessions.get(request.getSessionId());
             if (session != null) {
@@ -182,11 +179,6 @@ public class SessionManager implements Runnable{
         }
     }
 
-    private SessionMessage getClientMessage() {
-        Pair<String, Object> message = clientMessage.get();
-        return (SessionMessage) message.snd;
-    }
-
     /**
      * This method should be used only when working with TCP off
      * @param sessionId
@@ -196,7 +188,6 @@ public class SessionManager implements Runnable{
         if( config.isTCPon() ){
             throw new MultiuserException( ErrorMessages.USE_TCP_INSTEAD, "send" );
         }
-        clientMessage.put( new Pair<>(sessionId, message) );
     }
 
     private void resume(Session session, ZMsgWrapper msgRequest) {
