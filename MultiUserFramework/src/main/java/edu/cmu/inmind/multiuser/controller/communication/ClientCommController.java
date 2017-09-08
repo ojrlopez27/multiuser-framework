@@ -9,25 +9,22 @@ import edu.cmu.inmind.multiuser.controller.MultiuserFramework;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
-import edu.cmu.inmind.multiuser.controller.session.Session;
+import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ClosedChannelException;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by oscarr on 3/29/17.
  */
 
-public class ClientCommController {
+public class ClientCommController{
+    private static final String TOKEN = "TOKEN";
+    private static final String STOP = "STOP";
     private ClientCommAPI clientCommAPI;
     private String serviceName;
     private String sessionManagerService;
@@ -44,7 +41,10 @@ public class ClientCommController {
     //we need to keep the state in case of failure and reconnection
     private int sentMessages = 0;
     private int receivedMessages = 0;
-    private final ClientMessage clientMessage;
+//    private final ClientMessage clientMessage;
+    private ZMQ.Context context;
+    private ZMQ.Socket clientSocket;
+
 
     //control
     private boolean stop = false;
@@ -69,8 +69,11 @@ public class ClientCommController {
         this.shouldProcessReply = builder.shouldProcessReply;
         this.responseListener = builder.responseListener;
         this.sessionManagerService = builder.sessionManagerService;
-        this.clientMessage = new ClientMessage();
         this.muf = builder.muf;
+        this.context = ZMQ.context(1);
+        //  Bind to inproc: endpoint, then start upstream thread
+        this.clientSocket = context.socket(ZMQ.PAIR);
+        this.clientSocket.bind("inproc://sender-thread");
         this.timer = new ResponseTimer();
         if( this.muf != null ){
             muf.setClient( this );
@@ -92,7 +95,8 @@ public class ClientCommController {
         private String sessionManagerService = Constants.SESSION_MANAGER_SERVICE;
 
         public ClientCommController build(){
-            return new ClientCommController( this );
+            ClientCommController client = new ClientCommController( this );
+            return client;
         }
 
         public Builder setTCPon(boolean TCPon) {
@@ -201,7 +205,7 @@ public class ClientCommController {
                 sessionMessage.setUrl(clientAddress);
                 sessionMessage.setPayload(Arrays.toString(subscriptionMessages));
                 timer.schedule(new ResponseCheck(), timeout);
-                stop = !sendToBroker(new Pair<>(sessionManagerService, sessionMessage));
+                stop = !sendToBroker( sessionManagerService, Utils.toJson(sessionMessage));
                 if (!stop) {
                     SessionMessage reply = Utils.fromJson(receive(), SessionMessage.class);
                     timer.stopTimer();
@@ -228,6 +232,8 @@ public class ClientCommController {
             clientCommAPI = null;
             timer.cancel();
             timer.purge();
+            clientSocket.close ();
+            context.term ();
         }catch (Throwable e) {
             ExceptionHandler.handle(e);
         }
@@ -241,50 +247,72 @@ public class ClientCommController {
     }
 
     public void send(Pair<String, Object> message) {
-        clientMessage.put( message );
+        clientSocket.send( message.fst + TOKEN + Utils.toJson( message.snd) );
+        String response = clientSocket.recvStr();
+        if( response.equals(Constants.CONNECTION_STARTED) ){
+            sendState = checkFSM(sendState, Constants.CONNECTION_STARTED);
+            response = clientSocket.recvStr();
+        }
+        if( response.equals(STOP) ) {
+            if (receiveThread.isAlive()) {
+                receiveThread.interrupt();
+            }
+            sendState = checkFSM(sendState, Constants.CONNECTION_FINISHED);
+            checkReconnect();
+        }
     }
 
-    private boolean sendToBroker(Pair<String, Object> message) throws Throwable{
+    private boolean sendToBroker(String id, String message) throws Throwable{
         ZMsg request = new ZMsg();
-        String msgString = Utils.toJson( message.snd );
-        request.addString( msgString );
+        request.addString( message );
         if( isTCPon ) {
-            return clientCommAPI.send(message.fst, request);
+            return clientCommAPI.send(id, request);
         }else{
-            muf.getOrchestrator().process( msgString );
+            muf.getOrchestrator().process( message );
             return true;
         }
     }
 
     private void sendThread() {
-        sendThread = new Thread("ClientSendMsgsThread"){
-            public void run() {
-                try {
-                    sendState = checkFSM(sendState, Constants.CONNECTION_STARTED);
-                    while (!Thread.currentThread().isInterrupted() && !stop) {
-                        try {
-                            Pair<String, Object> message = clientMessage.get();
-                            stop = (!sendToBroker(message) || checkNumSent) && (sentMessages > receivedMessages + difference);
-                            if (stop) {
-                                continue;
-                            }
-                            sentMessages++;
-                        } catch (Throwable e) {
-                            ExceptionHandler.handle(e);
-                        }
-                        System.gc();
-                    }
-                    if (receiveThread.isAlive()) {
-                        receiveThread.interrupt();
-                    }
-                    sendState = checkFSM(sendState, Constants.CONNECTION_FINISHED);
-                    checkReconnect();
-                }catch (Throwable e){
-                    ExceptionHandler.handle( e );
-                }
-            }
-        };
+        sendThread = new SenderThread("ClientSendMsgsThread", context);
         sendThread.start();
+    }
+
+    class SenderThread extends Thread{
+        private ZMQ.Context context;
+        private ZMQ.Socket senderSocket;
+        private boolean stop;
+
+        public SenderThread(String threadName, ZMQ.Context context){
+            super(threadName);
+            this.context = context;
+            senderSocket = this.context.socket(ZMQ.PAIR);
+            senderSocket.connect("inproc://sender-thread");
+        }
+
+        public void run() {
+            try{
+                senderSocket.send(Constants.CONNECTION_STARTED, 0);
+                while( !Thread.currentThread().isInterrupted() && !stop ) {
+                    try{
+                        String[] msg = senderSocket.recvStr().split(TOKEN);
+                        stop = (!sendToBroker(msg[0], msg[1]) || checkNumSent) && (sentMessages > receivedMessages + difference);
+                        if (stop) {
+                            continue;
+                        }
+                        sentMessages++;
+                        //  Signal downstream to client-thread
+                        senderSocket.send("ACK", 0);
+                    } catch (Throwable e) {
+                        ExceptionHandler.handle(e);
+                    }
+                }
+            }catch (Throwable e){
+                ExceptionHandler.handle( e );
+            }
+            senderSocket.send(STOP, 0);
+            senderSocket.close();
+        }
     }
 
     /********************************* RECEIVE THREAD **************************************/
@@ -298,9 +326,12 @@ public class ClientCommController {
                 ZMsg reply = clientCommAPI.recv();
                 if (reply != null && reply.peekLast() != null) {
                     String response = reply.peekLast().toString();
+                    Log4J.debug("ClientCommController.receive", "response: " + response);
                     reply.destroy();
                     return response;
                 }
+            }else{
+                return STOP;
             }
         }catch (Throwable e){
             if( e instanceof ClosedByInterruptException || e instanceof ClosedChannelException){
@@ -326,6 +357,10 @@ public class ClientCommController {
                         try {
                             String response = receive();
                             receivedMessages++;
+                            if( response.equals(STOP) ) {
+                                stop = true;
+                                continue;
+                            }
                             if ((response == null || checkNumSent) && (sentMessages > receivedMessages + difference)) {
                                 stop = true;
                             } else if (responseListener != null) {
@@ -338,7 +373,6 @@ public class ClientCommController {
                         } catch (Throwable e) {
                             ExceptionHandler.handle(e);
                         }
-                        System.gc();
                     }
                     if (sendThread.isAlive()) {
                         sendThread.interrupt();

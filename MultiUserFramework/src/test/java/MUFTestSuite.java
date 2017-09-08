@@ -73,7 +73,7 @@ public class MUFTestSuite {
      */
     @Test
     public void testMUFwithTCPIPoff() throws Throwable{
-        testBasicServerClientCommunication( false );
+        //testBasicServerClientCommunication( false );
     }
 
     /**
@@ -114,6 +114,7 @@ public class MUFTestSuite {
         // this method will be executed asynchronuously, so we need to add a delay before stopping the MUF
         client.receive(message -> {
             SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
+            assertNotNull( sessionMessage );
             if( !sessionMessage.getRequestType().equals( Constants.SESSION_CLOSED ) ) {
                 assertEquals("Response from MUF : " + uniqueMsgId, sessionMessage.getPayload());
             }
