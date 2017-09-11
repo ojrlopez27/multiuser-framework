@@ -45,9 +45,10 @@ public class ExceptionHandler {
     public static void handle(Throwable e){
         if( loggerOn ){
             logger.add( messageId, Throwables.getStackTraceAsString( e ) );
-            if( e instanceof OutOfMemoryError ) addOutOfMemoryLog();
+            if( e instanceof OutOfMemoryError )
+                addOutOfMemoryLog();
             storeLog();
-        }
+    }
         switch ( Config.getExceptionTraceLevel() ){
             case Constants.SHOW_ALL_EXCEPTIONS:
                 e.printStackTrace();
