@@ -341,7 +341,7 @@ public class ClientCommController{
                 ExceptionHandler.handle( e );
             }
         }
-        return null;
+        return STOP;
     }
 
     public void receive(ResponseListener responseListener) {
