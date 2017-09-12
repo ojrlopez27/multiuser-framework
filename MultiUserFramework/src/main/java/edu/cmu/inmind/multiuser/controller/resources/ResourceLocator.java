@@ -1,6 +1,10 @@
 package edu.cmu.inmind.multiuser.controller.resources;
 
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.ServiceManager;
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
@@ -12,6 +16,7 @@ import edu.cmu.inmind.multiuser.controller.session.ServiceComponent;
 import org.apache.logging.log4j.Logger;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by oscarr on 3/21/17.
@@ -23,6 +28,7 @@ public class ResourceLocator {
     private static Map<String, Queue> syncMap = new HashMap<>();
     private static Map<ServiceManager, String> serviceManagers = new HashMap<>();
     private static Map<Class, Logger> loggers = new HashMap<>();
+    private static Cache<String, Object> cache;
 
     /**
      * This method registers remote or external services that can be looked up by other components
@@ -148,6 +154,26 @@ public class ResourceLocator {
 
     public static void addLogger(Class clazz, Logger logger){
         loggers.put(clazz, logger);
+    }
+
+
+    /**
+     * Cache Memmory
+     */
+    static{
+        cache = CacheBuilder.newBuilder()
+                .maximumSize(1000)
+                //.expireAfterWrite(10, TimeUnit.MINUTES)
+                //.removalListener(MY_LISTENER)
+                .build();
+    }
+
+    public static void toCache(String key, Object value){
+        cache.put( key, value );
+    }
+
+    public static Object fromCache(String key){
+        return cache.asMap().get(key);
     }
 
 }
