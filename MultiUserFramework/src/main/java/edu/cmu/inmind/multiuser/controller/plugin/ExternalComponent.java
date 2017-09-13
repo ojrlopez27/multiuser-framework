@@ -65,11 +65,25 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
 
     @Override
     public void shutDown() {
-        SessionMessage sessionMessage = new SessionMessage();
-        sessionMessage.setSessionId( getSessionId() );
-        sessionMessage.setRequestType( Constants.REQUEST_DISCONNECT );
-        getClientCommController().send( getSessionId(), sessionMessage );
+        sendCloseMessage();
         super.shutDown();
+    }
+
+    /**
+     * We need to send this message to the Python Dialogue System on a separate thread, otherwise
+     * we will get some TimeOut exceptions because the communication process takes longer than the
+     * shuttingdown process
+     */
+    private void sendCloseMessage(){
+        new Thread("send-message-close-python-dialogue") {
+            public void run(){
+                SessionMessage sessionMessage = new SessionMessage();
+                sessionMessage.setRequestType( Constants.REQUEST_DISCONNECT );
+                sessionMessage.setSessionId(getSessionId());
+                getClientCommController().send( getSessionId(), sessionMessage );
+                Utils.sleep(1000);
+            }
+        }.start();
     }
 
     @Override

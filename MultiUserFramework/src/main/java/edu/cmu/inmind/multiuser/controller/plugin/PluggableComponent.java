@@ -55,7 +55,9 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
     }
 
     public Blackboard blackboard(){
-        Blackboard bb = blackboards.get( activeSession.getId() );
+        Blackboard bb = null;
+        if( activeSession != null && activeSession.getId() != null && blackboards != null )
+            bb = blackboards.get( activeSession.getId() );
         //TODO: why blackboard is null?
         if( bb == null ){
             bb = new Blackboard();
