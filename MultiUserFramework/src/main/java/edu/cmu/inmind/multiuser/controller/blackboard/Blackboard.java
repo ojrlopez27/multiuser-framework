@@ -11,6 +11,14 @@ import edu.cmu.inmind.multiuser.controller.log.MessageLog;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.sync.ForceSync;
 import edu.cmu.inmind.multiuser.controller.sync.SynchronizableEvent;
+import io.reactivex.Completable;
+import io.reactivex.Flowable;
+import io.reactivex.Notification;
+import io.reactivex.Observable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -91,8 +99,9 @@ public class Blackboard {
                     element, sender.getClass().getName() ));
             Object clone = shouldClone ? Utils.clone(element) : element;
             Log4J.debug(this, "cloned element: " + clone);
-            if (keepModel && clone != null) model.put(key, clone);
-            if (loggerOn) {
+            if (keepModel && clone != null && key != null)
+                model.put(key, clone);
+            if (loggerOn){
                 logger.add(key, clone == null? "element is null" : clone.toString());
             }
             notifySubscribers(sender, Constants.ELEMENT_ADDED, key, clone);
@@ -173,33 +182,33 @@ public class Blackboard {
     }
 
     private void notifySubscribers(BlackboardListener sender, String status, String key, Object element){
-        if(notifySubscribers) {
+        if(notifySubscribers && key != null) {
             try {
                 List<BlackboardListener> listeners = subscriptions.get(key);
                 if (listeners != null) {
                     BlackboardEvent event = new BlackboardEvent(status, key, element);
-                    for (BlackboardListener subscriber : listeners) {
-                        if (subscriber instanceof PluggableComponent) {
-                            ((PluggableComponent) subscriber).setActiveSession(sender.getSessionId());
-                        }
-                        new Thread("NotifyBlackboardSubscribersThread"){
-                            public void run(){
-                                try {
-                                    subscriber.onEvent(event);
-                                }catch (Throwable e){
-                                    ExceptionHandler.handle( e );
-                                }
+                    final String sessionId = sender.getSessionId();
+
+                    for(BlackboardListener subscriber : listeners ){
+                        Flowable.just(subscriber).subscribe(blackboardListener -> {
+                            if (subscriber instanceof PluggableComponent) {
+                                ((PluggableComponent) subscriber).setActiveSession(sessionId);
                             }
-                        }.start();
-                        if (subscriber instanceof PluggableComponent && subscriber.getClass()
-                                .isAnnotationPresent(ConnectRemoteService.class)) {
-                            SessionMessage sessionMessage = new SessionMessage();
-                            sessionMessage.setSessionId(sender.getSessionId());
-                            sessionMessage.setRequestType(status);
-                            sessionMessage.setMessageId(key);
-                            sessionMessage.setPayload(Utils.toJson( event.getElement() ));
-                            ((PluggableComponent) subscriber).send(sessionMessage, false);
-                        }
+                            try {
+                                subscriber.onEvent(event);
+                                if (subscriber instanceof PluggableComponent && subscriber.getClass()
+                                        .isAnnotationPresent(ConnectRemoteService.class)) {
+                                    SessionMessage sessionMessage = new SessionMessage();
+                                    sessionMessage.setSessionId(sender.getSessionId());
+                                    sessionMessage.setRequestType(status);
+                                    sessionMessage.setMessageId(key);
+                                    sessionMessage.setPayload(Utils.toJson( event.getElement() ));
+                                    ((PluggableComponent) subscriber).send(sessionMessage, false);
+                                }
+                            }catch (Throwable e){
+                                ExceptionHandler.handle( e );
+                            }
+                        });
                     }
                 }
             } catch (Throwable e) {

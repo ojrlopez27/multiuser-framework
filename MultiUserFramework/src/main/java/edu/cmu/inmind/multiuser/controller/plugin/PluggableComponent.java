@@ -157,7 +157,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
                 shutDown();
             }
         }
-        sessions.remove( sessionId );
+            sessions.remove( sessionId );
     }
 
     /** METHODS OF BlackboardListener INTERFACE **/

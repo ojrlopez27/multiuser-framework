@@ -307,11 +307,13 @@ public class ClientCommController{
                         ExceptionHandler.handle(e);
                     }
                 }
+                if( !stop ) {
+                    senderSocket.send(STOP, 0);
+                    senderSocket.close();
+                }
             }catch (Throwable e){
                 ExceptionHandler.handle( e );
             }
-            senderSocket.send(STOP, 0);
-            senderSocket.close();
         }
     }
 
