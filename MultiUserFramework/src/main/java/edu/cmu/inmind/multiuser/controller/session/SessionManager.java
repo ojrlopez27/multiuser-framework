@@ -13,6 +13,9 @@ import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
 import org.zeromq.ZMsg;
 
 import java.util.ArrayList;
@@ -24,7 +27,7 @@ import java.util.Properties;
  * Created by oscarr on 3/3/17.
  * This class will control the sessions lifecycle (connect, disconnect, pause, resume)
  */
-public class SessionManager implements Runnable{
+public class SessionManager implements Runnable, Session.SessionObserver{
     /** sessions handled by the session manager */
     private Map<String, Session> sessions;
     /** communication controller that process
@@ -101,7 +104,7 @@ public class SessionManager implements Runnable{
                 processRequest( );
             }
         }catch (Throwable e){
-            ExceptionHandler.handle(e);
+            //ExceptionHandler.handle(e);
         }finally{
             boolean done = false;
             while( !done ) {
@@ -251,6 +254,7 @@ public class SessionManager implements Runnable{
     private void createSession(ZMsgWrapper msgRequest, SessionMessage request) {
         String key = request.getSessionId();
         Session session = DependencyManager.getInstance().getComponent(Session.class);
+        session.onClose(this);
         session.setConfig( config );
         session.setId(key, msgRequest, fullAddress);
         sessions.put( key, session );
@@ -275,7 +279,7 @@ public class SessionManager implements Runnable{
         Log4J.info(this, "Creating new service as a framework: " + serviceInfo.getServiceName());
 
         // let's process the response
-        clientCommController.receive(message -> {
+        clientCommController.setResponseListener(message -> {
             SessionMessage sessionMessage = Utils.fromJson( message, SessionMessage.class );
             String messageId = sessionMessage.getMessageId();
             sessionMessage.setMessageId("");
@@ -332,5 +336,10 @@ public class SessionManager implements Runnable{
     public void start() {
         thread = new Thread( this, "SessionManagerThread" );
         thread.start();
+    }
+
+    @Override
+    public void notifyCloseSession(Session session) {
+        this.sessions.remove(session.getId());
     }
 }

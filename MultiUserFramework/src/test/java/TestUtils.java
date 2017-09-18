@@ -34,6 +34,7 @@ public class TestUtils {
                 //.setPathLogs(Utils.getProperty("pathLogs"))
                 .setSessionTimeout(5, TimeUnit.MINUTES)
                 .setServerAddress(serverAddress)
+                //.setJsonServicesConfig("services.json")
                 .setExceptionTraceLevel(Constants.SHOW_ALL_EXCEPTIONS)
                 .build();
     }

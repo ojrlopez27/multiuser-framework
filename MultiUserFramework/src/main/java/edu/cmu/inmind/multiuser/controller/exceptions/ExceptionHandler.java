@@ -7,6 +7,7 @@ import edu.cmu.inmind.multiuser.controller.log.MessageLog;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 
 import java.io.File;
+import java.nio.channels.ClosedByInterruptException;
 
 /**
  * Created by oscarr on 3/24/17.
@@ -43,31 +44,33 @@ public class ExceptionHandler {
     }
 
     public static void handle(Throwable e){
-        if( loggerOn ){
-            logger.add( messageId, Throwables.getStackTraceAsString( e ) );
-            if( e instanceof OutOfMemoryError )
-                addOutOfMemoryLog();
-            storeLog();
-    }
-        switch ( Config.getExceptionTraceLevel() ){
-            case Constants.SHOW_ALL_EXCEPTIONS:
-                e.printStackTrace();
-                break;
-            case Constants.SHOW_MUF_EXCEPTIONS:
-                if( e instanceof MultiuserException ){
+        if( !(e instanceof org.zeromq.ZMQException && e instanceof ClosedByInterruptException )) {
+            if (loggerOn) {
+                logger.add(messageId, Throwables.getStackTraceAsString(e));
+                if (e instanceof OutOfMemoryError)
+                    addOutOfMemoryLog();
+                storeLog();
+            }
+            switch (Config.getExceptionTraceLevel()) {
+                case Constants.SHOW_ALL_EXCEPTIONS:
                     e.printStackTrace();
-                }
-                break;
-            case Constants.SHOW_NO_EXCEPTIONS:
-                //do nothing
-                break;
-            case Constants.SHOW_NON_MUF_EXCEPTIONS:
-                if( !(e instanceof MultiuserException ) ){
-                    e.printStackTrace();
-                }
-                break;
-            default:
-                break;
+                    break;
+                case Constants.SHOW_MUF_EXCEPTIONS:
+                    if (e instanceof MultiuserException) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case Constants.SHOW_NO_EXCEPTIONS:
+                    //do nothing
+                    break;
+                case Constants.SHOW_NON_MUF_EXCEPTIONS:
+                    if (!(e instanceof MultiuserException)) {
+                        e.printStackTrace();
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
     }
 

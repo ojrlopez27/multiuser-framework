@@ -102,7 +102,7 @@ public class Broker extends Thread {
             bind("tcp://*:" + port);
             mediate();
         }catch (Throwable e){
-            ExceptionHandler.handle( e );
+            //ExceptionHandler.handle( e );
         }
     }
 
@@ -371,7 +371,7 @@ public class Broker extends Thread {
 
         // Stack routing envelope to start of message
         msg.wrap(worker.address.duplicate());
-        Log4J.debug(this, "sending to worker " + worker.toString());
+        //Log4J.debug(this, "sending to worker " + worker.toString());
         msg.send(socket);
     }
 }

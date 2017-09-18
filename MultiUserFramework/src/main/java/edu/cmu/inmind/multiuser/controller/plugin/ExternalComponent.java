@@ -10,6 +10,8 @@ import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
+import io.reactivex.Flowable;
+import io.reactivex.functions.Consumer;
 
 /**
  * Created by oscarr on 4/4/17.
@@ -24,15 +26,17 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
                              String[] messages){
         try {
             Utils.addOrChangeAnnotation(getClass().getAnnotation(BlackboardSubscription.class), "messages", messages);
-            setClientCommController( new ClientCommController.Builder()
-                    .setServerAddress(serviceURL)
-                    .setServiceName(sessionId)
-                    .setClientAddress( clientAddress )
-                    .setMsgTemplate( zMsgWrapper )
-                    .setSubscriptionMessages( messages )
-                    .setRequestType( Constants.REQUEST_CONNECT )
-                    .build() );
-            getClientCommController().receive(this);
+            Flowable.just(this).subscribe(externalComponent -> {
+                setClientCommController( new ClientCommController.Builder()
+                        .setServerAddress(serviceURL)
+                        .setServiceName(sessionId)
+                        .setClientAddress( clientAddress )
+                        .setMsgTemplate( zMsgWrapper )
+                        .setSubscriptionMessages( messages )
+                        .setRequestType( Constants.REQUEST_CONNECT )
+                        .setResponseListener(this)
+                        .build() );
+            });
         }catch (Throwable e){
             ExceptionHandler.handle( e );
         }
@@ -87,13 +91,15 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
     }
 
     @Override
-    public void close( String sessionId ) throws Throwable{
-        super.close( getSessionId() );
-    }
-
-    @Override
     public void process(String message) {
         SessionMessage sessionMessage = Utils.fromJson( message, SessionMessage.class );
+        if( sessionMessage.getMessageId() == null || sessionMessage.getMessageId().isEmpty() ){
+            String msg = "This message from Python (or any other external server) has an empty or null id. Make " +
+                    "sure you send a message with a proper id, otherwise it won't be delivered through the Blackboard. " +
+                    "Message: " + sessionMessage.getPayload();
+            Log4J.error(this, msg );
+            System.err.println(msg);
+        }
         blackboard().post( this, sessionMessage.getMessageId(), sessionMessage.getPayload() );
     }
 }

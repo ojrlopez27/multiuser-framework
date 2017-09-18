@@ -83,6 +83,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
             if (clientCommController == null) {
                 throw new MultiuserException( ErrorMessages.NO_REMOTE_ANNOTATION, getClass().getSimpleName() );
             }
+            Log4J.debug(this, "4.1. shouldProcessRequest: " + shouldProcessReply);
             clientCommController.setShouldProcessReply( shouldProcessReply );
             clientCommController.send( getSessionId(), sessionMessage);
         }catch (Throwable e){
@@ -95,7 +96,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
             if (clientCommController == null) {
                 throw new MultiuserException(ErrorMessages.NO_REMOTE_ANNOTATION, getClass().getSimpleName());
             }
-            clientCommController.receive(responseListener);
+            clientCommController.setResponseListener(responseListener);
         }catch (Throwable e){
             ExceptionHandler.handle( e );
         }

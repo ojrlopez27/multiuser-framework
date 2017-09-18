@@ -95,7 +95,7 @@ public class Blackboard {
 
     private void post(BlackboardListener sender, String key, Object element, boolean shouldClone){
         try {
-            Log4J.debug(this, String.format( "this is the message-id and message: (%s, $) send by: %s", key,
+            Log4J.debug(this, String.format( "this is the message-id and message: (%s, %s) send by: %s", key,
                     element, sender.getClass().getName() ));
             Object clone = shouldClone ? Utils.clone(element) : element;
             Log4J.debug(this, "cloned element: " + clone);
@@ -182,6 +182,10 @@ public class Blackboard {
     }
 
     private void notifySubscribers(BlackboardListener sender, String status, String key, Object element){
+        if( element == null ){
+            Log4J.error( this, "You are posting a null object through the Blackboard. Please check that. " +
+                    "I am sending an empty String instead in order to not break the system down");
+        }
         if(notifySubscribers && key != null) {
             try {
                 List<BlackboardListener> listeners = subscriptions.get(key);
@@ -195,6 +199,10 @@ public class Blackboard {
                                 ((PluggableComponent) subscriber).setActiveSession(sessionId);
                             }
                             try {
+                                Log4J.debug( Blackboard.this, sessionId,
+                                        String.format("Component [%s] sends the following message to component [%s]: %s",
+                                                sender.getClass().getSimpleName(), subscriber.getClass().getSimpleName(),
+                                                element == null? "" : element.toString()) );
                                 subscriber.onEvent(event);
                                 if (subscriber instanceof PluggableComponent && subscriber.getClass()
                                         .isAnnotationPresent(ConnectRemoteService.class)) {
@@ -203,7 +211,8 @@ public class Blackboard {
                                     sessionMessage.setRequestType(status);
                                     sessionMessage.setMessageId(key);
                                     sessionMessage.setPayload(Utils.toJson( event.getElement() ));
-                                    ((PluggableComponent) subscriber).send(sessionMessage, false);
+                                    ((PluggableComponent) subscriber).send(sessionMessage);
+                                    //((PluggableComponent) subscriber).send(sessionMessage, true);
                                 }
                             }catch (Throwable e){
                                 ExceptionHandler.handle( e );

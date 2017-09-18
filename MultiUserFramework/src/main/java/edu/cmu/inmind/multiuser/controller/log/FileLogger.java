@@ -2,6 +2,8 @@ package edu.cmu.inmind.multiuser.controller.log;
 
 
 import edu.cmu.inmind.multiuser.common.Utils;
+import io.reactivex.Flowable;
+import io.reactivex.functions.Consumer;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -35,13 +37,15 @@ public class FileLogger implements MessageLog {
 
     @Override
     public void store() throws Throwable{
-        if( turnedOn && !log.toString().isEmpty() ) {
-            File file = new File(path + id + "-" + Utils.getDateString() + ".log");
-            PrintWriter printWriter = new PrintWriter(file);
-            printWriter.write(log.toString());
-            printWriter.flush();
-            printWriter.close();
-        }
+        Flowable.just(log).subscribe(stringBuffer -> {
+            if( turnedOn && !stringBuffer.toString().isEmpty() ) {
+                File file = new File(path + id + "-" + Utils.getDateString() + ".log");
+                PrintWriter printWriter = new PrintWriter(file);
+                printWriter.write(stringBuffer.toString());
+                printWriter.flush();
+                printWriter.close();
+            }
+        });
     }
 
     @Override

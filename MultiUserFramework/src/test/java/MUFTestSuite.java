@@ -112,12 +112,13 @@ public class MUFTestSuite {
                 .setMuf( isTPCon? null : muf ) //when TCP is off, we need to explicitly tell the client who the MUF is
                 .build();
         // this method will be executed asynchronuously, so we need to add a delay before stopping the MUF
-        client.receive(message -> {
+        client.setResponseListener(message -> {
             SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
             assertNotNull( sessionMessage );
             if( !sessionMessage.getRequestType().equals( Constants.SESSION_CLOSED ) ) {
                 assertEquals("Response from MUF : " + uniqueMsgId, sessionMessage.getPayload());
             }
+            client.send( sessionId, new SessionMessage(Constants.REQUEST_DISCONNECT, ""+uniqueMsgId, sessionId) );
             Log4J.info(ResponseListener.class, "expected and received messages are the same");
             MUFTestSuite.this.checkAsyncCall = true;
         });
@@ -141,7 +142,7 @@ public class MUFTestSuite {
                 .setMuf( null )
                 .build();
         // this method will be executed asynchronuously, so we need to add a delay before stopping the MUF
-        client.receive(message -> {
+        client.setResponseListener(message -> {
             SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
             if( !sessionMessage.getRequestType().equals( Constants.SESSION_CLOSED ) ) {
                 assertEquals("Response from MUF : " + "uniqueMsgId", sessionMessage.getPayload());

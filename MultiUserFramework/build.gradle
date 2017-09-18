@@ -1,9 +1,12 @@
+import java.util.concurrent.TimeUnit
+
 group 'edu.cmu.inmind.multiuser.framework'
 version '2.0.1'
 
 apply plugin: 'java'
 
 sourceCompatibility = 1.8
+
 
 repositories {
     mavenCentral()
@@ -58,7 +61,7 @@ uploadArchives {
                 name 'MultiuserFramework'
                 packaging 'jar'
                 description 'Multiuser Framework for Plugable Components. It loads services from services.json'
-                pom.version = '2.13-RxJava'
+                pom.version = '2.14-reconnection'
                 pom.artifactId = 'multiuser'
                 pom.groupId = "edu.cmu.inmind.framework"
 
@@ -79,4 +82,18 @@ uploadArchives {
             }
         }
     }
+}
+
+task showMeCache {
+    doLast{
+        configurations.compile.each { println it }
+    }
+}
+
+
+configurations.all {
+    // Check for updates every hour.
+    // You can force it to an immediate update by passing 0 instead of 3600
+    resolutionStrategy.cacheChangingModulesFor(60, TimeUnit.MINUTES)
+    resolutionStrategy.cacheDynamicVersionsFor(60, TimeUnit.MINUTES)
 }

@@ -15,6 +15,7 @@ import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -35,9 +36,11 @@ public class Session implements Runnable, OrchestratorListener{
     private Config config;
     private String fullAddress;
     private ClientCommController client;
+    private List<SessionObserver> observers;
 
     public Session() {
         this.timer = new InactivityTimer();
+        this.observers = new ArrayList<>();
     }
 
     public String getId() {
@@ -105,6 +108,7 @@ public class Session implements Runnable, OrchestratorListener{
      */
     public void close() throws Throwable{
         if( !isClosed ) {
+            notifyObservers();
             Log4J.info(this, String.format("Closing session: %s", id));
             isClosed = true;
             status = Constants.SESSION_CLOSED;
@@ -161,7 +165,7 @@ public class Session implements Runnable, OrchestratorListener{
             }
             close();
         }catch (Throwable e){
-            ExceptionHandler.handle(e);
+            //ExceptionHandler.handle(e);
         }
     }
 
@@ -182,6 +186,20 @@ public class Session implements Runnable, OrchestratorListener{
 
     private void stopTimer(){
         timer.stopTimer();
+    }
+
+    public void onClose(SessionObserver observer) {
+        this.observers.add(observer);
+    }
+
+    private void notifyObservers(){
+        for(SessionObserver observer : observers){
+            observer.notifyCloseSession(this);
+        }
+    }
+
+    interface SessionObserver{
+        void notifyCloseSession(Session session);
     }
 
     /**

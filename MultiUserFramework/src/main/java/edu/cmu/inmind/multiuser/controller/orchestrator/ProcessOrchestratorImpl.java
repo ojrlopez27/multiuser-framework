@@ -107,6 +107,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
 
     @Override
     public void initialize( Session session ) throws Throwable{
+        this.orchestratorListeners = new CopyOnWriteArrayList<>();
         this.session = session;
         this.config = session.getConfig();
         this.fullAddress = session.getFullAddress();
@@ -121,6 +122,8 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         }
         logger.setId( sessionId );
         ResourceLocator.addServiceToComponent(components, sessionId, fullAddress );
+        blackboard.setComponents( components, sessionId );
+        blackboard.subscribe( this );
         for( PluggableComponent component : components ){
             if( component instanceof PluggableComponent){
                 component.addMessageLogger(sessionId, logger);
@@ -168,9 +171,6 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     @Override
     public void start() {
         Log4J.info(this, String.format("Starting Process Orchestrator for session: %s", sessionId));
-        blackboard.setComponents( components, sessionId );
-        blackboard.subscribe( this );
-        orchestratorListeners = new CopyOnWriteArrayList<>();
     }
 
     @Override
