@@ -14,14 +14,7 @@ import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import edu.cmu.inmind.multiuser.controller.sync.ForceSync;
 import edu.cmu.inmind.multiuser.controller.sync.SynchronizableEvent;
-import io.reactivex.Completable;
 import io.reactivex.Flowable;
-import io.reactivex.Notification;
-import io.reactivex.Observable;
-import io.reactivex.functions.Action;
-import io.reactivex.functions.Consumer;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,6 +46,9 @@ public class Blackboard {
 
     public void setComponents(Set<PluggableComponent> components, String sessionId){
         try {
+            if( components == null || components.isEmpty() ){
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.COMPONENTS_NULL, "") );
+            }
             for (PluggableComponent component : components) {
                 subscribe(component);
                 if (component instanceof PluggableComponent) {
@@ -122,6 +118,9 @@ public class Blackboard {
 
     private void remove(BlackboardListener sender, String key, boolean shouldClone){
         try {
+            if( key == null ){
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_KEY_NULL) );
+            }
             Object clone = Utils.clone(model.get(key));
             if (key.contains(Constants.REMOVE_ALL)) {
                 model.clear();
@@ -143,6 +142,9 @@ public class Blackboard {
 
     private Object get(String key, boolean shouldClone) {
         Object value = null;
+        if( key == null ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_KEY_NULL) );
+        }
         try {
             value = shouldClone ? Utils.clone(model.get(key)) : model.get(key);
         }catch (NoClassDefFoundError e){
@@ -158,9 +160,14 @@ public class Blackboard {
     }
 
     public void subscribe(BlackboardListener subscriber){
+        if( subscriber == null ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_SUBSCRIBER_NULL) );
+        }
         subscribers.add( subscriber );
         Class subsClass = Utils.getClass( subscriber );
         if( subscriber instanceof ExternalComponent ){
+            //If the component is a ExternalComponent, we cannot modify its annotations because the subscription message
+            // list will be overriden.
             subscribe( subscriber, ResourceLocator.getComponentsSubscriptions( subscriber.hashCode() ) );
         }else if (subsClass.isAnnotationPresent(BlackboardSubscription.class)) {
             String[] messages = ((Class<? extends BlackboardListener>)subsClass)
@@ -170,8 +177,17 @@ public class Blackboard {
     }
 
     private void subscribe(BlackboardListener subscriber, String[] messages) {
+        if( subscriber == null ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_SUBSCRIBER_NULL));
+        }
+        if( messages == null || messages.length == 0){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_MESSAGES_NULL));
+        }
         for (String message : messages) {
             List<BlackboardListener> listeners = subscriptions.get( message );
+            if( listeners == null || listeners.isEmpty() ){
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_SUBSCRIBERS_NULL) );
+            }
             if( listeners == null ){
                 listeners = new ArrayList<>();
                 subscriptions.put( message, listeners );
@@ -192,6 +208,9 @@ public class Blackboard {
         }
         if( key == null ){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_KEY_NULL, "") );
+        }
+        if( sender == null ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_SENDER_NULL, "") );
         }
 
         if(notifySubscribers && key != null) {

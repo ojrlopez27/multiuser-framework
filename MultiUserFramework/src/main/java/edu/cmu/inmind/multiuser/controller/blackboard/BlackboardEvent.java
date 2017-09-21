@@ -1,5 +1,9 @@
 package edu.cmu.inmind.multiuser.controller.blackboard;
 
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
+import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
+
 /**
  * Created by oscarr on 3/16/17.
  */
@@ -9,6 +13,9 @@ public class BlackboardEvent {
     private Object element;
 
     public BlackboardEvent(String status, String id, Object element) {
+        if( status == null || status.isEmpty() || id == null ||  id.isEmpty() || element == null ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_EVENT, status, id, element) );
+        }
         this.status = status;
         this.element = element;
         this.id = id;

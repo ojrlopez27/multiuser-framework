@@ -185,15 +185,19 @@ public class ClientCommController{
     private void execute() {
         Flowable.just(this).subscribe(clientCommController -> {
             if( release.equals(Constants.CONNECTION_FINISHED) ) {
-                reset();
-                connect();
-                sendThread();
-                receiveThread();
+                try {
+                    reset();
+                    connect();
+                    sendThread();
+                    receiveThread();
+                }catch (Throwable e){
+                    ExceptionHandler.handle( e );
+                }
             }
         });
     }
 
-    private void reset() {
+    private void reset() throws Throwable{
         stop = false;
         sentMessages = 0;
         receivedMessages = 0;
@@ -202,7 +206,7 @@ public class ClientCommController{
         release = checkFSM( release, Constants.CONNECTION_NEW);
     }
 
-    private void connect() {
+    private void connect() throws Throwable{
         try {
             if( isTCPon ) {
                 this.clientCommAPI = new ClientCommAPI(serverAddress);
@@ -233,28 +237,32 @@ public class ClientCommController{
         }
     }
 
-    public void close(){
-        try {
-            stop = true;
-            clientCommAPI.destroy();
-            clientCommAPI = null;
-            timer.cancel();
-            timer.purge();
-            context.destroySocket(clientSocket);
-            context.destroy();
-        }catch (Throwable e) {
-            //ExceptionHandler.handle(e);
-        }
+    public void close() throws Throwable{
+        new Thread(() -> {
+            try {
+                stop = true;
+                timer.cancel();
+                timer.purge();
+                //let's wait for all messages to be sent
+                Thread.sleep( 1000 );
+                clientCommAPI.destroy();
+                clientCommAPI = null;
+                context.destroySocket(clientSocket);
+                context.destroy();
+            }catch (Throwable e) {
+                //ExceptionHandler.handle(e);
+            }
+        }).start();
     }
 
     /********************************* SEND THREAD **************************************/
     /************************************************************************************/
 
-    public void send(String serviceId, Object message){
+    public void send(String serviceId, Object message) throws Throwable{
         send( new Pair<>(serviceId, message) );
     }
 
-    public void send(Pair<String, Object> message) {
+    public void send(Pair<String, Object> message) throws Throwable{
         try {
             clientSocket.send(message.fst + TOKEN + Utils.toJson(message.snd));
             String response = clientSocket.recvStr();
@@ -285,7 +293,7 @@ public class ClientCommController{
         }
     }
 
-    private void sendThread() {
+    private void sendThread() throws Throwable{
         sendThread = new SenderThread("ClientSendMsgsThread", context);
         sendThread.start();
     }
@@ -397,14 +405,14 @@ public class ClientCommController{
     /********************************* RECONNECT THREAD **************************************/
     /*****************************************************************************************/
 
-    private void checkReconnect(){
+    private void checkReconnect() throws Throwable{
         if ( stop && sendState.equals(Constants.CONNECTION_FINISHED)
                 && receiveState.equals(Constants.CONNECTION_FINISHED)) {
             reconnect();
         }
     }
 
-    private void reconnect() {
+    private void reconnect() throws Throwable{
         release = checkFSM(release, Constants.CONNECTION_STARTED);
         new Thread("ReconnectClientThread") {
             public void run() {

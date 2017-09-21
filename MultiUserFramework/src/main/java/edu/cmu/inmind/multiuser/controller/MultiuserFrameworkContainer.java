@@ -52,9 +52,9 @@ public class MultiuserFrameworkContainer {
         muf.stop();
     }
 
-    public static void stopFrameworks(){
-        for( String key : mufs.keySet() ){
-            mufs.remove( key ).stop();
+    public static void stopFrameworks() throws Throwable{
+        for (String key : mufs.keySet()) {
+            mufs.remove(key).stop();
         }
     }
 

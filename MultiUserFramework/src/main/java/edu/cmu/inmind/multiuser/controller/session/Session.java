@@ -2,12 +2,14 @@ package edu.cmu.inmind.multiuser.controller.session;
 
 import com.google.inject.Inject;
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.communication.ServerCommController;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.orchestrator.OrchestratorListener;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
@@ -73,6 +75,10 @@ public class Session implements Runnable, OrchestratorListener{
      * @param msg
      */
     public void setId(String id, ZMsgWrapper msg, String fullAddress) {
+        if(  id == null || id.isEmpty() || msg == null || fullAddress == null || fullAddress.isEmpty()){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "id: " + id,
+                    "msg: " + msg, "fullAddress: " + fullAddress) );
+        }
         if( this.id == null ){
             this.thread = new Thread( this, String.format("Session-%s-Thread", id ));
             Log4J.info(this, "A new session has been created with id: " + id);
@@ -174,7 +180,10 @@ public class Session implements Runnable, OrchestratorListener{
      * @param output
      */
     @Override
-    public void processOutput(SessionMessage output) {
+    public void processOutput(SessionMessage output) throws Throwable{
+        if( output == null ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "output: " + output));
+        }
         if( config.isTCPon() ) {
             sessionCommController.send(output);
         }else{
@@ -189,6 +198,10 @@ public class Session implements Runnable, OrchestratorListener{
     }
 
     public void onClose(SessionObserver observer) {
+        if( observer == null || observers == null ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "observer: " + observer,
+                    "observers: " + observers));
+        }
         this.observers.add(observer);
     }
 

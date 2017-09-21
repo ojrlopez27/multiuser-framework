@@ -26,15 +26,19 @@ import static com.google.inject.matcher.Matchers.any;
 public class PluginModule extends AbstractModule {
 
     private Multibinder<PluggableComponent> pluginBinder;
-    private List<ModuleComponent> plugableComponents;
+    private List<ModuleComponent> pluggableComponents;
     private Class<? extends ProcessOrchestrator> orchestrator;
 
     private PluginModule(Builder builder){
-        this.plugableComponents = builder.plugableComponents;
+        this.pluggableComponents = builder.plugableComponents;
         this.orchestrator = builder.orchestrator;
     }
 
     private void addPlugin( ModuleComponent moduleComponent ) throws Throwable{
+        if( moduleComponent == null || moduleComponent.component == null ){
+            ExceptionHandler.handle( new MultiuserException( ErrorMessages.ANY_ELEMENT_IS_NULL, "moduleComponent: "
+                    + moduleComponent, "component: " + moduleComponent == null? null : moduleComponent.component) );
+        }
         Class<? extends PluggableComponent> component = moduleComponent.component;
         String message = moduleComponent.message;
         int numOfInstances = moduleComponent.numOfInstances;
@@ -68,7 +72,11 @@ public class PluginModule extends AbstractModule {
         }
     }
 
-    private void addOrchestrator(Class<? extends ProcessOrchestrator> clazz){
+    private void addOrchestrator(Class<? extends ProcessOrchestrator> clazz) throws Throwable{
+        if( clazz == null  ){
+            ExceptionHandler.handle( new MultiuserException( ErrorMessages.ANY_ELEMENT_IS_NULL, "ProcessOrchestrator: "
+                    + clazz) );
+        }
         install(new FactoryModuleBuilder()
                 .implement(ProcessOrchestrator.class, clazz)
                 .build(ProcessOrchestratorFactory.class));
@@ -79,7 +87,11 @@ public class PluginModule extends AbstractModule {
     protected void configure(){
         try {
             pluginBinder = Multibinder.newSetBinder(binder(), PluggableComponent.class);
-            for (ModuleComponent component : plugableComponents) {
+            if( pluggableComponents == null || pluggableComponents.isEmpty() ){
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
+                        "pluggableComponents: " + pluggableComponents));
+            }
+            for (ModuleComponent component : pluggableComponents) {
                 addPlugin(component);
             }
             addOrchestrator(orchestrator);
@@ -118,14 +130,6 @@ public class PluginModule extends AbstractModule {
             addPlugin( component, message );
         }
 
-        public Builder addPlugin(Class<? extends PluggableComponent> component, int numOfInstances, String message ){
-            if( plugableComponents == null ){
-                plugableComponents = new ArrayList<>();
-            }
-            plugableComponents.add( new ModuleComponent(component, numOfInstances, message) );
-            return this;
-        }
-
         public Builder addPlugin(Class<? extends PluggableComponent> component, String mapping ){
             return addPlugin( component, defaultNumOfInstances, mapping );
         }
@@ -144,6 +148,18 @@ public class PluginModule extends AbstractModule {
             return null;
         }
 
+        public Builder addPlugin(Class<? extends PluggableComponent> component, int numOfInstances, String message ){
+            if( component == null || numOfInstances == 0 || message == null || message.isEmpty() ){
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "component: "
+                        + component, "numInstances (cannot be 0): " + numOfInstances, "message: " + message));
+            }
+            if( plugableComponents == null ){
+                plugableComponents = new ArrayList<>();
+            }
+            plugableComponents.add( new ModuleComponent(component, numOfInstances, message) );
+            return this;
+        }
+
         public PluginModule build(){
             return new PluginModule( this );
         }
@@ -154,7 +170,7 @@ public class PluginModule extends AbstractModule {
         private int numOfInstances;
         private String message;
 
-        public ModuleComponent(Class<? extends PluggableComponent> component, int numOfInstances, String message) {
+        private ModuleComponent(Class<? extends PluggableComponent> component, int numOfInstances, String message) {
             this.component = component;
             this.numOfInstances = numOfInstances;
             this.message = message;

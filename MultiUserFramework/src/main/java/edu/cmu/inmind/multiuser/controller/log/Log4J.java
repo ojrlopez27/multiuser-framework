@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.log;
 
 import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
@@ -91,14 +92,19 @@ public class Log4J{
         if( turnedOn ) getLogger(caller).warn( getSessionAndMsg(sessionId, message ));
     }
 
-    private static Logger getLogger(Object caller){
-        Class clazz = Utils.getClass(caller);
-        org.apache.logging.log4j.Logger logger = ResourceLocator.getLogger(clazz);
-        if( logger == null ){
-            logger = LogManager.getLogger( clazz.getSimpleName() );
-            ResourceLocator.addLogger(clazz, logger);
+    private static Logger getLogger(Object caller) {
+        try {
+            Class clazz = Utils.getClass(caller);
+            org.apache.logging.log4j.Logger logger = ResourceLocator.getLogger(clazz);
+            if (logger == null) {
+                logger = LogManager.getLogger(clazz.getSimpleName());
+                ResourceLocator.addLogger(clazz, logger);
+            }
+            return logger;
+        }catch (Throwable e){
+            ExceptionHandler.handle( e );
         }
-        return logger;
+        return null;
     }
 
     public static void turnOn(boolean shouldTurnOn){

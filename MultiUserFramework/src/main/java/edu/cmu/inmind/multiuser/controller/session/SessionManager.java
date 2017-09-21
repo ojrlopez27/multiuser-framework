@@ -52,6 +52,10 @@ public class SessionManager implements Runnable, Session.SessionObserver{
 
 
     public SessionManager(PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws Throwable{
+        if( modules == null || modules.length <= 0 || config == null ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "modules: " + modules,
+                    "config: " + config));
+        }
         this.config = config;
         if( config == null ){
             throw new MultiuserException(ErrorMessages.OBJECT_NULL, "config");
@@ -107,21 +111,25 @@ public class SessionManager implements Runnable, Session.SessionObserver{
             //ExceptionHandler.handle(e);
         }finally{
             boolean done = false;
-            while( !done ) {
-                done = true;
-                for (ServiceManager serviceManager : ResourceLocator.getServiceManagers().keySet()) {
-                    // if the sever manager has stopped, we are done!
-                    if( !ResourceLocator.getServiceManagers().get(serviceManager).equals(Constants.SERVICE_MANAGER_STOPPED) ){
-                        done = false;
-                        break;
+            try {
+                while (!done) {
+                    done = true;
+                    for (ServiceManager serviceManager : ResourceLocator.getServiceManagers().keySet()) {
+                        // if the sever manager has stopped, we are done!
+                        if (!ResourceLocator.getServiceManagers().get(serviceManager).equals(Constants.SERVICE_MANAGER_STOPPED)) {
+                            done = false;
+                            break;
+                        }
                     }
+                    Utils.sleep(500);
                 }
-                Utils.sleep(500);
-            }
-            ExceptionHandler.storeLog();
-            Log4J.info(this, "Session Manager stopped. Bye bye!");
-            if( config.executeExit() ) {
-                System.exit(0);
+                ExceptionHandler.storeLog();
+                Log4J.info(this, "Session Manager stopped. Bye bye!");
+                if (config.executeExit()) {
+                    System.exit(0);
+                }
+            }catch (Throwable e){
+                ExceptionHandler.handle( e );
             }
         }
     }
@@ -167,7 +175,7 @@ public class SessionManager implements Runnable, Session.SessionObserver{
         }
     }
 
-    private void loadRemoteServices(){
+    private void loadRemoteServices() throws Throwable{
         try {
             ServiceInfoContainer container = Utils.fromJsonFile(config.getServiceConfigPath(), ServiceInfoContainer.class);
             if (container != null) {
@@ -193,13 +201,13 @@ public class SessionManager implements Runnable, Session.SessionObserver{
         }
     }
 
-    private void resume(Session session, ZMsgWrapper msgRequest) {
+    private void resume(Session session, ZMsgWrapper msgRequest) throws Throwable{
         Log4J.info(this, "Resuming session: " + session.getId());
         session.resume();
         send( msgRequest, new SessionMessage(Constants.SESSION_RESUMED) );
     }
 
-    private void pause(Session session, ZMsgWrapper msgRequest) {
+    private void pause(Session session, ZMsgWrapper msgRequest) throws Throwable{
         Log4J.info(this, "Pausing session: " + session.getId());
         session.pause();
         send( msgRequest, new SessionMessage(Constants.SESSION_PAUSED) );
@@ -207,9 +215,9 @@ public class SessionManager implements Runnable, Session.SessionObserver{
 
     private void disconnect(Session session, ZMsgWrapper msgRequest) throws Throwable{
         Log4J.info(this, "Disconnecting session: " + session.getId());
+        send( msgRequest, new SessionMessage(Constants.SESSION_CLOSED) );
         session.close( );
         sessions.remove( session.getId() );
-        send( msgRequest, new SessionMessage(Constants.SESSION_CLOSED) );
     }
 
     /**
@@ -217,19 +225,19 @@ public class SessionManager implements Runnable, Session.SessionObserver{
      * @param request
      * @param msgRequest
      */
-    private void registerRemoteService(SessionMessage request, ZMsgWrapper msgRequest) {
+    private void registerRemoteService(SessionMessage request, ZMsgWrapper msgRequest)  throws Throwable{
         Log4J.info(this, "Registering service: " + request.getSessionId());
         ResourceLocator.registerService(request, msgRequest, request.getPayload());
         if(msgRequest != null) send( msgRequest, new SessionMessage(Constants.RESPONSE_REMOTE_REGISTERED) );
     }
 
 
-    private void registerRemoteService(ServiceInfo serviceInfo) {
+    private void registerRemoteService(ServiceInfo serviceInfo) throws Throwable{
         Log4J.info(this, "Registering service: " + serviceInfo.getServiceName());
         ResourceLocator.registerService(serviceInfo);
     }
 
-    private void unregisterRemoteService(SessionMessage request, ZMsgWrapper msgRequest) {
+    private void unregisterRemoteService(SessionMessage request, ZMsgWrapper msgRequest) throws Throwable {
         Log4J.info(this, "Unregistering service: " + request.getSessionId());
         ResourceLocator.unregisterService(request);
         send( msgRequest, new SessionMessage(Constants.RESPONSE_REMOTE_UNREGISTERED) );
@@ -240,7 +248,7 @@ public class SessionManager implements Runnable, Session.SessionObserver{
      * @param msgRequest
      * @return
      */
-    private SessionMessage getServerRequest(ZMsgWrapper msgRequest) {
+    private SessionMessage getServerRequest(ZMsgWrapper msgRequest) throws Throwable{
         if( msgRequest != null && msgRequest.getMsg().peekLast() != null ) {
             return Utils.fromJson(msgRequest.getMsg().peekLast().toString(), SessionMessage.class);
         }
@@ -251,7 +259,7 @@ public class SessionManager implements Runnable, Session.SessionObserver{
      * Once a new session instance is created (for a specific client), this method returns to that client the port
      * number on which it should be sending (pushing information to) and listening (pulling information from).
      */
-    private void createSession(ZMsgWrapper msgRequest, SessionMessage request) {
+    private void createSession(ZMsgWrapper msgRequest, SessionMessage request) throws Throwable{
         String key = request.getSessionId();
         Session session = DependencyManager.getInstance().getComponent(Session.class);
         session.onClose(this);
@@ -268,31 +276,39 @@ public class SessionManager implements Runnable, Session.SessionObserver{
      * @param serviceInfo
      */
     private void createFrameworkAsService(ServiceInfo serviceInfo) {
-        ClientCommController clientCommController = new ClientCommController.Builder()
-                .setServerAddress(serviceInfo.getServerAddress())
-                .setServiceName(serviceInfo.getServiceName())
-                .setClientAddress( serviceInfo.getClientAddress() )
-                .setMsgTemplate( serviceInfo.getMsgWrapper() )
-                .setSubscriptionMessages( serviceInfo.getMsgSubscriptions() )
-                .setRequestType( Constants.REGISTER_REMOTE_SERVICE )
-                .build();
-        Log4J.info(this, "Creating new service as a framework: " + serviceInfo.getServiceName());
+        try {
+            ClientCommController clientCommController = new ClientCommController.Builder()
+                    .setServerAddress(serviceInfo.getServerAddress())
+                    .setServiceName(serviceInfo.getServiceName())
+                    .setClientAddress(serviceInfo.getClientAddress())
+                    .setMsgTemplate(serviceInfo.getMsgWrapper())
+                    .setSubscriptionMessages(serviceInfo.getMsgSubscriptions())
+                    .setRequestType(Constants.REGISTER_REMOTE_SERVICE)
+                    .build();
+            Log4J.info(this, "Creating new service as a framework: " + serviceInfo.getServiceName());
 
-        // let's process the response
-        clientCommController.setResponseListener(message -> {
-            SessionMessage sessionMessage = Utils.fromJson( message, SessionMessage.class );
-            String messageId = sessionMessage.getMessageId();
-            sessionMessage.setMessageId("");
-            serviceInfo.getResponseListener().process( Utils.toJson(sessionMessage) );
-            if( sessionMessage.getRequestType().equals( Constants.REQUEST_SHUTDOWN_SYSTEM )
-                    && messageId.equals( Constants.SESSION_MANAGER_SERVICE) ){
-                clientCommController.close();
-                //MultiuserFramework.stop();
-            }
-        });
+            // let's process the response
+            clientCommController.setResponseListener(message -> {
+                try {
+                    SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
+                    String messageId = sessionMessage.getMessageId();
+                    sessionMessage.setMessageId("");
+                    serviceInfo.getResponseListener().process(Utils.toJson(sessionMessage));
+                    if (sessionMessage.getRequestType().equals(Constants.REQUEST_SHUTDOWN_SYSTEM)
+                            && messageId.equals(Constants.SESSION_MANAGER_SERVICE)) {
+                        clientCommController.close();
+                        //MultiuserFramework.stop();
+                    }
+                }catch (Throwable e){
+                    ExceptionHandler.handle(e);
+                }
+            });
+        }catch (Throwable e){
+            ExceptionHandler.handle(e);
+        }
     }
 
-    private void reconnect(ZMsgWrapper msgRequest, SessionMessage request, Session session){
+    private void reconnect(ZMsgWrapper msgRequest, SessionMessage request, Session session) throws Throwable{
         Log4J.info(this, "Reconnecting session: " + session.getId() + " as per request "
                 + request.getSessionId());
         if(request.getSessionId().equals(session.getId())){
@@ -302,7 +318,7 @@ public class SessionManager implements Runnable, Session.SessionObserver{
         }
     }
 
-    private void send(ZMsgWrapper msgRequest, SessionMessage request){
+    private void send(ZMsgWrapper msgRequest, SessionMessage request) throws Throwable{
         if( serverCommController != null ){
             serverCommController.send( msgRequest, request );
         }
@@ -333,13 +349,17 @@ public class SessionManager implements Runnable, Session.SessionObserver{
     /**
      * MUF runs on its own separate thread
      */
-    public void start() {
+    public void start() throws Throwable{
         thread = new Thread( this, "SessionManagerThread" );
         thread.start();
     }
 
     @Override
     public void notifyCloseSession(Session session) {
+        if( session == null || sessions == null ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "session: " + session,
+                    "sessions: " + sessions));
+        }
         this.sessions.remove(session.getId());
     }
 }

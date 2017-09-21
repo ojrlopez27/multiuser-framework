@@ -25,7 +25,7 @@ public class LoggerInterceptor implements MethodInterceptor {
         return methodInvocation.proceed();
     }
 
-    private String argsToString( MethodInvocation methodInvocation ){
+    private String argsToString( MethodInvocation methodInvocation ) throws Throwable{
         Object[] args = methodInvocation.getArguments();
         if( args != null && args.length > 0 ){
             StringBuffer stringBuffer = new StringBuffer( "[" );

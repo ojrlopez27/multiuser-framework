@@ -9,6 +9,7 @@ import com.google.common.util.concurrent.ServiceManager;
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.communication.*;
+import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
@@ -37,6 +38,10 @@ public class ResourceLocator {
      * @param request
      */
     public static void registerService(SessionMessage request, ZMsgWrapper msg, String payload) {
+        if( request == null || msg == null || payload == null ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "request: "
+                    + request, "msg: " + msg, "payload: " + payload) );
+        }
         ServiceComponent serviceComponent = serviceRegistry.get(request.getSessionId());
         serviceComponent = serviceComponent != null ? serviceComponent.setServiceURL(request.getUrl())
                 : new ServiceComponent(null, request.getUrl(), msg.duplicate());
@@ -48,6 +53,10 @@ public class ResourceLocator {
 
 
     public static void registerService(ServiceInfo serviceInfo) {
+        if( serviceInfo == null ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "serviceInfo: "
+                    + serviceInfo) );
+        }
         ServiceComponent serviceComponent = serviceRegistry.get( serviceInfo.getServiceName() );
         serviceComponent = serviceComponent != null ? serviceComponent.setServiceURL( serviceInfo.getClientAddress())
                 : new ServiceComponent(null, serviceInfo.getClientAddress(), null);
@@ -64,6 +73,10 @@ public class ResourceLocator {
 
     public static void addComponentToService(String serviceId, Class<? extends PluggableComponent> component,
                                              ZMsgWrapper msg) {
+        if( component == null || msg == null){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "component: "
+                    + component, "msg: " + msg) );
+        }
         ServiceComponent serviceComponent = serviceRegistry.get( serviceId );
         serviceComponent = serviceComponent != null ? serviceComponent.setComponent(component)
                 : new ServiceComponent(component, null, msg.duplicate());
@@ -83,6 +96,10 @@ public class ResourceLocator {
 
     public static void addServiceToComponent(PluggableComponent component, String sessionId, String fullAddress)
             throws Throwable{
+        if( component == null || sessionId == null || sessionId.isEmpty() || fullAddress == null || fullAddress.isEmpty()){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "sessionId: "
+                    + sessionId, "component: " + component, "fulAddress: " + fullAddress) );
+        }
         if (component.getClass().isAnnotationPresent(ConnectRemoteService.class)) {
             String servideId = component.getClass().getAnnotation(ConnectRemoteService.class).remoteService();
             ServiceComponent serviceComponent = serviceRegistry.get(servideId);
@@ -103,7 +120,12 @@ public class ResourceLocator {
         }
     }
 
-    public static Set<PluggableComponent> addComponentsToRegistry(Set<PluggableComponent> components, String sessionId) {
+    public static Set<PluggableComponent> addComponentsToRegistry(Set<PluggableComponent> components, String sessionId)
+        throws Throwable{
+        if( components == null || components.isEmpty() || sessionId == null || sessionId.isEmpty() ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "sessionId: "
+                    + sessionId, "components: " + components, "sessionId: " + sessionId) );
+        }
         Set<PluggableComponent> newComponents = new HashSet<>();
         for( PluggableComponent component : components ) {
             List<String> sessionIds = componentsRegistry.get( component );
@@ -126,6 +148,10 @@ public class ResourceLocator {
     }
 
     public static void addMsgMapping(String message, Class<? extends PluggableComponent> component){
+        if( component == null || message == null || message.isEmpty() ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "component: "
+                    + component, "message: " + message) );
+        }
         messageMapping.put(message, component);
     }
 
@@ -178,6 +204,10 @@ public class ResourceLocator {
     }
 
     public static void addComponentSubscriptions(int hashcode, String[] messages) {
+        if( hashcode <=0 || messages == null || messages.length <= 0 ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "hashcode: "
+                    + hashcode, "messages: " + messages) );
+        }
         componentsSubscriptions.put( hashcode, messages );
     }
 

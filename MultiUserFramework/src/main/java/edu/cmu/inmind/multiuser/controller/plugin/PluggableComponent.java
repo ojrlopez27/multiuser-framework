@@ -42,6 +42,10 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
 
 
     public void addBlackboard(String sessionId, Blackboard blackboard) {
+        if( blackboards == null || sessionId == null || blackboard == null ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "blackboards: "+blackboards,
+                    "sessionId: " + sessionId, "blackboard: " + blackboard));
+        }
         blackboards.put(sessionId, blackboard);
     }
 
@@ -56,8 +60,11 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
 
     public Blackboard blackboard(){
         Blackboard bb = null;
-        if( activeSession != null && activeSession.getId() != null && blackboards != null )
-            bb = blackboards.get( activeSession.getId() );
+        if( activeSession != null && activeSession.getId() != null && blackboards != null ) {
+            bb = blackboards.get(activeSession.getId());
+        }else{
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, blackboards, activeSession, ""));
+        }
         //TODO: why blackboard is null?
         if( bb == null ){
             bb = new Blackboard();
@@ -121,21 +128,29 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
     }
 
     private void checkActiveSession(){
-        if (activeSession == null) {
-            if( sessions.size() == 1 ){
+        if (activeSession == null){
+            if( sessions != null && sessions.size() == 1 ){
                 activeSession = new ArrayList<>( sessions.values() ).get(0);
             }else {
-                ExceptionHandler.handle( new MultiuserException(ErrorMessages.ATTRIBUTE_NULL, "activeSession",
-                        "setActiveSession") );
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "activeSession: "
+                        + activeSession, "sessions: " + sessions) );
             }
         }
     }
 
     public void addMessageLogger(String sessionId, MessageLog messageLogger) {
+        if( messageLoggers == null || sessionId == null || sessionId.isEmpty() || messageLogger == null ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
+                    "messageLoggers: " + messageLoggers, "sessionId: " + sessionId, "messagaLogger: " + messageLogger) );
+        }
         messageLoggers.put(sessionId, messageLogger);
     }
 
     public void addSession(Session session){
+        if( session == null || sessions == null ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
+                    "session: " + session, "sessions: " + sessions) );
+        }
         sessions.put(session.getId(), session);
     }
 
@@ -158,7 +173,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
                 shutDown();
             }
         }
-            sessions.remove( sessionId );
+        sessions.remove( sessionId );
     }
 
     /** METHODS OF BlackboardListener INTERFACE **/

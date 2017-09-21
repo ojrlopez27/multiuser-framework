@@ -1,7 +1,10 @@
 package edu.cmu.inmind.multiuser.controller.log;
 
 
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
 
@@ -25,6 +28,9 @@ public class FileLogger implements MessageLog {
 
     @Override
     public void setPath(String path) {
+        if( path == null || path.isEmpty() || !(new File(path).exists()) ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.FILE_NOT_EXISTS, path) );
+        }
         this.path = path;
     }
 
@@ -38,12 +44,16 @@ public class FileLogger implements MessageLog {
     @Override
     public void store() throws Throwable{
         Flowable.just(log).subscribe(stringBuffer -> {
-            if( turnedOn && !stringBuffer.toString().isEmpty() ) {
-                File file = new File(path + id + "-" + Utils.getDateString() + ".log");
-                PrintWriter printWriter = new PrintWriter(file);
-                printWriter.write(stringBuffer.toString());
-                printWriter.flush();
-                printWriter.close();
+            try {
+                if (turnedOn && !stringBuffer.toString().isEmpty()) {
+                    File file = new File(path + id + "-" + Utils.getDateString() + ".log");
+                    PrintWriter printWriter = new PrintWriter(file);
+                    printWriter.write(stringBuffer.toString());
+                    printWriter.flush();
+                    printWriter.close();
+                }
+            }catch (Throwable e){
+                ExceptionHandler.handle( e );
             }
         });
     }

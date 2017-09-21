@@ -27,4 +27,19 @@ public class ErrorMessages {
             "check that";
     public static final String NOBODY_IS_SUBSCRIBED = "None Component is subscribed to message: %s. Noboby will " +
             "listen to you! Check your services.json file or the @BlackboardSubscription annotation";
+    public static final String PAIR_VALUE_NULL = "One (or both) of the Pair variables is null. var1: &s, var2: %s";
+    public static final String COMPONENTS_NULL = "The list of components is empty or null.";
+    public static final String BLACKBOARD_SUBSCRIBER_NULL = "Blackboard subscriber is null";
+
+    public static final String BLACKBOARD_MESSAGES_NULL = "The list of subscription messages is empty or null";
+    public static final String BLACKBOARD_SUBSCRIBERS_NULL = "The list of balckboard subscribers is null or empty";
+    public static final String BLACKBOARD_SENDER_NULL = "Blackboard sender is null";
+    public static final String BLACKBOARD_EVENT = "Blackboard event contains a null or empty parameter. status: %, " +
+            "id: %s, element: %s";
+    public static final String NO_SUBSCRIPTION_MESSSAGES = "The service '%s' has no subscription messages. Please " +
+            "check your services.json file";
+    public static final String ANY_ELEMENT_IS_NULL = "One or more of these elements is/are null (or empty): %s, %s, %s";
+    public static final String INCORRECT_SERVER_ADDRESS = "The ip address for %s is incorrect: %s";
+    public static final String UNKNOWN_EXCEPTION_TRACE_LEVEL = "Unknown Exception trace level: %s. It should be a value " +
+            "between 1-4";
 }

@@ -6,5 +6,5 @@ import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
  * Created by oscarr on 3/10/17.
  */
 public interface OrchestratorListener {
-    void processOutput(SessionMessage output);
+    void processOutput(SessionMessage output) throws Throwable;
 }

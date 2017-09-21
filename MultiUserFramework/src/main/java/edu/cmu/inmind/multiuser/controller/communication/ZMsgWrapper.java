@@ -33,7 +33,7 @@ public class ZMsgWrapper {
         return new ZMsgWrapper( this.getMsg().duplicate(), this.getReplyTo().duplicate() );
     }
 
-    public void destroy(){
+    public void destroy() throws Throwable{
         if(msg != null) msg.destroy();
         if(replyTo != null) replyTo.destroy();
     }

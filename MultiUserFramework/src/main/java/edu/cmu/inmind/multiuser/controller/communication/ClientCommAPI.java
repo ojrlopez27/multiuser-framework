@@ -31,7 +31,7 @@ public class ClientCommAPI {
     /**
      * Connect or reconnect to broker
      */
-    void reconnectToBroker() {
+    void reconnectToBroker() throws Throwable{
         if (clientSocket != null) {
             ctx.destroySocket(clientSocket);
         }
@@ -104,17 +104,13 @@ public class ClientCommAPI {
         request.addFirst(service);
         request.addFirst(MDP.C_CLIENT.newFrame());
         request.addFirst("");
-        //Log4J.debug(this, "about to send " + request.toString());
         if( !request.send(clientSocket) ){
-            //Log4J.debug(this, "failed to send " + request.toString());
             return false;
         }
-        //Log4J.debug(this, "successfully sent " + request.toString());
         return true;
     }
 
     public void destroy() throws Throwable{
         ctx.destroy();
     }
-
 }

@@ -36,15 +36,19 @@ public class ServerCommController {
     private ZFrame replyTo;
 
     public ServerCommController(String serverAddress, String serviceId, ZMsgWrapper msgTemplate) {
-        ExceptionHandler.checkAssert( serverAddress != null);
-        ExceptionHandler.checkAssert( serviceId != null);
-        this.serverAddress = serverAddress;
-        this.service = serviceId;
-        if( msgTemplate != null ){
-            this.msgTemplate = msgTemplate.duplicate();
+        try {
+            ExceptionHandler.checkAssert(serverAddress != null);
+            ExceptionHandler.checkAssert(serviceId != null);
+            this.serverAddress = serverAddress;
+            this.service = serviceId;
+            if (msgTemplate != null) {
+                this.msgTemplate = msgTemplate.duplicate();
+            }
+            ctx = new ZContext();
+            reconnectToBroker();
+        }catch (Throwable e){
+            ExceptionHandler.handle(e);
         }
-        ctx = new ZContext();
-        reconnectToBroker();
     }
 
     /**
@@ -54,7 +58,7 @@ public class ServerCommController {
      * @param option
      * @param msg
      */
-    void sendToBroker(MDP command, String option, ZMsg msg) {
+    void sendToBroker(MDP command, String option, ZMsg msg) throws Throwable{
         msg = msg != null ? msg.duplicate() : new ZMsg();
 
         // Stack protocol envelope to start of message
@@ -70,7 +74,7 @@ public class ServerCommController {
     /**
      * Connect or reconnect to broker
      */
-    void reconnectToBroker() {
+    void reconnectToBroker() throws Throwable{
         if (workerSocket != null) {
             ctx.destroySocket(workerSocket);
         }
@@ -159,7 +163,7 @@ public class ServerCommController {
     }
 
 
-    public void send(ZMsgWrapper reply, Object message){
+    public void send(ZMsgWrapper reply, Object message) throws Throwable{
         if (reply != null) {
             if( replyTo == null || replyTo.toString().isEmpty() ){
                 if( reply.getReplyTo() != null && !reply.getReplyTo().toString().isEmpty() ){
@@ -180,7 +184,7 @@ public class ServerCommController {
         }
     }
 
-    public void send(Object message){
+    public void send(Object message) throws Throwable{
         if( msgTemplate == null ){
             ExceptionHandler.handle( new MultiuserException( ErrorMessages.OBJECT_NULL, "msgTemplate" ) );
         }
@@ -194,7 +198,7 @@ public class ServerCommController {
             if (replyTo != null) replyTo.destroy();
             if (ctx != null) ctx.destroy();
         }catch (Throwable e){
-            ExceptionHandler.handle(e);
+            //ExceptionHandler.handle(e);
         }
     }
 

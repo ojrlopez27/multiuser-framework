@@ -11,6 +11,9 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -168,19 +171,28 @@ public class Utils {
         try{
             Thread.yield();
             Thread.sleep(millis);
-        }catch (Throwable e){ }
+        }catch (Throwable e){
+            e.printStackTrace();
+        }
     }
 
 
     public static void toJson(Object object, String name){
+        PrintWriter out = null;
         try {
             String json = gson.toJson(object);
-            PrintWriter out = new PrintWriter(name + ".json");
+             out = new PrintWriter(name + ".json");
             out.println(json);
             out.flush();
             out.close();
         }catch (Throwable e){
             e.printStackTrace();
+        }finally {
+            try {
+                out.close();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
         }
     }
 
@@ -202,7 +214,7 @@ public class Utils {
         return null;
     }
 
-    private static String trimDoubleQuotes(String stringRepresentation) {
+    private static String trimDoubleQuotes(String stringRepresentation) throws Throwable{
         boolean trimmed = false;
         if( stringRepresentation.substring(0, 1).equals("\"") ){
             stringRepresentation = stringRepresentation.substring( 1 );
@@ -216,12 +228,12 @@ public class Utils {
     }
 
 
-    public static String getDateString(){
+    public static String getDateString() throws Throwable{
         SimpleDateFormat format = new SimpleDateFormat("[yyyy-MM-dd-HH.mm.ss]");
         return format.format( new Date() );
     }
 
-    public static void exchange(String[] conversationalStrategies, String behaviorName) {
+    public static void exchange(String[] conversationalStrategies, String behaviorName) throws Throwable{
         if( !conversationalStrategies[0].equals(behaviorName) ) {
             ArrayList<String> list = new ArrayList(Arrays.asList(conversationalStrategies));
             list.remove(behaviorName);
@@ -232,29 +244,30 @@ public class Utils {
         }
     }
 
-    public static <T> T createInstance(Class<T> clazz, Object... args){
-        Class[] parameterTypes = new Class[args.length];
-        for( int i = 0; i < args.length; i++ ){
-            if( args[i] instanceof Class ){
-                parameterTypes[i] = (Class)args[i];
-                args[i] = null;
-            }else {
-                parameterTypes[i] = args[i].getClass();
-            }
-        }
+    public static <T> T createInstance(Class<T> clazz, Object... args) {
+        Class[] parameterTypes = null;
         try {
+            parameterTypes = new Class[args.length];
+            for( int i = 0; i < args.length; i++ ){
+                if( args[i] instanceof Class ){
+                    parameterTypes[i] = (Class)args[i];
+                    args[i] = null;
+                }else {
+                    parameterTypes[i] = args[i].getClass();
+                }
+            }
             Constructor constructor = clazz.getConstructor( parameterTypes );
             return (T)constructor.newInstance( args );
         }catch (Throwable e){
-            for( int i = 0; i < args.length; i++ ){
-                if( args[i] != null && !(args[i] instanceof Class) ){
-                    Class argClass = args[i].getClass().getSuperclass();
-                    if( argClass != Object.class && argClass != Class.class ) {
-                        parameterTypes[i] = argClass;
+            try{
+                for( int i = 0; i < args.length; i++ ){
+                    if( args[i] != null && !(args[i] instanceof Class) ){
+                        Class argClass = args[i].getClass().getSuperclass();
+                        if( argClass != Object.class && argClass != Class.class ) {
+                            parameterTypes[i] = argClass;
+                        }
                     }
                 }
-            }
-            try{
                 Constructor constructor = clazz.getConstructor( parameterTypes );
                 return (T)constructor.newInstance( args );
             }catch(Throwable e1){
@@ -293,12 +306,19 @@ public class Utils {
 
     public static Properties loadProperties(String pathName){
         Properties prop = null;
+        FileInputStream inputStream = null;
         try {
             prop = new Properties();
-            FileInputStream inputStream = new FileInputStream(pathName);
+            inputStream = new FileInputStream(pathName);
             prop.load( new FileInputStream(pathName) );
-            inputStream.close();
         }catch (Exception e){
+            e.printStackTrace();
+        }finally{
+            try {
+                inputStream.close();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
         }
         return prop;
     }
@@ -323,7 +343,7 @@ public class Utils {
         return cloner.deepClone(list);
     }
 
-    public static ArrayList cloneArray( ArrayList list ){
+    public static ArrayList cloneArray( ArrayList list ) throws Throwable{
         ArrayList result = new ArrayList(list.size());
         for( Object element : list ){
             result.add( cloner.deepClone(element) );
@@ -332,14 +352,16 @@ public class Utils {
     }
 
     public static Class getClass(Object caller) {
-        Class clazz = caller.getClass();
-        String className = clazz.getName();
-        if( className.contains("$$Enhancer") ){
-            try {
+        Class clazz = null;
+        String className;
+        try {
+            clazz = caller.getClass();
+            className = clazz.getName();
+            if (className.contains("$$Enhancer")) {
                 clazz = Class.forName(className.substring(0, className.indexOf("$$Enhancer")));
-            }catch (Throwable e){
-                ExceptionHandler.handle(e);
             }
+        }catch (Throwable e) {
+            ExceptionHandler.handle(e);
         }
         return clazz;
     }
@@ -349,7 +371,8 @@ public class Utils {
      * the previous value.
      */
     @SuppressWarnings("unchecked")
-    public static Object addOrChangeAnnotation(BlackboardSubscription annotation, String key, Object newValue) {
+    public static Object addOrChangeAnnotation(BlackboardSubscription annotation, String key, Object newValue)
+            throws Throwable{
         Object handler = Proxy.getInvocationHandler(annotation);
         Field f;
         try {
@@ -373,6 +396,7 @@ public class Utils {
     }
 
     public static void toJsonFile(Object obj, String directory, String fileName) {
+        PrintWriter writer = null;
         if( obj != null ) {
             try {
                 File dir = new File(directory);
@@ -380,34 +404,43 @@ public class Utils {
                     dir.mkdir();
                 }
                 File file = new File( directory, fileName);
-                PrintWriter writer = new PrintWriter(file, "UTF-8");
+                writer = new PrintWriter(file, "UTF-8");
                 writer.print( gson.toJson( obj ) );
-                writer.flush();
-                writer.close();
             } catch (Throwable e) {
                 e.printStackTrace();
+            }finally {
+                if( writer != null ){
+                    writer.flush();
+                    writer.close();
+                }
             }
         }
     }
 
     public static <T> T fromJsonFile(String fileName, Class<T> clazz) throws Exception{
         if( fileName == null ) return null;
+        Scanner scanner = null;
         try {
             File file = new File( fileName );
             if( file.exists() ) {
-                String text = new Scanner(file, "UTF-8").useDelimiter("\\A").next();
+                scanner = new Scanner(file, "UTF-8");
+                String text = scanner.useDelimiter("\\A").next();
                 return fromJson(text, clazz);
             }else{
                 throw new FileNotFoundException();
             }
         } catch (FileNotFoundException e) {
             throw e;
+        }finally {
+            if( scanner != null ) {
+                scanner.close();
+            }
         }
     }
 
 
 
-    public static void renameFile(String pathAndNameOriginalFile, String nameFinalFile){
+    public static void renameFile(String pathAndNameOriginalFile, String nameFinalFile) throws Throwable{
         try {
             Path yourFile = Paths.get(pathAndNameOriginalFile);
             Files.move(yourFile, yourFile.resolveSibling(nameFinalFile), REPLACE_EXISTING);
@@ -417,25 +450,32 @@ public class Utils {
     }
 
     public static <T extends Annotation> T getAnnotation(Class<?> clazz, Class<T> annotationType)
-    {
+            throws Throwable{
         T result;
         boolean isAnnotationPresent = clazz.isAnnotationPresent(annotationType);
-        if(!isAnnotationPresent)
-        {
+        if(!isAnnotationPresent){
             Class<?> superClazz = clazz.getSuperclass();
-            if(superClazz!=null)
-            {
+            if(superClazz!=null){
                 return getAnnotation(superClazz, annotationType);
             }
-            else
-            {
+            else{
                 return null;
             }
-        }
-        else
-        {
+        }else{
             result = clazz.getAnnotation(annotationType);
             return result;
         }
+    }
+
+
+
+    public static boolean isIPAddress(String ip){
+        try {
+            InetAddress inet = InetAddress.getByName( ip );
+            return inet.getHostAddress().equals(ip) && inet instanceof Inet4Address;
+        }catch(UnknownHostException ex){
+            ex.printStackTrace();
+        }
+        return false;
     }
 }

@@ -1,9 +1,11 @@
 package edu.cmu.inmind.multiuser.controller;
 
 
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.communication.ServiceInfo;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
@@ -58,6 +60,9 @@ public class MultiuserFramework{
     }
 
     public void setClient(ClientCommController client) {
+        if( client == null ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "client: " + client) );
+        }
         this.client = client;
         this.session.setClient( this.client );
     }
@@ -87,31 +92,36 @@ public class MultiuserFramework{
     }
 
     void start( ){
-        if( config.isTCPon() ) {
-            sessionManager.start();
-        }else{
-            Log4J.info(this, "start orchestrator");
+        try {
+            if (config.isTCPon()) {
+                sessionManager.start();
+            } else {
+                Log4J.info(this, "start orchestrator");
+            }
+        }catch (Throwable e){
+            ExceptionHandler.handle( e );
         }
     }
 
     void stop(){
-        if( !stopping ) {
-            if( hooks != null ){
-                for( ShutdownHook hook : hooks ){
-                    hook.execute();
+        try {
+            if (!stopping) {
+                if (hooks != null) {
+                    for (ShutdownHook hook : hooks) {
+                        hook.execute();
+                    }
                 }
-            }
-            stopping = true;
-            DependencyManager.reset();
-            try {
-                if( config.isTCPon() ) {
+                stopping = true;
+                DependencyManager.reset();
+
+                if (config.isTCPon()) {
                     sessionManager.stop();
-                }else {
+                } else {
                     session.close();
                 }
-            } catch (Throwable e) {
-                ExceptionHandler.handle(e);
             }
+        }catch (Throwable e) {
+            ExceptionHandler.handle(e);
         }
     }
 }

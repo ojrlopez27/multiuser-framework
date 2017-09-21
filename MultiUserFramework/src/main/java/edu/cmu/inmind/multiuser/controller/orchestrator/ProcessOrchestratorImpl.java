@@ -27,7 +27,6 @@ import edu.cmu.inmind.multiuser.controller.session.Session;
 import edu.cmu.inmind.multiuser.controller.sync.ForceSync;
 import edu.cmu.inmind.multiuser.controller.sync.SynchronizableEvent;
 
-import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -72,11 +71,15 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     }
 
     public <T extends PluggableComponent> T get(Class<T> clazz){
-        String className = clazz.getName();
-        for( PluggableComponent component : components ){
-            if( component.getClass().getName().contains( className ) ){
-                return (T)component;
+        try {
+            String className = clazz.getName();
+            for (PluggableComponent component : components) {
+                if (component.getClass().getName().contains(className)) {
+                    return (T) component;
+                }
             }
+        }catch (Throwable e ){
+            ExceptionHandler.handle(e);
         }
         return null;
     }
@@ -95,14 +98,28 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
 
     @Override
     public void process(String input){
-        while( status != null && (status.equals( Constants.ORCHESTRATOR_STOPPED)
-                || status.equals( Constants.ORCHESTRATOR_PAUSED))) {
-            Utils.sleep( 500 );
+        try {
+            while (status != null && (status.equals(Constants.ORCHESTRATOR_STOPPED)
+                    || status.equals(Constants.ORCHESTRATOR_PAUSED))) {
+                Utils.sleep(500);
+            }
+        }catch (Throwable e){
+            ExceptionHandler.handle(e);
         }
     }
 
     protected void sendResponse(SessionMessage output){
-        orchestratorListeners.forEach( listener ->  listener.processOutput(output) );
+        try {
+            orchestratorListeners.forEach(listener -> {
+                try {
+                    listener.processOutput(output);
+                } catch (Throwable throwable) {
+                    ExceptionHandler.handle(throwable);
+                }
+            });
+        }catch (Throwable e){
+            ExceptionHandler.handle(e);
+        }
     }
 
     @Override
@@ -136,7 +153,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         initialized = true;
     }
 
-    private void initServiceManager() {
+    private void initServiceManager() throws Throwable{
         Log4J.info(this, String.format("Initializing ServiceManager for session: %s", sessionId));
         Set<PluggableComponent> newComponents = ResourceLocator.addComponentsToRegistry(components, sessionId);
         serviceManager = new ServiceManager( newComponents );
@@ -321,23 +338,31 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         }
     }
 
-    private void addAsyncEvents( String id, Blackboard blackboard ){
+    private void addAsyncEvents( String id, Blackboard blackboard ) throws Throwable{
         Queue<CompSyncEvent> queue = ResourceLocator.getSyncMap( id );
         if( !queue.isEmpty() ){
             if( queue.peek().event != null ){
                 blackboard.post(this,id, (SynchronizableEvent) () -> {
-                    addAsyncEvents(id, blackboard);
-                    if (!queue.isEmpty()) {
-                        CompSyncEvent compSyncEvent = queue.poll();
-                        compSyncEvent.component.execute();
-                        compSyncEvent.event.notifyNext();
+                    try {
+                        addAsyncEvents(id, blackboard);
+                        if (!queue.isEmpty()) {
+                            CompSyncEvent compSyncEvent = queue.poll();
+                            compSyncEvent.component.execute();
+                            compSyncEvent.event.notifyNext();
+                        }
+                    }catch (Throwable e){
+                        ExceptionHandler.handle(e);
                     }
                 });
             }else {
                 blackboard.post(this,id, (SynchronizableEvent) () -> {
-                    addAsyncEvents(id, blackboard);
-                    if (!queue.isEmpty()) {
-                        queue.poll().component.execute();
+                    try {
+                        addAsyncEvents(id, blackboard);
+                        if (!queue.isEmpty()) {
+                            queue.poll().component.execute();
+                        }
+                    }catch (Throwable e){
+                        ExceptionHandler.handle(e);
                     }
                 });
             }
@@ -355,14 +380,21 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     }
 
     private void checkComponents( List<PluggableComponent> otherComponents ){
-        for( PluggableComponent component : otherComponents ){
-            if( !components.contains(component) ){
-                if( component instanceof PluggableComponent){
-                    component.addMessageLogger(sessionId, logger);
-                    component.addBlackboard(sessionId, blackboard);
+        if( components == null || components.isEmpty() ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.COMPONENTS_NULL) );
+        }
+        try {
+            for (PluggableComponent component : otherComponents) {
+                if (!components.contains(component)) {
+                    if (component instanceof PluggableComponent) {
+                        component.addMessageLogger(sessionId, logger);
+                        component.addBlackboard(sessionId, blackboard);
+                    }
+                    components.add(component);
                 }
-                components.add( component );
             }
+        }catch (Throwable e){
+            ExceptionHandler.handle(e);
         }
     }
 
@@ -371,13 +403,16 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
      * We use this method only if the remote service has provided a list of subscription messages, otherwise
      * it will be responsibility of developer to decide when to send messages to remote service.
      */
-    private List<ExternalComponent> createExternalComponents(){
+    private List<ExternalComponent> createExternalComponents() throws Throwable{
         Log4J.debug(this, "createExternalComponents");
         List<ExternalComponent> externalComponents = new ArrayList<>();
         for(ServiceComponent service : ResourceLocator.getServiceRegistry().values() ) {
             if( service.getSubMessages() != null && service.getSubMessages().length > 0 ) {
                 externalComponents.add(new ExternalComponent(service.getServiceURL(), fullAddress, sessionId,
                         service.getMsgTemplate(), service.getSubMessages()));
+            }else{
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.NO_SUBSCRIPTION_MESSSAGES,
+                        service.getServiceURL()));
             }
         }
         return externalComponents;

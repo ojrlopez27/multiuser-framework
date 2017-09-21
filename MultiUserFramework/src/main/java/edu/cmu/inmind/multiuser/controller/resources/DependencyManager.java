@@ -4,6 +4,9 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
+import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorFactory;
 
@@ -25,6 +28,10 @@ public class DependencyManager {
     }
 
     private static void initialize( AbstractModule[] modules ){
+        if( modules == null || modules.length <= 0){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "modules: "
+                    + modules) );
+        }
         Injector injector = Guice.createInjector(modules);
         instance = injector.getInstance( DependencyManager.class );
         instance.injector = injector;
@@ -45,7 +52,12 @@ public class DependencyManager {
     }
 
     public <T> T getComponent(Class<T> clazz){
-        return injector.getInstance( clazz );
+        try{
+            return  injector.getInstance( clazz );
+        }catch (Throwable e){
+            ExceptionHandler.handle( e);
+        }
+        return null;
     }
 
     public ProcessOrchestrator getOrchestrator( ){

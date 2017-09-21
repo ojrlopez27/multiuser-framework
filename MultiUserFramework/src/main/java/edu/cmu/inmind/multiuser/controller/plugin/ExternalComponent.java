@@ -85,25 +85,33 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
     private void sendCloseMessage(){
         new Thread("send-message-close-python-dialogue") {
             public void run(){
-                SessionMessage sessionMessage = new SessionMessage();
-                sessionMessage.setRequestType( Constants.REQUEST_DISCONNECT );
-                sessionMessage.setSessionId(getSessionId());
-                getClientCommController().send( getSessionId(), sessionMessage );
-                Utils.sleep(1000);
+                try {
+                    SessionMessage sessionMessage = new SessionMessage();
+                    sessionMessage.setRequestType(Constants.REQUEST_DISCONNECT);
+                    sessionMessage.setSessionId(getSessionId());
+                    getClientCommController().send(getSessionId(), sessionMessage);
+                    Utils.sleep(1000);
+                }catch (Throwable e){
+                    ExceptionHandler.handle(e);
+                }
             }
         }.start();
     }
 
     @Override
     public void process(String message) {
-        SessionMessage sessionMessage = Utils.fromJson( message, SessionMessage.class );
-        if( sessionMessage.getMessageId() == null || sessionMessage.getMessageId().isEmpty() ){
-            String msg = "This message from Python (or any other external server) has an empty or null id. Make " +
-                    "sure you send a message with a proper id, otherwise it won't be delivered through the Blackboard. " +
-                    "Message: " + sessionMessage.getPayload();
-            Log4J.error(this, msg );
-            System.err.println(msg);
+        try {
+            SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
+            if (sessionMessage.getMessageId() == null || sessionMessage.getMessageId().isEmpty()) {
+                String msg = "This message from Python (or any other external server) has an empty or null id. Make " +
+                        "sure you send a message with a proper id, otherwise it won't be delivered through the Blackboard. " +
+                        "Message: " + sessionMessage.getPayload();
+                Log4J.error(this, msg);
+                System.err.println(msg);
+            }
+            blackboard().post(this, sessionMessage.getMessageId(), sessionMessage.getPayload());
+        }catch (Throwable e){
+            ExceptionHandler.handle(e);
         }
-        blackboard().post( this, sessionMessage.getMessageId(), sessionMessage.getPayload() );
     }
 }

@@ -4,6 +4,7 @@ package edu.cmu.inmind.multiuser.controller.communication;
  * Created by oscarr on 3/28/17.
  */
 
+import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import org.zeromq.ZContext;
@@ -137,7 +138,6 @@ public class Broker extends Thread {
                     //Log4J.debug(this, "received message " + msg.toString() + " remains unhandled.");
                     msg.destroy();
                 }
-
                 sender.destroy();
                 empty.destroy();
                 header.destroy();
@@ -154,10 +154,18 @@ public class Broker extends Thread {
      * Disconnect all workers, destroy context.
      */
     public void close() throws Throwable{
-        if( !isTerminated ){
+        if (!isTerminated) {
             isTerminated = true;
-            ArrayList<Worker> wrkrs = new ArrayList( workers.values() );
-            wrkrs.forEach(worker -> deleteWorker(worker, true));
+            ArrayList<Worker> wrkrs = new ArrayList(workers.values());
+            wrkrs.forEach(worker -> {
+                try {
+                    deleteWorker(worker, true);
+                } catch (Throwable throwable) {
+                    throwable.printStackTrace();
+                }
+            });
+            //let's wait for all workers to close
+            Utils.sleep(1000);
             ctx.destroy();
             Log4J.debug(this, "Broker is now closing down.");
         }
@@ -166,7 +174,7 @@ public class Broker extends Thread {
     /**
      * Process a request coming from a client.
      */
-    private void processClient(ZFrame sender, ZMsg msg) {
+    private void processClient(ZFrame sender, ZMsg msg) throws Throwable{
         ExceptionHandler.checkAssert(msg.size() >= 2); // Service name + body
         ZFrame serviceFrame = msg.pop();
         // Set reply return address to client sender
@@ -181,13 +189,10 @@ public class Broker extends Thread {
     /**
      * Process message sent to us by a worker.
      */
-    private void processWorker(ZFrame sender, ZMsg msg) {
+    private void processWorker(ZFrame sender, ZMsg msg) throws Throwable{
         ExceptionHandler.checkAssert( (msg.size() >= 1) ); // At least, command
-
         ZFrame command = msg.pop();
-
         boolean workerReady = workers.containsKey(sender.strhex());
-
         Worker worker = requireWorker(sender);
 
         if (MDP.S_READY.frameEquals(command)) {
@@ -232,7 +237,7 @@ public class Broker extends Thread {
     /**
      * Deletes worker from all data structures, and destroys worker.
      */
-    private void deleteWorker(Worker worker, boolean disconnect) {
+    private void deleteWorker(Worker worker, boolean disconnect) throws Throwable{
         ExceptionHandler.checkAssert( (worker != null) );
         if (disconnect) {
             sendToWorker(worker, MDP.S_DISCONNECT, null, null);
@@ -246,7 +251,7 @@ public class Broker extends Thread {
     /**
      * Finds the worker (creates if necessary).
      */
-    private Worker requireWorker(ZFrame address) {
+    private Worker requireWorker(ZFrame address) throws Throwable{
         ExceptionHandler.checkAssert( (address != null) );
         String identity = address.strhex();
         Worker worker = workers.get(identity);
@@ -260,7 +265,7 @@ public class Broker extends Thread {
     /**
      * Locates the service (creates if necessary).
      */
-    private Service requireService(ZFrame serviceFrame) {
+    private Service requireService(ZFrame serviceFrame) throws Throwable{
         ExceptionHandler.checkAssert( (serviceFrame != null) );
         String name = serviceFrame.toString();
         Service service = services.get(name);
@@ -275,14 +280,14 @@ public class Broker extends Thread {
      * Bind broker to endpoint, can call this multiple times. We use a single
      * socket for both clients and workers.
      */
-    public void bind(String endpoint) {
+    public void bind(String endpoint) throws Throwable{
         socket.bind(endpoint);
     }
 
     /**
      * Handle internal service according to 8/MMI specification
      */
-    private void serviceInternal(ZFrame serviceFrame, ZMsg msg) {
+    private void serviceInternal(ZFrame serviceFrame, ZMsg msg) throws Throwable{
         String returnCode = "501";
         if ("mmi.service".equals(serviceFrame.toString())) {
             String name = msg.peekLast().toString();
@@ -301,7 +306,7 @@ public class Broker extends Thread {
     /**
      * Send heartbeats to idle workers if it's time
      */
-    public synchronized void sendHeartbeats() {
+    public synchronized void sendHeartbeats() throws Throwable{
         // Send heartbeats to idle workers if it's time
         if (System.currentTimeMillis() >= heartbeatAt) {
             for (Worker worker : waiting) {
@@ -315,7 +320,7 @@ public class Broker extends Thread {
      * Look for & kill expired workers. Workers are oldest to most recent, so we
      * stop at the first alive worker.
      */
-    public synchronized void purgeWorkers() {
+    public synchronized void purgeWorkers() throws Throwable{
         Iterator<Worker> iterator = waiting.iterator();
         while(iterator.hasNext()){
             Worker w = iterator.next();
@@ -329,7 +334,7 @@ public class Broker extends Thread {
     /**
      * This worker is now waiting for work.
      */
-    public synchronized void workerWaiting(Worker worker) {
+    public synchronized void workerWaiting(Worker worker) throws Throwable{
         // Queue to broker and service waiting lists
         waiting.addLast(worker);
         worker.service.waiting.addLast(worker);
@@ -340,7 +345,7 @@ public class Broker extends Thread {
     /**
      * Dispatch requests to waiting workers as possible
      */
-    private void dispatch(Service service, ZMsg msg) {
+    private void dispatch(Service service, ZMsg msg) throws Throwable{
         ExceptionHandler.checkAssert( (service != null) );
         if (msg != null)// Queue message if any
             service.requests.offerLast(msg);
@@ -359,7 +364,7 @@ public class Broker extends Thread {
      * not destroy the message, this is the caller's job.
      */
     public void sendToWorker(Worker worker, MDP command, String option,
-                             ZMsg msgp) {
+                             ZMsg msgp) throws Throwable{
 
         ZMsg msg = msgp == null ? new ZMsg() : msgp.duplicate();
 
