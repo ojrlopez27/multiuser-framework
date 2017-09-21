@@ -10,6 +10,7 @@ import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
+import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
 
@@ -25,7 +26,10 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
     public ExternalComponent(String serviceURL, String clientAddress, String sessionId, ZMsgWrapper zMsgWrapper,
                              String[] messages){
         try {
-            Utils.addOrChangeAnnotation(getClass().getAnnotation(BlackboardSubscription.class), "messages", messages);
+            //if we override annotations, it will affect all instances of ExternalComponent, so every
+            //ExternalComponent will have the same subscription messages
+            //Utils.addOrChangeAnnotation(getClass().getAnnotation(BlackboardSubscription.class), "messages", messages);
+            ResourceLocator.addComponentSubscriptions( this.hashCode(), messages );
             Flowable.just(this).subscribe(externalComponent -> {
                 setClientCommController( new ClientCommController.Builder()
                         .setServerAddress(serviceURL)

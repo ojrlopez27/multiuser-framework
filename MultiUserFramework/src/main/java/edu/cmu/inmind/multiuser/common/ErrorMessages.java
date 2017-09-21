@@ -20,5 +20,11 @@ public class ErrorMessages {
     public static final String USE_TCP_INSTEAD = "TCP is on so you should use method %s";
     public static final String NO_RESPONSE_FROM_SERVER = "Server %s is not responding to connection request after %s " +
             "millisenconds";
-    public static final java.lang.String FILE_NOT_EXISTS = "%s does not exist or path is incorrect";
+    public static final String FILE_NOT_EXISTS = "%s does not exist or path is incorrect";
+    public static final String BLACKBOARD_ELEMENT_NULL = "You are posting a null object through the Blackboard. Please " +
+            "check that";
+    public static final String BLACKBOARD_KEY_NULL = "You are posting a null message id through the Blackboard. Please " +
+            "check that";
+    public static final String NOBODY_IS_SUBSCRIBED = "None Component is subscribed to message: %s. Noboby will " +
+            "listen to you! Check your services.json file or the @BlackboardSubscription annotation";
 }

@@ -6,9 +6,12 @@ import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ConnectRemoteService;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
+import edu.cmu.inmind.multiuser.controller.plugin.ExternalComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
+import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import edu.cmu.inmind.multiuser.controller.sync.ForceSync;
 import edu.cmu.inmind.multiuser.controller.sync.SynchronizableEvent;
 import io.reactivex.Completable;
@@ -157,14 +160,16 @@ public class Blackboard {
     public void subscribe(BlackboardListener subscriber){
         subscribers.add( subscriber );
         Class subsClass = Utils.getClass( subscriber );
-        if (subsClass.isAnnotationPresent(BlackboardSubscription.class)) {
+        if( subscriber instanceof ExternalComponent ){
+            subscribe( subscriber, ResourceLocator.getComponentsSubscriptions( subscriber.hashCode() ) );
+        }else if (subsClass.isAnnotationPresent(BlackboardSubscription.class)) {
             String[] messages = ((Class<? extends BlackboardListener>)subsClass)
                     .getAnnotation(BlackboardSubscription.class).messages();
             subscribe(subscriber, messages);
         }
     }
 
-    public void subscribe(BlackboardListener subscriber, String[] messages) {
+    private void subscribe(BlackboardListener subscriber, String[] messages) {
         for (String message : messages) {
             List<BlackboardListener> listeners = subscriptions.get( message );
             if( listeners == null ){
@@ -183,12 +188,18 @@ public class Blackboard {
 
     private void notifySubscribers(BlackboardListener sender, String status, String key, Object element){
         if( element == null ){
-            Log4J.error( this, "You are posting a null object through the Blackboard. Please check that. " +
-                    "I am sending an empty String instead in order to not break the system down");
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_ELEMENT_NULL, "") );
         }
+        if( key == null ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_KEY_NULL, "") );
+        }
+
         if(notifySubscribers && key != null) {
             try {
                 List<BlackboardListener> listeners = subscriptions.get(key);
+                if( listeners == null || listeners.isEmpty() ){
+                    ExceptionHandler.handle( new MultiuserException(ErrorMessages.NOBODY_IS_SUBSCRIBED, key) );
+                }
                 if (listeners != null) {
                     BlackboardEvent event = new BlackboardEvent(status, key, element);
                     final String sessionId = sender.getSessionId();

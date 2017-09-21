@@ -197,8 +197,9 @@ public class Utils {
         try {
             return gson.fromJson( trimDoubleQuotes(stringRepresentation), clazz);
         }catch (Throwable e){
-            return null;
+            e.printStackTrace();
         }
+        return null;
     }
 
     private static String trimDoubleQuotes(String stringRepresentation) {

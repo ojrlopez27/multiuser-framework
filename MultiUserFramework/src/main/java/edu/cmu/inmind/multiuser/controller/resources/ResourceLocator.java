@@ -29,6 +29,7 @@ public class ResourceLocator {
     private static Map<ServiceManager, String> serviceManagers = new HashMap<>();
     private static Map<Class, Logger> loggers = new HashMap<>();
     private static Cache<String, Object> cache;
+    private static Map<Integer, String[]> componentsSubscriptions = new HashMap<>();
 
     /**
      * This method registers remote or external services that can be looked up by other components
@@ -176,4 +177,11 @@ public class ResourceLocator {
         return cache.asMap().get(key);
     }
 
+    public static void addComponentSubscriptions(int hashcode, String[] messages) {
+        componentsSubscriptions.put( hashcode, messages );
+    }
+
+    public static String[] getComponentsSubscriptions(int hashcode) {
+        return componentsSubscriptions.get(hashcode);
+    }
 }
