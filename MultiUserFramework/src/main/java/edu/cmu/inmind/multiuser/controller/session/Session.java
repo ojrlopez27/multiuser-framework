@@ -142,7 +142,6 @@ public class Session implements Runnable, OrchestratorListener{
         Log4J.info(this, String.format("Initializing session: %s.", id));
         orchestrator = DependencyManager.getInstance().getOrchestrator();
         orchestrator.initialize(this);
-        Thread.sleep(10000 );
         orchestrator.start();
         orchestrator.subscribe(this);
         status = Constants.SESSION_INITIATED;
