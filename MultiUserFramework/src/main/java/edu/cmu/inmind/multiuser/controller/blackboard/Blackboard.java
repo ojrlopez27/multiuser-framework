@@ -14,7 +14,6 @@ import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import edu.cmu.inmind.multiuser.controller.sync.ForceSync;
 import edu.cmu.inmind.multiuser.controller.sync.SynchronizableEvent;
-import io.reactivex.Flowable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -94,10 +93,16 @@ public class Blackboard {
 
     private void post(BlackboardListener sender, String key, Object element, boolean shouldClone){
         try {
-            Log4J.debug(this, String.format( "this is the message-id and message: (%s, %s) send by: %s", key,
-                    element, sender.getClass().getName() ));
+            if( key == null ){
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_KEY_NULL, "") );
+            }
+            if( sender == null ){
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_SENDER_NULL, "") );
+            }
+            if( !key.equals(Constants.REMOVE_ALL) && element == null ){
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_ELEMENT_NULL, "") );
+            }
             Object clone = shouldClone ? Utils.clone(element) : element;
-            Log4J.debug(this, "cloned element: " + clone);
             if (keepModel && clone != null && key != null)
                 model.put(key, clone);
             if (loggerOn){
@@ -185,9 +190,6 @@ public class Blackboard {
         }
         for (String message : messages) {
             List<BlackboardListener> listeners = subscriptions.get( message );
-            if( listeners == null || listeners.isEmpty() ){
-                ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_SUBSCRIBERS_NULL) );
-            }
             if( listeners == null ){
                 listeners = new ArrayList<>();
                 subscriptions.put( message, listeners );
@@ -203,20 +205,10 @@ public class Blackboard {
     }
 
     private void notifySubscribers(BlackboardListener sender, String status, String key, Object element){
-        if( element == null ){
-            ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_ELEMENT_NULL, "") );
-        }
-        if( key == null ){
-            ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_KEY_NULL, "") );
-        }
-        if( sender == null ){
-            ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_SENDER_NULL, "") );
-        }
-
         if(notifySubscribers && key != null) {
             try {
                 List<BlackboardListener> listeners = subscriptions.get(key);
-                if( listeners == null || listeners.isEmpty() ){
+                if( !key.equals(Constants.REMOVE_ALL) && (listeners == null || listeners.isEmpty() )){
                     ExceptionHandler.handle( new MultiuserException(ErrorMessages.NOBODY_IS_SUBSCRIBED, key) );
                 }
                 if (listeners != null) {
@@ -224,15 +216,15 @@ public class Blackboard {
                     final String sessionId = sender.getSessionId();
 
                     for(BlackboardListener subscriber : listeners ){
-                        Flowable.just(subscriber).subscribe(blackboardListener -> {
+                        Utils.execObsParallel(blackboardListener -> {
                             if (subscriber instanceof PluggableComponent) {
                                 ((PluggableComponent) subscriber).setActiveSession(sessionId);
                             }
                             try {
-                                Log4J.debug( Blackboard.this, sessionId,
-                                        String.format("Component [%s] sends the following message to component [%s]: %s",
-                                                sender.getClass().getSimpleName(), subscriber.getClass().getSimpleName(),
-                                                element == null? "" : element.toString()) );
+//                                Log4J.debug( Blackboard.this, sessionId,
+//                                        String.format("Component [%s] sends the following message to component [%s]: %s",
+//                                                sender.getClass().getSimpleName(), subscriber.getClass().getSimpleName(),
+//                                                element == null? "" : element.toString()) );
                                 subscriber.onEvent(event);
                                 if (subscriber instanceof PluggableComponent && subscriber.getClass()
                                         .isAnnotationPresent(ConnectRemoteService.class)) {

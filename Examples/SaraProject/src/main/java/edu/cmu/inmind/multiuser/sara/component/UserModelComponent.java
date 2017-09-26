@@ -21,7 +21,7 @@ import java.util.List;
  * Created by oscarr on 3/16/17.
  */
 @StateType(state = Constants.STATEFULL )
-@BlackboardSubscription( messages = {SaraCons.MSG_NLU})
+@BlackboardSubscription( messages = {SaraCons.MSG_NLU, "MSG_START_DM"} )
 public class UserModelComponent extends PluggableComponent {
 
     // this is out user model (though you may want to create something more sophisticated)

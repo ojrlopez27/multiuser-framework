@@ -94,7 +94,7 @@ public class Log4J{
 
     private static Logger getLogger(Object caller) {
         try {
-            Class clazz = Utils.getClass(caller);
+            Class clazz = caller instanceof Class? (Class) caller : Utils.getClass(caller);
             org.apache.logging.log4j.Logger logger = ResourceLocator.getLogger(clazz);
             if (logger == null) {
                 logger = LogManager.getLogger(clazz.getSimpleName());

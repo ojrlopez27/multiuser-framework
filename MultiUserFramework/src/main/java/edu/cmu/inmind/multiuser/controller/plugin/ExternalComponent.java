@@ -11,8 +11,7 @@ import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
-import io.reactivex.Flowable;
-import io.reactivex.functions.Consumer;
+
 
 /**
  * Created by oscarr on 4/4/17.
@@ -30,17 +29,15 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
             //ExternalComponent will have the same subscription messages
             //Utils.addOrChangeAnnotation(getClass().getAnnotation(BlackboardSubscription.class), "messages", messages);
             ResourceLocator.addComponentSubscriptions( this.hashCode(), messages );
-            Flowable.just(this).subscribe(externalComponent -> {
-                setClientCommController( new ClientCommController.Builder()
-                        .setServerAddress(serviceURL)
-                        .setServiceName(sessionId)
-                        .setClientAddress( clientAddress )
-                        .setMsgTemplate( zMsgWrapper )
-                        .setSubscriptionMessages( messages )
-                        .setRequestType( Constants.REQUEST_CONNECT )
-                        .setResponseListener(this)
-                        .build() );
-            });
+            setClientCommController( new ClientCommController.Builder()
+                .setServerAddress(serviceURL)
+                .setServiceName(sessionId)
+                .setClientAddress( clientAddress )
+                .setMsgTemplate( zMsgWrapper )
+                .setSubscriptionMessages( messages )
+                .setRequestType( Constants.REQUEST_CONNECT )
+                .setResponseListener(this)
+                .build() );
         }catch (Throwable e){
             ExceptionHandler.handle( e );
         }

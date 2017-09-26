@@ -2,13 +2,13 @@
 package edu.cmu.inmind.multiuser.controller.communication;
 
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Pair;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.MultiuserFramework;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
-import io.reactivex.Flowable;
-import io.reactivex.functions.Consumer;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
@@ -37,13 +37,17 @@ public class ClientCommController{
     private Thread sendThread;
     private Thread receiveThread;
     private ResponseTimer timer;
-    private long timeout = 5000; //we should receive a response from server within 5 seconds
+    private long timeout = 10000; //we should receive a response from server within 10 seconds
 
     //we need to keep the state in case of failure and reconnection
     private int sentMessages = 0;
     private int receivedMessages = 0;
 //    private final ClientMessage clientMessage;
     private ZContext context;
+    /**
+     * We use this socket to communicate with senderSocket, which is running on another
+     * thread (SenderThread).
+     */
     private ZMQ.Socket clientSocket;
 
 
@@ -183,7 +187,7 @@ public class ClientCommController{
     /************************************************************************************/
 
     private void execute() {
-        Flowable.just(this).subscribe(clientCommController -> {
+        Utils.execObsParallel(clientCommController -> {
             if( release.equals(Constants.CONNECTION_FINISHED) ) {
                 try {
                     reset();
@@ -237,7 +241,7 @@ public class ClientCommController{
         }
     }
 
-    public void close() throws Throwable{
+    public void close(){
         new Thread(() -> {
             try {
                 stop = true;
@@ -258,8 +262,12 @@ public class ClientCommController{
     /********************************* SEND THREAD **************************************/
     /************************************************************************************/
 
-    public void send(String serviceId, Object message) throws Throwable{
-        send( new Pair<>(serviceId, message) );
+    public void send(String serviceId, Object message){
+        try {
+            send(new Pair<>(serviceId, message));
+        }catch (Throwable e){
+            ExceptionHandler.handle(e   );
+        }
     }
 
     public void send(Pair<String, Object> message) throws Throwable{
@@ -300,6 +308,11 @@ public class ClientCommController{
 
     class SenderThread extends Thread{
         private ZContext context;
+        /**
+         * senderSocket communicates with clientSocket. This communication
+         * is interprocess, so clientSocket runs on the main thread and senderSocket
+         * on the SenderThread.
+         */
         private ZMQ.Socket senderSocket;
         private boolean stop;
 
@@ -329,7 +342,7 @@ public class ClientCommController{
                 }
                 if( !stop ) {
                     senderSocket.send(STOP_FLAG, 0);
-                    senderSocket.close();
+                    context.destroySocket(senderSocket);
                 }
             }catch (Throwable e){
                 //ExceptionHandler.handle( e );
@@ -446,7 +459,7 @@ public class ClientCommController{
     class ResponseCheck extends TimerTask{
         @Override
         public void run() {
-            //ExceptionHandler.handle( new MultiuserException(ErrorMessages.NO_RESPONSE_FROM_SERVER, serverAddress, timeout));
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.NO_RESPONSE_FROM_SERVER, serverAddress, timeout));
         }
     }
 

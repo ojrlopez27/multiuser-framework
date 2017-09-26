@@ -19,9 +19,8 @@ public class ServiceComponent{
     private String[] subMessages;
 
     public ServiceComponent(Class<? extends PluggableComponent> component, String url, ZMsgWrapper msgTemplate) {
-        if( component == null || url == null || url.isEmpty() || msgTemplate == null){
-            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "component: "
-                    + component, "url: " + url, "msgTemplate: " + msgTemplate) );
+        if( url == null || url.isEmpty()){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "url: " + url) );
         }
         this.component = component;
         this.serviceURL = url;

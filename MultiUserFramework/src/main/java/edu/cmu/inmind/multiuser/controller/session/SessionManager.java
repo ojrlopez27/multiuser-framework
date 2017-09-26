@@ -3,7 +3,6 @@ package edu.cmu.inmind.multiuser.controller.session;
 import com.google.common.util.concurrent.ServiceManager;
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
-import edu.cmu.inmind.multiuser.common.Pair;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.*;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
@@ -13,15 +12,9 @@ import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
-import io.reactivex.Observable;
-import io.reactivex.Observer;
-import io.reactivex.disposables.Disposable;
 import org.zeromq.ZMsg;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by oscarr on 3/3/17.
@@ -29,7 +22,7 @@ import java.util.Properties;
  */
 public class SessionManager implements Runnable, Session.SessionObserver{
     /** sessions handled by the session manager */
-    private Map<String, Session> sessions;
+    private ConcurrentHashMap<String, Session> sessions;
     /** communication controller that process
      * lifecycle request messages (connect a client, disconnect, etc.)*/
     private ServerCommController serverCommController;
@@ -68,7 +61,7 @@ public class SessionManager implements Runnable, Session.SessionObserver{
             // if your MUF is a slave MUF
             createFrameworkAsService(serviceInfo);
         }
-        sessions = new HashMap<>();
+        sessions = new ConcurrentHashMap<>();
         extractConfig();
         if( config.isTCPon() ) {
             initializeBroker();
@@ -116,12 +109,12 @@ public class SessionManager implements Runnable, Session.SessionObserver{
                     done = true;
                     for (ServiceManager serviceManager : ResourceLocator.getServiceManagers().keySet()) {
                         // if the sever manager has stopped, we are done!
-                        if (!ResourceLocator.getServiceManagers().get(serviceManager).equals(Constants.SERVICE_MANAGER_STOPPED)) {
+                        if (!ResourceLocator.getServiceManagers().get(serviceManager)
+                                .equals(Constants.SERVICE_MANAGER_STOPPED)) {
                             done = false;
                             break;
                         }
                     }
-                    Utils.sleep(500);
                 }
                 ExceptionHandler.storeLog();
                 Log4J.info(this, "Session Manager stopped. Bye bye!");
@@ -178,6 +171,10 @@ public class SessionManager implements Runnable, Session.SessionObserver{
     private void loadRemoteServices() throws Throwable{
         try {
             ServiceInfoContainer container = Utils.fromJsonFile(config.getServiceConfigPath(), ServiceInfoContainer.class);
+            if( config.getServiceConfigPath() != null && (container.getServices() == null
+                    || container.getServices().isEmpty()) ){
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.SERVICES_FILE_EMPTY, config.getServiceConfigPath()) );
+            }
             if (container != null) {
                 for (ServiceInfo serviceInfo : container.getServices()) {
                     registerRemoteService(serviceInfo);
@@ -261,13 +258,13 @@ public class SessionManager implements Runnable, Session.SessionObserver{
      */
     private void createSession(ZMsgWrapper msgRequest, SessionMessage request) throws Throwable{
         String key = request.getSessionId();
+        Log4J.info(this, "Creating session: " + key);
         Session session = DependencyManager.getInstance().getComponent(Session.class);
         session.onClose(this);
         session.setConfig( config );
         session.setId(key, msgRequest, fullAddress);
         sessions.put( key, session );
         send( msgRequest, new SessionMessage( Constants.SESSION_INITIATED) );
-        Log4J.info(this, "Creating session: " + session.getId());
     }
 
     /**
@@ -343,6 +340,7 @@ public class SessionManager implements Runnable, Session.SessionObserver{
             serverCommController.close();
             broker.close();
         }
+        ResourceLocator.stopStatlessComp();
         thread.interrupt();
     }
 

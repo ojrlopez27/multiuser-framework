@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.sara.log;
 
 import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
 
 import java.io.File;
@@ -19,8 +20,12 @@ public class ExceptionLogger implements MessageLog {
 
     @Override
     public void setId(String id) {
-        this.id = id + "-" + Utils.getDateString();
-        log = new StringBuffer();
+        try {
+            this.id = id + "-" + Utils.getDateString();
+            log = new StringBuffer();
+        }catch (Throwable e){
+            ExceptionHandler.handle(e);
+        }
     }
 
     @Override

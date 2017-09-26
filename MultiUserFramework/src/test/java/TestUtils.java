@@ -1,4 +1,5 @@
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
@@ -31,11 +32,10 @@ public class TestUtils {
                 .setSessionManagerPort(port)
                 .setDefaultNumOfPoolInstances(10)
                 // or you can refer to values in your config.properties file:
-                //.setPathLogs(Utils.getProperty("pathLogs"))
+                .setPathLogs(Utils.getProperty("pathLogs"))
                 .setSessionTimeout(5, TimeUnit.MINUTES)
                 .setServerAddress(serverAddress)
-                .setJsonServicesConfig("services.json")
-                //.setJsonServicesConfig("services.json")
+//                .setJsonServicesConfig("services.json")
                 .setExceptionTraceLevel(Constants.SHOW_ALL_EXCEPTIONS)
                 .build();
     }

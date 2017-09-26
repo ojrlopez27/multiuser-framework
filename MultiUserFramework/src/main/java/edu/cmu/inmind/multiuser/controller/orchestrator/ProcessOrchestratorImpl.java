@@ -1,7 +1,5 @@
 package edu.cmu.inmind.multiuser.controller.orchestrator;
 
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.Inject;
 import edu.cmu.inmind.multiuser.common.Constants;
@@ -45,7 +43,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     protected CopyOnWriteArrayList<OrchestratorListener> orchestratorListeners;
     protected Session session;
     protected MessageLog logger;
-    protected ServiceManager serviceManager;
+    protected ServiceManager statefullServManager;
     private String sessionId;
     private boolean isClosed;
     private Config config;
@@ -63,6 +61,14 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
 
     public MessageLog getLogger() {
         return logger;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void setStatefullServManager(ServiceManager statefullServManager) {
+        this.statefullServManager = statefullServManager;
     }
 
     @Override
@@ -155,34 +161,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
 
     private void initServiceManager() throws Throwable{
         Log4J.info(this, String.format("Initializing ServiceManager for session: %s", sessionId));
-        Set<PluggableComponent> newComponents = ResourceLocator.addComponentsToRegistry(components, sessionId);
-        serviceManager = new ServiceManager( newComponents );
-        serviceManager.addListener(
-                new ServiceManager.Listener() {
-                    public void stopped() {
-                        Log4J.info(ProcessOrchestratorImpl.this, String.format("All components have been shut down. " +
-                                "Closing ServiceManager for Session: %s", sessionId));
-                        status = Constants.ORCHESTRATOR_STOPPED;
-                        ResourceLocator.addServiceManager( serviceManager, Constants.SERVICE_MANAGER_STOPPED );
-                    }
-
-                    public void healthy() {
-                        // Services have been initialized and are healthy, start accepting requests...
-                        Log4J.info(ProcessOrchestratorImpl.this, String.format("ServiceManager has initialized all the " +
-                                        "services for session: %s", sessionId));
-                        status = Constants.ORCHESTRATOR_STARTED;
-                    }
-
-                    public void failure(Service service) {
-                        // Something failed, at this point we could log it, notify a load balancer, or take
-                        // some other action.  For now we will just exit.
-                        Log4J.error(ProcessOrchestratorImpl.this, String.format("There was a failure with service: %s " +
-                                        "in session: %s", service.getClass().getName(), sessionId));
-                    }
-                },
-                MoreExecutors.directExecutor());
-        serviceManager.startAsync();
-        ResourceLocator.addServiceManager( serviceManager, Constants.SERVICE_MANAGER_STARTED );
+        ResourceLocator.addComponentsToRegistry(this, components, sessionId);
     }
 
     @Override
@@ -209,7 +188,9 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
             isClosed = true;
             logger.store();
             status = Constants.ORCHESTRATOR_STOPPED;
-            serviceManager.stopAsync().awaitStopped(20, TimeUnit.SECONDS);
+            if( statefullServManager != null ) {
+                statefullServManager.stopAsync().awaitStopped(20, TimeUnit.SECONDS);
+            }
             for(PluggableComponent component : components ){
                 component.close( sessionId );
             }
@@ -219,7 +200,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
                 blackboard.reset();
             }
             blackboard = null;
-            serviceManager = null;
+            statefullServManager = null;
             components = null;
             componentsSet = null;
             session = null;
@@ -404,7 +385,6 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
      * it will be responsibility of developer to decide when to send messages to remote service.
      */
     private List<ExternalComponent> createExternalComponents() throws Throwable{
-        Log4J.debug(this, "createExternalComponents");
         List<ExternalComponent> externalComponents = new ArrayList<>();
         for(ServiceComponent service : ResourceLocator.getServiceRegistry().values() ) {
             if( service.getSubMessages() != null && service.getSubMessages().length > 0 ) {

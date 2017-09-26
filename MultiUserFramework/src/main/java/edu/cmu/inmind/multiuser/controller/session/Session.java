@@ -189,7 +189,6 @@ public class Session implements Runnable, OrchestratorListener{
         }else{
             client.getResponseListener().process( Utils.toJson(output) );
         }
-        Log4J.debug(this, "session timeout is " + config.getSessionTimeout());
         timer.schedule(new InactivityCheck(), config.getSessionTimeout());
     }
 
