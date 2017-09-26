@@ -60,7 +60,7 @@ public class ClientCommAPI {
                 return null; // Interrupted
 
             if (items.pollin(0)) {
-                Log4J.debug(this, "attempting to receive ... ");
+                //Log4J.debug(this, "attempting to receive ... ");
                 ZMsg msg = ZMsg.recvMsg(clientSocket, ZMQ.DONTWAIT);
                 //            Log4J.debug(this, "received message " + msg.toString());
 

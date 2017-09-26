@@ -7,34 +7,47 @@ import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
+import io.reactivex.Flowable;
+import io.reactivex.Observable;
+import io.reactivex.Scheduler;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
 
+import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Created by oscarr on 9/17/17.
  */
 public class MockClient {
 
-    public static void main(String args[]){
+    public static void main(String args[]) throws Exception {
         try {
             String sessionId = args[0];
             ClientCommController client = new ClientCommController.Builder()
+//                    .setServerAddress("tcp://34.203.160.208:5555")
+//                    .setClientAddress("tcp://34.203.160.208:5555")
                     .setServerAddress("tcp://127.0.0.1:5555")
-                    .setServiceName(sessionId)
                     .setClientAddress("tcp://127.0.0.1:5555")
+                    .setServiceName(sessionId)
                     .setRequestType(Constants.REQUEST_CONNECT)
                     .setTCPon(true)
                     .setMuf(null) //when TCP is off, we need to explicitly tell the client who the MUF is
+                    .setResponseListener(message -> {
+                        SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
+                        Log4J.info(ResponseListener.class, "Received message: " + message);
+                    })
                     .build();
-            // this method will be executed asynchronuously, so we need to add a delay before stopping the MUF
-            client.setResponseListener(message -> {
-                SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
-                Log4J.info(ResponseListener.class, "Received message: " + sessionMessage.getPayload());
-            });
 
             Scanner scanner = new Scanner(System.in);
             String input = "";
-            while (!input.equals("stop")) {
+            while (!input.equals("stop") && !input.equals("disconnect")) {
                 System.out.println("Enter a command:");
                 input = scanner.nextLine();
                 if (input.equals("stop")) {
@@ -52,8 +65,10 @@ public class MockClient {
                     client.send(sessionId, sessionMessage);
                 }
             }
-        }catch (Throwable e){
+            System.exit(0);
+        } catch (Throwable e) {
             ExceptionHandler.handle(e);
         }
     }
+
 }

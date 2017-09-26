@@ -1,12 +1,8 @@
 package edu.cmu.inmind.multiuser.controller.log;
 
 
-import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
-import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
-import io.reactivex.Flowable;
-import io.reactivex.functions.Consumer;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -28,9 +24,7 @@ public class FileLogger implements MessageLog {
 
     @Override
     public void setPath(String path) {
-        if( path == null || path.isEmpty() || !(new File(path).exists()) ){
-            ExceptionHandler.handle( new MultiuserException(ErrorMessages.FILE_NOT_EXISTS, path) );
-        }
+        ExceptionHandler.checkPath(path);
         this.path = path;
     }
 
@@ -43,7 +37,7 @@ public class FileLogger implements MessageLog {
 
     @Override
     public void store() throws Throwable{
-        Flowable.just(log).subscribe(stringBuffer -> {
+        Utils.execObsParallel(stringBuffer -> {
             try {
                 if (turnedOn && !stringBuffer.toString().isEmpty()) {
                     File file = new File(path + id + "-" + Utils.getDateString() + ".log");

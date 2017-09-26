@@ -13,6 +13,7 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *  Majordomo Protocol broker
@@ -76,8 +77,8 @@ public class Broker extends Thread {
     private ZMQ.Socket socket; // Socket for clients & workers
 
     private long heartbeatAt;// When to send HEARTBEAT
-    private Map<String, Service> services;// known services
-    private Map<String, Worker> workers;// known workers
+    private ConcurrentHashMap<String, Service> services;// known services
+    private ConcurrentHashMap<String, Worker> workers;// known workers
     private Deque<Worker> waiting;// idle workers
 
     // ---------------------------------------------------------------------
@@ -87,8 +88,8 @@ public class Broker extends Thread {
      */
     public Broker(int port) {
         super("broker thread");
-        this.services = new HashMap<>();
-        this.workers = new HashMap<>();
+        this.services = new ConcurrentHashMap<>();
+        this.workers = new ConcurrentHashMap<>();
         this.waiting = new ArrayDeque<>();
         this.heartbeatAt = System.currentTimeMillis() + HEARTBEAT_INTERVAL;
         this.ctx = new ZContext();
@@ -146,7 +147,6 @@ public class Broker extends Thread {
             purgeWorkers();
             sendHeartbeats();
         }
-        Log4J.debug(this, "mediate() is about to terminate.");
         close(); // interrupted
     }
 

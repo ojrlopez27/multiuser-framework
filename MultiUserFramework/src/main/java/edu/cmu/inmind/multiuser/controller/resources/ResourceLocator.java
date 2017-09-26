@@ -3,34 +3,43 @@ package edu.cmu.inmind.multiuser.controller.resources;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
+import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.*;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
+import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
+import edu.cmu.inmind.multiuser.controller.plugin.StateType;
 import edu.cmu.inmind.multiuser.controller.session.ServiceComponent;
+import io.reactivex.Flowable;
+import io.reactivex.functions.Consumer;
 import org.apache.logging.log4j.Logger;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Created by oscarr on 3/21/17.
  */
 public class ResourceLocator {
-    private static Map<String, ServiceComponent> serviceRegistry = new HashMap<>();
-    private static Map<Object, List<String>> componentsRegistry = new HashMap<>();
-    private static Map<String, Class<? extends PluggableComponent>> messageMapping = new HashMap<>();
-    private static Map<String, Queue> syncMap = new HashMap<>();
-    private static Map<ServiceManager, String> serviceManagers = new HashMap<>();
-    private static Map<Class, Logger> loggers = new HashMap<>();
+    private static ConcurrentHashMap<String, ServiceComponent> serviceRegistry = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<String, Class<? extends PluggableComponent>> messageMapping = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<String, Queue> syncMap = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<ServiceManager, String> serviceManagers = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<Class, Logger> loggers = new ConcurrentHashMap<>();
     private static Cache<String, Object> cache;
-    private static Map<Integer, String[]> componentsSubscriptions = new HashMap<>();
+    private static ConcurrentHashMap<Integer, String[]> componentsSubscriptions = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<PluggableComponent, List<String>> statelessCompRegistry = new ConcurrentHashMap<>();
+    /** This ServiceManager is only used for Stateless and Pool components */
+    private static ServiceManager statelessServManager;
+
 
     /**
      * This method registers remote or external services that can be looked up by other components
@@ -83,7 +92,7 @@ public class ResourceLocator {
         serviceRegistry.put(serviceId, serviceComponent);
     }
 
-    public static Map<String, ServiceComponent> getServiceRegistry() {
+    public static ConcurrentHashMap<String, ServiceComponent> getServiceRegistry() {
         return serviceRegistry;
     }
 
@@ -101,8 +110,11 @@ public class ResourceLocator {
                     + sessionId, "component: " + component, "fulAddress: " + fullAddress) );
         }
         if (component.getClass().isAnnotationPresent(ConnectRemoteService.class)) {
-            String servideId = component.getClass().getAnnotation(ConnectRemoteService.class).remoteService();
-            ServiceComponent serviceComponent = serviceRegistry.get(servideId);
+            String serviceId = component.getClass().getAnnotation(ConnectRemoteService.class).remoteService();
+            if( serviceRegistry.get( serviceId ) != null ){
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.DUPLICATED_SERVICE_DEFINITION, serviceId) );
+            }
+            ServiceComponent serviceComponent = serviceRegistry.get(serviceId);
             if (serviceComponent != null && serviceComponent.getServiceURL() != null ) {
                 if (serviceComponent.getComponent() == null) {
                     serviceComponent.setComponent( component.getClass() );
@@ -115,33 +127,55 @@ public class ResourceLocator {
                         .setRequestType( Constants.REQUEST_CONNECT )
                         .build() );
             }else {
-                throw new MultiuserException(ErrorMessages.SERVICE_NOT_REGISTERED, servideId );
+                throw new MultiuserException(ErrorMessages.SERVICE_NOT_REGISTERED, serviceId );
             }
         }
     }
 
-    public static Set<PluggableComponent> addComponentsToRegistry(Set<PluggableComponent> components, String sessionId)
-        throws Throwable{
-        if( components == null || components.isEmpty() || sessionId == null || sessionId.isEmpty() ){
-            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "sessionId: "
-                    + sessionId, "components: " + components, "sessionId: " + sessionId) );
-        }
-        Set<PluggableComponent> newComponents = new HashSet<>();
-        for( PluggableComponent component : components ) {
-            List<String> sessionIds = componentsRegistry.get( component );
-            if( sessionIds == null ){
-                sessionIds = new ArrayList<>();
-                sessionIds.add( sessionId );
-                newComponents.add( component );
-            }else{
-                if( !sessionIds.contains( sessionId ) ){
-                    sessionIds.add( sessionId );
+    public static void addComponentsToRegistry(final ProcessOrchestratorImpl orchestrator, final Set<PluggableComponent> components,
+                                                         final String sessionId) throws Throwable{
+        Utils.execObsSequential(resourceLocator -> {
+            try{
+                if( components == null || components.isEmpty() || sessionId == null || sessionId.isEmpty() ){
+                    ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "sessionId: "
+                            + sessionId, "components: " + components, "sessionId: " + sessionId) );
                 }
+                ConcurrentHashMap<PluggableComponent, List<String>> statefullCompRegistry = new ConcurrentHashMap<>();
+                List<String> statefullSessionIds = null, statelessSessionIds = null;
+                for( PluggableComponent component : components ) {
+                    if( component.getClass().isAnnotationPresent(StateType.class) &&
+                            component.getClass().getAnnotation(StateType.class).state().equals(Constants.STATEFULL) ) {
+                        statefullSessionIds = getSessionIds(statefullSessionIds, statefullCompRegistry, component, sessionId);
+                        statefullCompRegistry.put( component, statefullSessionIds );
+                    }else{
+                        statelessSessionIds = getSessionIds(statelessSessionIds, statelessCompRegistry, component, sessionId);
+                        statelessCompRegistry.put( component, statelessSessionIds );
+                    }
+                }
+                statelessServManager = initServices( statelessServManager, orchestrator, (Set) statelessCompRegistry.keySet() );
+                orchestrator.setStatefullServManager( initServices( null, orchestrator, (Set) statefullCompRegistry.keySet() ) );
+            }catch (Throwable e){
+                ExceptionHandler.handle(e);
             }
-            componentsRegistry.put( component, sessionIds );
-        }
-        return newComponents;
+        });
     }
+
+
+    private static List<String> getSessionIds(List<String> sessionIds, ConcurrentHashMap<PluggableComponent, List<String>> componentsRegistry,
+                                       PluggableComponent component, String sessionId){
+        sessionIds = componentsRegistry.get( component );
+        if( sessionIds == null ){
+            sessionIds = new ArrayList<>();
+            sessionIds.add( sessionId );
+        }else{
+            if( !sessionIds.contains( sessionId ) ){
+                sessionIds.add( sessionId );
+            }
+        }
+        return sessionIds;
+    }
+
+
 
     public static ServiceComponent getService(String serviceId) {
         return serviceRegistry.get(serviceId);
@@ -171,7 +205,7 @@ public class ResourceLocator {
         serviceManagers.put(serviceManager, status);
     }
 
-    public static Map<ServiceManager, String> getServiceManagers() {
+    public static ConcurrentHashMap<ServiceManager, String> getServiceManagers() {
         return serviceManagers;
     }
 
@@ -213,5 +247,61 @@ public class ResourceLocator {
 
     public static String[] getComponentsSubscriptions(int hashcode) {
         return componentsSubscriptions.get(hashcode);
+    }
+
+
+    public static ServiceManager initServices(ServiceManager serviceManager, ProcessOrchestratorImpl orchestrator,
+                                              Set<Service> services ) throws Throwable{
+        if( services != null && !services.isEmpty() && serviceManager == null ) {
+            final boolean isStatefull = services.toArray(new PluggableComponent[services.size()])[0].getClass()
+                    .getAnnotation(StateType.class).state().equals(Constants.STATEFULL);
+            serviceManager = new ServiceManager(services);
+            final ServiceManager sm = serviceManager;
+            serviceManager.addListener(
+                new ServiceManager.Listener() {
+                    public void stopped() {
+                        try {
+                            Log4J.info(orchestrator, String.format("All components have been shut down. " +
+                                    "Closing ServiceManager for Session: %s", orchestrator.getSessionId()));
+                            if (isStatefull) orchestrator.setStatus(Constants.ORCHESTRATOR_STOPPED);
+                            ResourceLocator.addServiceManager(sm, Constants.SERVICE_MANAGER_STOPPED);
+                        } catch (Throwable e) {
+                            ExceptionHandler.handle(e);
+                        }
+                    }
+
+                    public void healthy() {
+                        try {
+                            // Services have been initialized and are healthy, start accepting requests...
+                            Log4J.info(orchestrator, String.format("ServiceManager has initialized all the " +
+                                    "services for session: %s", orchestrator.getSessionId()));
+                            if (isStatefull) orchestrator.setStatus(Constants.ORCHESTRATOR_STARTED);
+                        } catch (Throwable e) {
+                            ExceptionHandler.handle(e);
+                        }
+                    }
+
+                    public void failure(Service service) {
+                        try {
+                            // Something failed, at this point we could log it, notify a load balancer, or take
+                            // some other action.  For now we will just exit.
+                            Log4J.error(orchestrator, String.format("There was a failure with service: %s " +
+                                    "in session: %s", service.getClass().getName(), orchestrator.getSessionId()));
+                        } catch (Throwable e) {
+                            ExceptionHandler.handle(e);
+                        }
+                    }
+                },
+                MoreExecutors.directExecutor());
+            serviceManager.startAsync();
+            addServiceManager(serviceManager, Constants.SERVICE_MANAGER_STARTED);
+        }
+        return serviceManager;
+    }
+
+    public static void stopStatlessComp() throws Throwable{
+        if( statelessServManager != null ){
+            statelessServManager.stopAsync().awaitStopped(20, TimeUnit.SECONDS);
+        }
     }
 }

@@ -142,6 +142,7 @@ public class Session implements Runnable, OrchestratorListener{
         Log4J.info(this, String.format("Initializing session: %s.", id));
         orchestrator = DependencyManager.getInstance().getOrchestrator();
         orchestrator.initialize(this);
+        Thread.sleep(10000 );
         orchestrator.start();
         orchestrator.subscribe(this);
         status = Constants.SESSION_INITIATED;
@@ -189,7 +190,6 @@ public class Session implements Runnable, OrchestratorListener{
         }else{
             client.getResponseListener().process( Utils.toJson(output) );
         }
-        Log4J.debug(this, "session timeout is " + config.getSessionTimeout());
         timer.schedule(new InactivityCheck(), config.getSessionTimeout());
     }
 

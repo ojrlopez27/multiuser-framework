@@ -15,7 +15,6 @@ public class TestOrchestrator extends ProcessOrchestratorImpl {
 
     @Override
     public void process(String input){
-        Log4J.info(this, "Inside orchestrator.process");
         SessionMessage sessionMessage = Utils.fromJson( input, SessionMessage.class );
         logger.turnOn( false );
         blackboard.post(this, "MSG_COMPONENT_1", sessionMessage.getPayload() );

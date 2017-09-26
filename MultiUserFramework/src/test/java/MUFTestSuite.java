@@ -2,7 +2,6 @@ import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.MultiuserFramework;
 import edu.cmu.inmind.multiuser.controller.MultiuserFrameworkContainer;
-import edu.cmu.inmind.multiuser.controller.ShutdownHook;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
@@ -74,7 +73,7 @@ public class MUFTestSuite {
      */
     @Test
     public void testMUFwithTCPIPoff() throws Throwable{
-        //testBasicServerClientCommunication( false );
+        //testOneClientCommunication( false );
     }
 
     /**
@@ -83,12 +82,17 @@ public class MUFTestSuite {
      * @throws Throwable
      */
     @Test
-    public void testServerClientWithTCP() throws Throwable{
-        testBasicServerClientCommunication( true );
+    public void testOneClientWithTCP() throws Throwable{
+        runClient( true, "client-session-1" );
     }
 
-    private void testBasicServerClientCommunication(boolean isTPCon ) throws Throwable{
-        String sessionId = "session-1", messageId1 = "MSG_INITIAL_REQUEST", messageId2 = "MSG_COMPONENT_1",
+    @Test
+    public void testTwoClientsWithTCP() throws Throwable{
+        runClient( true, "client-session-1", "client-session-2");
+    }
+
+    private void runClient(boolean isTCPon, String... sessionIds) throws Throwable{
+        String messageId1 = "MSG_INITIAL_REQUEST", messageId2 = "MSG_COMPONENT_1",
                 messageId3 = "MSG_SEND_RESPONSE";
         long uniqueMsgId = System.currentTimeMillis();
         checkAsyncCall = false;
@@ -100,40 +104,42 @@ public class MUFTestSuite {
         // creates a MUF and set TCP to on or off
         MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
                 TestUtils.getModules(TestOrchestrator.class ),
-                TestUtils.createConfig( serverAddress, ports[0] ).setTCPon( isTPCon ) );
+                TestUtils.createConfig( serverAddress, ports[0] ).setTCPon( isTCPon ) );
         assertNotNull(muf);
         Utils.sleep(delay); //give some time to initialize the MUF
         // let's create a client that sends messages to MUF
-        ClientCommController client =  new ClientCommController.Builder()
-                .setServerAddress(serverAddress + ports[0])
-                .setServiceName(sessionId)
-                .setClientAddress( clientAddress + ports[0] )
-                .setRequestType( Constants.REQUEST_CONNECT )
-                .setTCPon( isTPCon )
-                .setMuf( isTPCon? null : muf ) //when TCP is off, we need to explicitly tell the client who the MUF is
-                .build();
-        // this method will be executed asynchronuously, so we need to add a delay before stopping the MUF
-        client.setResponseListener(message -> {
-            try {
-                SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
-                assertNotNull(sessionMessage);
-                if (!sessionMessage.getRequestType().equals(Constants.SESSION_CLOSED)) {
-                    assertEquals("Response from MUF : " + uniqueMsgId, sessionMessage.getPayload());
+        for(String sessionId : sessionIds ) {
+            ClientCommController client = new ClientCommController.Builder()
+                    .setServerAddress(serverAddress + ports[0])
+                    .setServiceName(sessionId)
+                    .setClientAddress(clientAddress + ports[0])
+                    .setRequestType(Constants.REQUEST_CONNECT)
+                    .setTCPon(isTCPon)
+                    .setMuf(isTCPon ? null : muf) //when TCP is off, we need to explicitly tell the client who the MUF is
+                    .build();
+            // this method will be executed asynchronuously, so we need to add a delay before stopping the MUF
+            client.setResponseListener(message -> {
+                try {
+                    SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
+                    assertNotNull(sessionMessage);
+                    if (!sessionMessage.getRequestType().equals(Constants.SESSION_CLOSED)) {
+                        assertEquals("Response from MUF : " + uniqueMsgId, sessionMessage.getPayload());
+                    }
+                    client.send(sessionId, new SessionMessage(Constants.REQUEST_DISCONNECT, "" + uniqueMsgId, sessionId));
+                    Log4J.info(ResponseListener.class, "1. expected and received messages are the same");
+                    MUFTestSuite.this.checkAsyncCall = true;
+                } catch (Throwable e) {
+                    ExceptionHandler.handle(e);
                 }
-                client.send(sessionId, new SessionMessage(Constants.REQUEST_DISCONNECT, "" + uniqueMsgId, sessionId));
-                Log4J.info(ResponseListener.class, "expected and received messages are the same");
-                MUFTestSuite.this.checkAsyncCall = true;
-            }catch (Throwable e){
-                ExceptionHandler.handle(e);
-            }
-        });
-        SessionMessage message = new SessionMessage( messageId1, "Message from client : " + uniqueMsgId, sessionId );
-        client.send( sessionId, message);
+            });
+            SessionMessage message = new SessionMessage( messageId1, "Message from client : " + uniqueMsgId, sessionId );
+            client.send( sessionId, message);
+        }
+
         Utils.sleep( delay * 2 );
         MultiuserFrameworkContainer.stopFramework( muf );
         assertTrue( checkAsyncCall );
     }
-
 
 
     //@Test
@@ -153,7 +159,7 @@ public class MUFTestSuite {
                 if (!sessionMessage.getRequestType().equals(Constants.SESSION_CLOSED)) {
                     assertEquals("Response from MUF : " + "uniqueMsgId", sessionMessage.getPayload());
                 }
-                Log4J.info(ResponseListener.class, "expected and received messages are the same");
+                Log4J.info(ResponseListener.class, "2. expected and received messages are the same");
                 MUFTestSuite.this.checkAsyncCall = true;
             });
             SessionMessage message = new SessionMessage("MSG_ASR", "Message from client : " + "uniqueMsgId", "session-1");

@@ -10,12 +10,13 @@ import edu.cmu.inmind.multiuser.controller.session.SessionManager;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by oscarr on 6/27/17.
  */
 public class MultiuserFrameworkContainer {
-    private static Map<String, MultiuserFramework> mufs = new HashMap<>();
+    private static ConcurrentHashMap<String, MultiuserFramework> mufs = new ConcurrentHashMap<>();
 
     /**
      * This method creates an instance of the SessionManager class, which listens to new connection/

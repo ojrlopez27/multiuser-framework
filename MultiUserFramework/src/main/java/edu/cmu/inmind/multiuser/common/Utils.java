@@ -3,22 +3,23 @@ package edu.cmu.inmind.multiuser.common;
 import com.google.gson.Gson;
 import com.rits.cloning.Cloner;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
-import edu.cmu.inmind.multiuser.controller.communication.ServiceInfoContainer;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
 
 import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -371,7 +372,7 @@ public class Utils {
      * the previous value.
      */
     @SuppressWarnings("unchecked")
-    public static Object addOrChangeAnnotation(BlackboardSubscription annotation, String key, Object newValue)
+    public static Object addOrChangeAnnotation(Annotation annotation, String key, Object newValue)
             throws Throwable{
         Object handler = Proxy.getInvocationHandler(annotation);
         Field f;
@@ -391,7 +392,7 @@ public class Utils {
         if (oldValue == null || oldValue.getClass() != newValue.getClass()) {
             throw new IllegalArgumentException();
         }
-        memberValues.put(key,newValue);
+        memberValues.put(key, newValue);
         return oldValue;
     }
 
@@ -469,13 +470,53 @@ public class Utils {
 
 
 
-    public static boolean isIPAddress(String ip){
-        try {
-            InetAddress inet = InetAddress.getByName( ip );
-            return inet.getHostAddress().equals(ip) && inet instanceof Inet4Address;
-        }catch(UnknownHostException ex){
-            ex.printStackTrace();
+    public static boolean isURLvalid(String address){
+        //TODO: we need to replace this with a proper reg exp
+        if( address.startsWith("tcp://") ){
+            String[] ip = address.substring( 6 ).split("\\." );
+            for(String segment : ip ){
+                if( segment.contains(":") ){
+                    segment = segment.split(":")[0];
+                }
+                int seg = Integer.valueOf(segment);
+                if( seg < 0 || seg > 255 ){
+                    return false;
+                }
+            }
+            return true;
         }
         return false;
     }
+
+
+    /**
+     * https://praveer09.github.io/technology/2016/02/29/rxjava-part-3-multithreading/
+     * This method executes a callable in a new thread
+     *
+     * @param callable
+     * @param mapper
+     * @param consumer
+     */
+    public static void execObsParallel(Callable callable, Function mapper, Consumer consumer){
+        io.reactivex.Observable.fromCallable(callable)
+                .map(mapper)
+                .observeOn(Schedulers.newThread())      // subscriber on different thread
+                .subscribe(consumer);
+    }
+
+    public static void execObsParallel(Consumer consumer){
+        execObsParallel( () -> "", s -> "", consumer );
+    }
+
+    /**
+     * This method executes an observabe sequentially (i.e., it doesn't start the next request (consumer) until
+     * the current one finishes)
+     * @param consumer
+     */
+    public static void execObsSequential(Consumer consumer){
+        io.reactivex.Observable.fromCallable(() -> consumer )
+                .observeOn(Schedulers.single())
+                .subscribe( consumer );
+    }
+
 }

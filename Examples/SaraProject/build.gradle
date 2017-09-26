@@ -17,6 +17,7 @@ repositories {
         }
         url "http://www.cs.cmu.edu/afs/cs/project/inmind-cmu-yahoo/www/maven2"
     }
+    maven { url 'https://oss.jfrog.org/libs-snapshot' }
 }
 
 configurations {
@@ -35,7 +36,7 @@ configurations.all {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'edu.cmu.inmind.framework:multiuser:2.10'        // this is the Multiuser Framework
+    compile 'edu.cmu.inmind.framework:multiuser:3.0-beta'        // this is the Multiuser Framework
     compile 'edu.cmu.inmind.framework:saracommons:1.0'      // this is the Sara Commons Catalog
 
     compile group: 'aopalliance', name: 'aopalliance', version: '1.0'
@@ -57,7 +58,12 @@ task sourceJar(type: Jar) {
     classifier "sources"
 }
 
+task showMeCache {
+    doLast{
+        configurations.compile.each { println it }
+    }
+}
+
 // you have to run: gradle clean build --refresh-dependencies
 
 apply plugin: 'maven'
-

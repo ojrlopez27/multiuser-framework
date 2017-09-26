@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.plugin;
 
 import com.google.common.util.concurrent.AbstractIdleService;
+import com.google.common.util.concurrent.AbstractService;
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
@@ -20,23 +21,24 @@ import edu.cmu.inmind.multiuser.controller.sync.SynchronizableEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by oscarr on 3/16/17.
  */
 @StateType( state = Constants.STATEFULL )
 public abstract class PluggableComponent extends AbstractIdleService implements BlackboardListener, Pluggable {
-    private Map<String, Blackboard> blackboards;
-    protected Map<String, MessageLog> messageLoggers;
-    protected Map<String, Session> sessions;
+    private ConcurrentHashMap<String, Blackboard> blackboards;
+    protected ConcurrentHashMap<String, MessageLog> messageLoggers;
+    protected ConcurrentHashMap<String, Session> sessions;
     private Session activeSession;
     private boolean isShutDown;
     private ClientCommController clientCommController;
 
     public PluggableComponent(){
-        blackboards = new HashMap<>();
-        messageLoggers = new HashMap<>();
-        sessions = new HashMap<>();//a component may be shared by several sessions (Stateless)
+        blackboards = new ConcurrentHashMap<>();
+        messageLoggers = new ConcurrentHashMap<>();
+        sessions = new ConcurrentHashMap<>();//a component may be shared by several sessions (Stateless)
         isShutDown = false;
     }
 
@@ -57,6 +59,59 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
     public void postCreate(){
         // do something after creation of this component
     }
+
+
+    /** ================================================ START OVERRIDE ============================================ **/
+
+    /**
+     * Super: Pluggable interface
+     */
+    @Override
+    public void execute(){
+        //do nothing
+    }
+
+    /**
+     * Super: BlackboardListener interface
+     */
+    @Override
+    public abstract void onEvent(BlackboardEvent event) throws Throwable;
+
+
+    /**
+     * Super: AbstractExecutionThreadService class (GUAVA)
+     */
+    @Override
+    protected void startUp() {
+        Log4J.info(this, "Starting up component: " + this.getClass().getSimpleName() +
+                " on session: " + checkActiveSession().getId() );
+    }
+
+    /**
+     * Super: AbstractExecutionThreadService class (GUAVA)
+     */
+    @Override
+    public void shutDown() {
+        Log4J.info(this, "Shutting down component: " + this.getClass().getSimpleName() +
+                " instantiation " + this.hashCode());
+        isShutDown = true;
+        blackboards.clear();
+        blackboards = null;
+        messageLoggers.clear();
+        messageLoggers = null;
+    }
+
+    /**
+     * Super: BlackboardListener interface
+     */
+    @Override
+    public String getSessionId(){
+        checkActiveSession();
+        return activeSession.getId();
+    }
+
+    /** ================================================ END OVERRIDE ============================================ **/
+
 
     public Blackboard blackboard(){
         Blackboard bb = null;
@@ -127,15 +182,16 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         return null;
     }
 
-    private void checkActiveSession(){
+    private Session checkActiveSession(){
         if (activeSession == null){
-            if( sessions != null && sessions.size() == 1 ){
-                activeSession = new ArrayList<>( sessions.values() ).get(0);
+            if( sessions != null && sessions.size() > 0 ){
+                activeSession = new ArrayList<>( sessions.values() ).get( sessions.size() - 1 );
             }else {
                 ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "activeSession: "
-                        + activeSession, "sessions: " + sessions) );
+                        + activeSession, "sessions: " + sessions, "") );
             }
         }
+        return activeSession;
     }
 
     public void addMessageLogger(String sessionId, MessageLog messageLogger) {
@@ -152,10 +208,6 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
                     "session: " + session, "sessions: " + sessions) );
         }
         sessions.put(session.getId(), session);
-    }
-
-    public void execute(){
-        //do nothing
     }
 
     public void close(String sessionId) throws Throwable{
@@ -176,29 +228,13 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         sessions.remove( sessionId );
     }
 
-    /** METHODS OF BlackboardListener INTERFACE **/
-    @Override
-    public abstract void onEvent(BlackboardEvent event) throws Throwable;
-
-
-    /** METHODS OF AbstractExecutionThreadService class (GUAVA) **/
-    @Override
-    protected void startUp() {
-        Log4J.info(this, "Starting up component: " + this.getClass().getSimpleName());
-    }
-
-    @Override
-    public void shutDown() {
-        Log4J.info(this, "Shutting down component: " + this.getClass().getSimpleName() + " instantiation " + this.hashCode());
-        isShutDown = true;
-        blackboards.clear();
-        blackboards = null;
-        messageLoggers.clear();
-        messageLoggers = null;
-    }
-
     public void notifyNext(PluggableComponent component){
         try {
+            if( blackboards == null || component == null || component.getSessionId() == null ){
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
+                        "blackboards: " + blackboards, "component: " + component, "sessionId: " +
+                        component != null? component.getSessionId() : null) );
+            }
             SynchronizableEvent next = blackboards.get(component.getSessionId()).getSyncEvent(component);
             if (next != null) {
                 next.notifyNext();
@@ -206,11 +242,5 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         }catch (Throwable e){
             ExceptionHandler.handle( e );
         }
-    }
-
-    @Override
-    public String getSessionId(){
-        checkActiveSession();
-        return activeSession.getId();
     }
 }

@@ -33,8 +33,8 @@ class Session(threading.Thread):
 
     def process(self, request):
         request_data = json.loads(str(request[2], "UTF-8"))
-        if 'ASRinput' in request_data:
-            asr = request_data['ASRinput']
+        if 'ASRinput' in request_data['payload']:
+            asr = 'I like action movies' # json.loads(json.loads(request_data['payload'])['ASRinput'])['utterance']
             user_intent = self.nlu.process(asr)
             system_intent = self.dm.process(user_intent)
             # you have to build a proper json here:

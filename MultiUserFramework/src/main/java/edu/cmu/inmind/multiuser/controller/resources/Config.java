@@ -179,9 +179,7 @@ public class Config {
         }
 
         public Builder setPathLogs(String pathLogs) {
-            if( pathLogs == null || pathLogs.isEmpty() || !(new File(pathLogs).exists())){
-                ExceptionHandler.handle( new MultiuserException(ErrorMessages.FILE_NOT_EXISTS, pathLogs));
-            }
+            ExceptionHandler.checkPath(pathLogs);
             this.pathLogs = pathLogs;
             return this;
         }
@@ -218,10 +216,7 @@ public class Config {
         }
 
         public Builder setServerAddress(String serverAddress) {
-            if( serverAddress == null || serverAddress.isEmpty() || !Utils.isIPAddress(serverAddress)){
-                ExceptionHandler.handle( new MultiuserException(ErrorMessages.INCORRECT_SERVER_ADDRESS, "serverAddress",
-                        serverAddress));
-            }
+            ExceptionHandler.checkIpAddress(serverAddress, sessionManagerPort);
             this.serverAddress = serverAddress;
             return this;
         }
@@ -236,9 +231,7 @@ public class Config {
         }
 
         public Builder setPathExceptionLogger(String pathExceptionLogger) {
-            if( pathExceptionLogger == null || pathExceptionLogger.isEmpty() || !(new File(pathExceptionLogger).exists())){
-                ExceptionHandler.handle( new MultiuserException(ErrorMessages.FILE_NOT_EXISTS, pathExceptionLogger));
-            }
+            ExceptionHandler.checkPath(pathExceptionLogger);
             this.pathExceptionLogger = pathExceptionLogger;
             return this;
         }
@@ -272,9 +265,7 @@ public class Config {
         }
 
         public Builder setJsonServicesConfig(String path) {
-            if( path == null || path.isEmpty() || !(new File(path).exists())){
-                ExceptionHandler.handle( new MultiuserException(ErrorMessages.FILE_NOT_EXISTS, path));
-            }
+            ExceptionHandler.checkPath(path);
             this.serviceConfigPath = path;
             return this;
         }

@@ -2,13 +2,14 @@ package edu.cmu.inmind.multiuser.controller.exceptions;
 
 import com.google.common.base.Throwables;
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
+import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.log.FileLogger;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 
 import java.io.File;
 import java.nio.channels.ClosedByInterruptException;
-import java.util.Observable;
 
 /**
  * Created by oscarr on 3/24/17.
@@ -118,5 +119,18 @@ public class ExceptionHandler {
         long presumableFreeMemory = Runtime.getRuntime().maxMemory() - allocatedMemory;
 
         logger.add( messageId, "Presumable free memory: " + presumableFreeMemory );
+    }
+
+
+    public static void checkIpAddress(String address, int port){
+        if( address == null || address.isEmpty() || !Utils.isURLvalid(address)){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.INCORRECT_IP_ADDRESS, "ip address", address));
+        }
+    }
+
+    public static void checkPath(String path) {
+        if( path == null || path.isEmpty() || !(new File(path).exists())){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.FILE_NOT_EXISTS, path));
+        }
     }
 }

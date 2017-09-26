@@ -178,7 +178,7 @@ public class ServerCommController {
             }else {
                 reply.getMsg().addLast(Utils.toJson(message));
             }
-            Log4J.debug(this, "sending " + reply.toString());
+            //Log4J.debug(this, "sending " + reply.toString());
             sendToBroker(MDP.S_REPLY, null, reply.getMsg());
             reply.destroy();
         }
