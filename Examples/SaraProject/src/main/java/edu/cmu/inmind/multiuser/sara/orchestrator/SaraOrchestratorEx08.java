@@ -25,7 +25,7 @@ public class SaraOrchestratorEx08 extends ProcessOrchestratorImpl {
         super.process(message);
 
         // we do this to not trigger onEvent method (just for now)
-        blackboard.setNotifySubscribers( false );
+        //blackboard.setNotifySubscribers( false );
         SessionMessage inputMessage = Utils.fromJson(message, SessionMessage.class);
         blackboard.post( this, inputMessage.getMessageId(), Utils.fromJson(inputMessage.getPayload(),
                 SaraInput.class));

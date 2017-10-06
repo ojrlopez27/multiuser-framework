@@ -29,7 +29,7 @@ public class SaraOrchestratorEx03 extends ProcessOrchestratorImpl {
 
         // since this example doesn't use the event-oriented approach but the direct-invocation approach, you may
         // want to tell the blackboard not to notify subscribers (you will notify them):
-        blackboard.setNotifySubscribers( false );
+        //blackboard.setNotifySubscribers( false );
         blackboard.post( this, inputMessage.getMessageId(), Utils.fromJson(inputMessage.getPayload(), SaraInput.class));
 
         // it selects only one component and then execute it:

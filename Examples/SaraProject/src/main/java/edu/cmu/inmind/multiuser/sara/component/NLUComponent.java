@@ -31,7 +31,6 @@ public class NLUComponent extends PluggableComponent {
     @Override
     public void execute() {
         Log4J.info(this, "NLUComponent: " + hashCode());
-
         SaraOutput saraOutput = extractAndProcess();
 
         //update the blackboard
@@ -58,15 +57,13 @@ public class NLUComponent extends PluggableComponent {
         //TODO: add code here
         //...
         Log4J.info(this, "NLUComponent. These objects have been updated at the blackboard: " + event.toString());
-
         SaraOutput saraOutput = extractAndProcess();
-        //update the blackboard
-        blackboard().post(this, SaraCons.MSG_NLU, saraOutput );
 
         //TODO: uncomment this code to run Ex13_UserModel and Ex15_WholePipeline
         saraOutput.getUserIntent().setUserIntent("user-interests");
         List<String> entities = Arrays.asList(new String[]{"robotics", "IA", "cooking"});
         saraOutput.getUserIntent().setEntitities( entities );
+        //update the blackboard
         blackboard().post(this, SaraCons.MSG_NLU, saraOutput );
     }
 

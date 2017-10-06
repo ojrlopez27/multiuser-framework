@@ -2,7 +2,7 @@
   "services": [
     {
       "serviceName": "RPT_SERVICE",
-      "clientAddress": "tcp://52.87.172.224:5580",
+      "slaveMUFAddress": "tcp://52.87.172.224:5580",
       "msgSubscriptions": [
         "MSG_ASR",
         "MSG_CSC",
@@ -12,7 +12,7 @@
     },
     {
       "serviceName": "NLU_SERVICE",
-      "clientAddress": "tcp://34.203.160.208:5590",
+      "slaveMUFAddress": "tcp://34.203.160.208:5590",
       "msgSubscriptions": [
         "MSG_ASR",
         "MSG_START_DM",

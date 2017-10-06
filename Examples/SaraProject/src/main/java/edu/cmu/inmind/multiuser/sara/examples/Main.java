@@ -71,13 +71,13 @@ public class Main{
     protected Config createConfig() {
         return new Config.Builder()
                 // you can add values directly like this:
+                .setExceptionTraceLevel( Constants.SHOW_ALL_EXCEPTIONS)
                 .setSessionManagerPort(5555)
                 .setDefaultNumOfPoolInstances(10)
-                        // or you can refer to values in your config.properties file:
+                // or you can refer to values in your config.properties file:
                 .setPathLogs(Utils.getProperty("pathLogs"))
                 .setSessionTimeout(5, TimeUnit.MINUTES)
-                .setServerAddress("127.0.0.1") //use IP instead of 'localhost'
-                .setExceptionTraceLevel( Constants.SHOW_MUF_EXCEPTIONS)
+                .setServerAddress("tcp://127.0.0.1") //use IP instead of 'localhost'
                 // if using FileLogger, just specify the path to store the logs
                 //.setPathExceptionLogger(Utils.getProperty("pathLogs"))
                 // if using your own implementation of MessageLog:

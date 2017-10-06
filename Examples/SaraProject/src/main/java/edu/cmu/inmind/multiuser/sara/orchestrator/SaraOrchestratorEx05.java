@@ -26,7 +26,7 @@ public class SaraOrchestratorEx05 extends ProcessOrchestratorImpl {
         super.process(message);
 
         // we need this so event-oriented approach is disabled
-        blackboard.setNotifySubscribers( false );
+        //blackboard.setNotifySubscribers( false );
         SessionMessage inputMessage = Utils.fromJson(message, SessionMessage.class);
         blackboard.post( this, inputMessage.getMessageId(), Utils.fromJson(inputMessage.getPayload(), SaraInput.class));
         // let's add an empty object for output, otherwise some components such as NLG may crash since there is no

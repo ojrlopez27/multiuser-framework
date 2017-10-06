@@ -59,7 +59,7 @@ public class RemoteNLUComponent extends PluggableComponent {
             saraOutput.getUserIntent().setUserIntent( userIntent + " - contribution from receive" );
 
             // notify those components that are subscribed to messages from NLUComponent
-            blackboard().setNotifySubscribers(true);
+            //blackboard().setNotifySubscribers(true);
             blackboard().post( this, SaraCons.MSG_ASR,  saraOutput);
         });
     }

@@ -15,7 +15,7 @@ import edu.cmu.inmind.multiuser.controller.plugin.StateType;
  * Created by oscarr on 3/7/17.
  */
 @StateType(state = Constants.STATEFULL )
-@BlackboardSubscription( messages = {SaraCons.MSG_TR})
+@BlackboardSubscription( messages = {SaraCons.MSG_TR, SaraCons.MSG_TR})
 public class SocialReasonerComponent extends PluggableComponent {
 
     @Override
