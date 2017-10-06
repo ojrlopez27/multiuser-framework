@@ -1,10 +1,9 @@
 package edu.cmu.inmind.multiuser.controller.plugin;
 
 import com.google.common.util.concurrent.AbstractIdleService;
-import com.google.common.util.concurrent.AbstractService;
+import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
-import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardListener;
@@ -19,26 +18,28 @@ import edu.cmu.inmind.multiuser.controller.session.Session;
 import edu.cmu.inmind.multiuser.controller.sync.SynchronizableEvent;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Created by oscarr on 3/16/17.
  */
 @StateType( state = Constants.STATEFULL )
-public abstract class PluggableComponent extends AbstractIdleService implements BlackboardListener, Pluggable {
+public abstract class PluggableComponent extends AbstractIdleService implements BlackboardListener, Pluggable,
+        DestroyableCallback {
     private ConcurrentHashMap<String, Blackboard> blackboards;
     protected ConcurrentHashMap<String, MessageLog> messageLoggers;
     protected ConcurrentHashMap<String, Session> sessions;
     private Session activeSession;
     private boolean isShutDown;
     private ClientCommController clientCommController;
+    private CopyOnWriteArrayList<DestroyableCallback> callbacks;
 
     public PluggableComponent(){
         blackboards = new ConcurrentHashMap<>();
         messageLoggers = new ConcurrentHashMap<>();
         sessions = new ConcurrentHashMap<>();//a component may be shared by several sessions (Stateless)
+        callbacks = new CopyOnWriteArrayList();
         isShutDown = false;
     }
 
@@ -95,9 +96,9 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         Log4J.info(this, "Shutting down component: " + this.getClass().getSimpleName() +
                 " instantiation " + this.hashCode());
         isShutDown = true;
-        blackboards.clear();
+        if(blackboards != null) blackboards.clear();
         blackboards = null;
-        messageLoggers.clear();
+        if(messageLoggers != null) messageLoggers.clear();
         messageLoggers = null;
     }
 
@@ -118,11 +119,12 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         if( activeSession != null && activeSession.getId() != null && blackboards != null ) {
             bb = blackboards.get(activeSession.getId());
         }else{
-            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, blackboards, activeSession, ""));
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
+                    "blackboards: " + blackboards, "activeSession: " + activeSession));
         }
         //TODO: why blackboard is null?
         if( bb == null ){
-            bb = new Blackboard();
+            bb = new Blackboard( getMessageLogger() );
         }
         return bb;
     }
@@ -188,7 +190,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
                 activeSession = new ArrayList<>( sessions.values() ).get( sessions.size() - 1 );
             }else {
                 ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "activeSession: "
-                        + activeSession, "sessions: " + sessions, "") );
+                        + activeSession, "sessions: " + sessions) );
             }
         }
         return activeSession;
@@ -210,22 +212,25 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         sessions.put(session.getId(), session);
     }
 
-    public void close(String sessionId) throws Throwable{
-        // if this is a stateless component, we can only close it if all sessions have stopped
-        String state = (Utils.getAnnotation( this.getClass(), StateType.class )).state();
-        if( (state.equals(Constants.STATEFULL)) || ( (state.equals( Constants.STATELESS )
-                || state.equals( Constants.POOL)) && sessions.isEmpty() ) ) {
-            if (clientCommController != null) {
-                for (Session session : sessions.values()) {
-                    clientCommController.send(session.getId(), new SessionMessage(Constants.SESSION_CLOSED));
-                }
-                clientCommController.close();
+    public void close(String sessionId, DestroyableCallback callback) throws Throwable{
+        callbacks.add(callback);
+        Session currentSession = sessions.remove( sessionId );
+        if( clientCommController != null ) {
+            clientCommController.send(currentSession.getId(), new SessionMessage(Constants.SESSION_CLOSED));
+            // if this is a stateless component, we can only close it if all sessions have stopped
+            if (sessions.isEmpty()) {
+                clientCommController.close(this);
             }
-            if (!isShutDown) {
-                shutDown();
-            }
+        }else{
+            destroyInCascade(this);
         }
-        sessions.remove( sessionId );
+    }
+
+    @Override
+    public void destroyInCascade(Object destroyedObj) throws Throwable{
+        for(DestroyableCallback callback : callbacks){
+            callback.destroyInCascade( this );
+        }
     }
 
     public void notifyNext(PluggableComponent component){

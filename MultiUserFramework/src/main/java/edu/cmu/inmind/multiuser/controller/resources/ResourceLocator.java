@@ -21,6 +21,7 @@ import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
 import org.apache.logging.log4j.Logger;
 
+import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -51,9 +52,14 @@ public class ResourceLocator {
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "request: "
                     + request, "msg: " + msg, "payload: " + payload) );
         }
+        ServiceInfo serviceInfo = new ServiceInfo.Builder()
+                .setServiceName(request.getMessageId())
+                .setSlaveMUFAddress( request.getUrl() )
+                .setRequestType( request.getRequestType() )
+                .build();
         ServiceComponent serviceComponent = serviceRegistry.get(request.getSessionId());
         serviceComponent = serviceComponent != null ? serviceComponent.setServiceURL(request.getUrl())
-                : new ServiceComponent(null, request.getUrl(), msg.duplicate());
+                : new ServiceComponent(null, serviceInfo, msg.duplicate());
         if( payload != null && !payload.equals("null") && payload.length() > 2 ){
             serviceComponent.setSubMessages(payload.substring(1, payload.length() - 1).split(", "));
         }
@@ -67,8 +73,8 @@ public class ResourceLocator {
                     + serviceInfo) );
         }
         ServiceComponent serviceComponent = serviceRegistry.get( serviceInfo.getServiceName() );
-        serviceComponent = serviceComponent != null ? serviceComponent.setServiceURL( serviceInfo.getClientAddress())
-                : new ServiceComponent(null, serviceInfo.getClientAddress(), null);
+        serviceComponent = serviceComponent != null ? serviceComponent.setServiceInfo( serviceInfo )
+                : new ServiceComponent(null, serviceInfo, null);
         if( serviceInfo.getMsgSubscriptions() != null ){
             serviceComponent.setSubMessages( serviceInfo.getMsgSubscriptions() );
         }
@@ -252,9 +258,14 @@ public class ResourceLocator {
 
     public static ServiceManager initServices(ServiceManager serviceManager, ProcessOrchestratorImpl orchestrator,
                                               Set<Service> services ) throws Throwable{
+
         if( services != null && !services.isEmpty() && serviceManager == null ) {
-            final boolean isStatefull = services.toArray(new PluggableComponent[services.size()])[0].getClass()
-                    .getAnnotation(StateType.class).state().equals(Constants.STATEFULL);
+            Service service = services.toArray(new PluggableComponent[services.size()])[0];
+            Annotation annotation = service.getClass().getAnnotation(StateType.class);
+            if( annotation == null ){
+                annotation = Utils.getAnnotation( service.getClass(), StateType.class );
+            }
+            final boolean isStatefull = ((StateType) annotation).state().equals(Constants.STATEFULL);
             serviceManager = new ServiceManager(services);
             final ServiceManager sm = serviceManager;
             serviceManager.addListener(

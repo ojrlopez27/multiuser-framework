@@ -71,6 +71,7 @@ public class ExceptionHandler {
                     }
                     break;
                 default:
+                    e.printStackTrace();
                     break;
             }
         }
@@ -124,7 +125,7 @@ public class ExceptionHandler {
 
     public static void checkIpAddress(String address, int port){
         if( address == null || address.isEmpty() || !Utils.isURLvalid(address)){
-            ExceptionHandler.handle( new MultiuserException(ErrorMessages.INCORRECT_IP_ADDRESS, "ip address", address));
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.INCORRECT_IP_ADDRESS, address));
         }
     }
 

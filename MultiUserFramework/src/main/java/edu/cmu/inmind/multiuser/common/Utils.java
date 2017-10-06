@@ -2,7 +2,6 @@ package edu.cmu.inmind.multiuser.common;
 
 import com.google.gson.Gson;
 import com.rits.cloning.Cloner;
-import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
@@ -19,7 +18,6 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -367,34 +365,6 @@ public class Utils {
         return clazz;
     }
 
-    /**
-     * Changes the annotation value for the given key of the given annotation to newValue and returns
-     * the previous value.
-     */
-    @SuppressWarnings("unchecked")
-    public static Object addOrChangeAnnotation(Annotation annotation, String key, Object newValue)
-            throws Throwable{
-        Object handler = Proxy.getInvocationHandler(annotation);
-        Field f;
-        try {
-            f = handler.getClass().getDeclaredField("memberValues");
-        } catch (NoSuchFieldException | SecurityException e) {
-            throw new IllegalStateException(e);
-        }
-        f.setAccessible(true);
-        Map<String, Object> memberValues;
-        try {
-            memberValues = (Map<String, Object>) f.get(handler);
-        } catch (IllegalArgumentException | IllegalAccessException e) {
-            throw new IllegalStateException(e);
-        }
-        Object oldValue = memberValues.get(key);
-        if (oldValue == null || oldValue.getClass() != newValue.getClass()) {
-            throw new IllegalArgumentException();
-        }
-        memberValues.put(key, newValue);
-        return oldValue;
-    }
 
     public static void toJsonFile(Object obj, String directory, String fileName) {
         PrintWriter writer = null;
@@ -450,13 +420,45 @@ public class Utils {
         }
     }
 
+
+
+
+    /**
+     * Changes the annotation value for the given key of the given annotation to newValue and returns
+     * the previous value.
+     */
+    @SuppressWarnings("unchecked")
+    public static Object addOrChangeAnnotation(Annotation annotation, String key, Object newValue)
+            throws Throwable{
+        Object handler = Proxy.getInvocationHandler(annotation);
+        Field f;
+        try {
+            f = handler.getClass().getDeclaredField("memberValues");
+        } catch (NoSuchFieldException | SecurityException e) {
+            throw new IllegalStateException(e);
+        }
+        f.setAccessible(true);
+        Map<String, Object> memberValues;
+        try {
+            memberValues = (Map<String, Object>) f.get(handler);
+        } catch (IllegalArgumentException | IllegalAccessException e) {
+            throw new IllegalStateException(e);
+        }
+        Object oldValue = memberValues.get(key);
+        if (oldValue == null || oldValue.getClass() != newValue.getClass()) {
+            throw new IllegalArgumentException();
+        }
+        memberValues.put(key, newValue);
+        return oldValue;
+    }
+
     public static <T extends Annotation> T getAnnotation(Class<?> clazz, Class<T> annotationType)
             throws Throwable{
         T result;
         boolean isAnnotationPresent = clazz.isAnnotationPresent(annotationType);
         if(!isAnnotationPresent){
             Class<?> superClazz = clazz.getSuperclass();
-            if(superClazz!=null){
+            if(superClazz != null){
                 return getAnnotation(superClazz, annotationType);
             }
             else{

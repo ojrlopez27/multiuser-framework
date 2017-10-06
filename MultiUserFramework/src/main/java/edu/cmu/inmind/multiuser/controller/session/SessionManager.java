@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.session;
 
 import com.google.common.util.concurrent.ServiceManager;
+import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
@@ -15,14 +16,16 @@ import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.zeromq.ZMsg;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Created by oscarr on 3/3/17.
  * This class will control the sessions lifecycle (connect, disconnect, pause, resume)
  */
-public class SessionManager implements Runnable, Session.SessionObserver{
+public class SessionManager implements Runnable, Session.SessionObserver, DestroyableCallback {
     /** sessions handled by the session manager */
     private ConcurrentHashMap<String, Session> sessions;
+    private CopyOnWriteArrayList closeableObjects;
     /** communication controller that process
      * lifecycle request messages (connect a client, disconnect, etc.)*/
     private ServerCommController serverCommController;
@@ -35,7 +38,6 @@ public class SessionManager implements Runnable, Session.SessionObserver{
      * processed by the session manager
      */
     private String serviceId = Constants.SESSION_MANAGER_SERVICE;
-
     private Broker broker;
 
     private int port;
@@ -45,6 +47,7 @@ public class SessionManager implements Runnable, Session.SessionObserver{
 
 
     public SessionManager(PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws Throwable{
+        closeableObjects = new CopyOnWriteArrayList();
         if( modules == null || modules.length <= 0 || config == null ){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "modules: " + modules,
                     "config: " + config));
@@ -66,6 +69,7 @@ public class SessionManager implements Runnable, Session.SessionObserver{
         if( config.isTCPon() ) {
             initializeBroker();
             serverCommController = new ServerCommController(fullAddress, serviceId, null);
+            closeableObjects.add( serverCommController );
         }
         DependencyManager.getInstance(modules);
     }
@@ -84,6 +88,7 @@ public class SessionManager implements Runnable, Session.SessionObserver{
 
     public void initializeBroker(){
         broker = new Broker(port);
+        closeableObjects.add( broker );
         // Can be called multiple times with different endpoints
         broker.start();
     }
@@ -101,7 +106,7 @@ public class SessionManager implements Runnable, Session.SessionObserver{
                 processRequest( );
             }
         }catch (Throwable e){
-            //ExceptionHandler.handle(e);
+            ExceptionHandler.handle(e);
         }finally{
             boolean done = false;
             try {
@@ -213,8 +218,9 @@ public class SessionManager implements Runnable, Session.SessionObserver{
     private void disconnect(Session session, ZMsgWrapper msgRequest) throws Throwable{
         Log4J.info(this, "Disconnecting session: " + session.getId());
         send( msgRequest, new SessionMessage(Constants.SESSION_CLOSED) );
-        session.close( );
+        session.close( this );
         sessions.remove( session.getId() );
+        Log4J.error(this, "start disconnecting session: " + session.getId());
     }
 
     /**
@@ -275,9 +281,9 @@ public class SessionManager implements Runnable, Session.SessionObserver{
     private void createFrameworkAsService(ServiceInfo serviceInfo) {
         try {
             ClientCommController clientCommController = new ClientCommController.Builder()
-                    .setServerAddress(serviceInfo.getServerAddress())
+                    .setServerAddress(serviceInfo.getMasterMUFAddress())
                     .setServiceName(serviceInfo.getServiceName())
-                    .setClientAddress(serviceInfo.getClientAddress())
+                    .setClientAddress(serviceInfo.getSlaveMUFAddress())
                     .setMsgTemplate(serviceInfo.getMsgWrapper())
                     .setSubscriptionMessages(serviceInfo.getMsgSubscriptions())
                     .setRequestType(Constants.REGISTER_REMOTE_SERVICE)
@@ -293,7 +299,8 @@ public class SessionManager implements Runnable, Session.SessionObserver{
                     serviceInfo.getResponseListener().process(Utils.toJson(sessionMessage));
                     if (sessionMessage.getRequestType().equals(Constants.REQUEST_SHUTDOWN_SYSTEM)
                             && messageId.equals(Constants.SESSION_MANAGER_SERVICE)) {
-                        clientCommController.close();
+                        Log4J.error(this, "closing clientCommController");
+                        clientCommController.close(this);
                         //MultiuserFramework.stop();
                     }
                 }catch (Throwable e){
@@ -328,7 +335,7 @@ public class SessionManager implements Runnable, Session.SessionObserver{
         stopped = true;
         Log4J.info(this, "Start closing all sessions...");
         for( Session session : sessions.values() ){
-            session.close();
+            session.close(this);
         }
         SessionMessage sessionMessage = new SessionMessage();
         sessionMessage.setRequestType( Constants.REQUEST_SHUTDOWN_SYSTEM );
@@ -337,11 +344,9 @@ public class SessionManager implements Runnable, Session.SessionObserver{
             send( serviceComponent.getMsgTemplate(), sessionMessage );
         }
         if( config.isTCPon() ) {
-            serverCommController.close();
-            broker.close();
+            serverCommController.close(this);
+            broker.close( this );
         }
-        ResourceLocator.stopStatlessComp();
-        thread.interrupt();
     }
 
     /**
@@ -359,5 +364,14 @@ public class SessionManager implements Runnable, Session.SessionObserver{
                     "sessions: " + sessions));
         }
         this.sessions.remove(session.getId());
+    }
+
+    @Override
+    public void destroyInCascade(Object destroyedObj) throws Throwable {
+        closeableObjects.remove( destroyedObj );
+        if( closeableObjects.isEmpty() ){
+            ResourceLocator.stopStatlessComp();
+            thread.interrupt();
+        }
     }
 }

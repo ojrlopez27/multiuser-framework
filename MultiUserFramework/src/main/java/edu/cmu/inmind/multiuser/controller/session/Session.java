@@ -1,6 +1,6 @@
 package edu.cmu.inmind.multiuser.controller.session;
 
-import com.google.inject.Inject;
+import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
@@ -21,12 +21,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Created by oscarr on 3/3/17.
  * This class controls all the interaction between a client and a set of specific components.
  */
-public class Session implements Runnable, OrchestratorListener{
+public class Session implements Runnable, OrchestratorListener, DestroyableCallback {
     private String id;
     private String status;
     private ProcessOrchestrator orchestrator;
@@ -39,10 +40,13 @@ public class Session implements Runnable, OrchestratorListener{
     private String fullAddress;
     private ClientCommController client;
     private List<SessionObserver> observers;
+    private DestroyableCallback callback;
+    private CopyOnWriteArrayList closeableObjects;
 
     public Session() {
         this.timer = new InactivityTimer();
         this.observers = new ArrayList<>();
+        this.closeableObjects = new CopyOnWriteArrayList();
     }
 
     public String getId() {
@@ -83,7 +87,10 @@ public class Session implements Runnable, OrchestratorListener{
             this.thread = new Thread( this, String.format("Session-%s-Thread", id ));
             Log4J.info(this, "A new session has been created with id: " + id);
             this.fullAddress = fullAddress;
-            if(msg != null) this.sessionCommController = new ServerCommController( fullAddress, id, msg);
+            if(msg != null) {
+                this.sessionCommController = new ServerCommController(fullAddress, id, msg);
+                closeableObjects.add( sessionCommController );
+            }
             this.thread.start();
         }
         this.id = id;
@@ -112,25 +119,36 @@ public class Session implements Runnable, OrchestratorListener{
      * communication controllers
      * @throws Throwable
      */
-    public void close() throws Throwable{
+    public void close(DestroyableCallback callback) throws Throwable{
+        this.callback = callback;
         if( !isClosed ) {
             notifyObservers();
             Log4J.info(this, String.format("Closing session: %s", id));
             isClosed = true;
             status = Constants.SESSION_CLOSED;
-            orchestrator.close();
-            orchestrator = null;
             if( sessionCommController != null ) { // it is null when TCP is off
+                //notify the client
                 sessionCommController.send(new SessionMessage(Constants.SESSION_CLOSED));
-                sessionCommController.close();
-                sessionCommController = null;
             }
-            System.gc();
-            thread.interrupt();
-            thread = null;
-            timer.cancel();
-            timer.purge();
-            Log4J.info(this, String.format("Session: %s has been disconnected!", id));
+            orchestrator.close( this );
+            sessionCommController.close(this);
+        }
+    }
+
+    @Override
+    public void destroyInCascade(Object destroyedObj) throws Throwable{
+        closeableObjects.remove( destroyedObj );
+        if( closeableObjects.isEmpty() ) {
+            orchestrator = null;
+            if (sessionCommController != null) { // it is null when TCP is off
+                sessionCommController = null;
+                timer.cancel();
+                timer.purge();
+                Log4J.info(this, String.format("Session: %s has been disconnected!", id));
+                thread.interrupt();
+                thread = null;
+                callback.destroyInCascade(this);
+            }
         }
     }
 
@@ -144,6 +162,7 @@ public class Session implements Runnable, OrchestratorListener{
         orchestrator.initialize(this);
         orchestrator.start();
         orchestrator.subscribe(this);
+        closeableObjects.add(orchestrator);
         status = Constants.SESSION_INITIATED;
     }
 
@@ -169,9 +188,9 @@ public class Session implements Runnable, OrchestratorListener{
                     }
                 }
             }
-            close();
+            close(this);
         }catch (Throwable e){
-            //ExceptionHandler.handle(e);
+            ExceptionHandler.handle(e);
         }
     }
 
@@ -221,7 +240,7 @@ public class Session implements Runnable, OrchestratorListener{
         @Override
         public void run() {
             try {
-                close();
+                close(Session.this);
             }catch (Throwable e){
                 ExceptionHandler.handle( e );
             }

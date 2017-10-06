@@ -1,8 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.exceptions;
 
+
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Created by oscarr on 3/16/17.
@@ -16,4 +15,8 @@ public class MultiuserException extends Exception {
         super( String.format( errorCode, params));
     }
 
+    public MultiuserException(StringBuffer errorCode, Object... params){
+        super( String.format( Arrays.asList(params).stream().reduce(errorCode, (str, toRem) -> str += " %s,").toString(),
+                params));
+    }
 }

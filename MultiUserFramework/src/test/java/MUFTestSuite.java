@@ -46,7 +46,7 @@ public class MUFTestSuite {
      * @throws Throwable
      */
     @Test
-    public void tesStartAndStopTwoMUFs() throws Throwable{
+    public void testStartAndStopTwoMUFs() throws Throwable{
         MultiuserFramework muf1 = MultiuserFrameworkContainer.startFramework(
                 TestUtils.getModules(TestOrchestrator.class ),
                 TestUtils.createConfig( serverAddress, ports[0] ) );
@@ -132,7 +132,7 @@ public class MUFTestSuite {
                     ExceptionHandler.handle(e);
                 }
             });
-            SessionMessage message = new SessionMessage( messageId1, "Message from client : " + uniqueMsgId, sessionId );
+                SessionMessage message = new SessionMessage( messageId1, "Message from client : " + uniqueMsgId, sessionId );
             client.send( sessionId, message);
         }
 

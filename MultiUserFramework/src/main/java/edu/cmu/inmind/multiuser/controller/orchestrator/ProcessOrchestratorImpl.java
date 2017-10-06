@@ -2,6 +2,7 @@ package edu.cmu.inmind.multiuser.controller.orchestrator;
 
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.Inject;
+import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
@@ -18,6 +19,7 @@ import edu.cmu.inmind.multiuser.controller.log.MessageLog;
 import edu.cmu.inmind.multiuser.controller.plugin.ExternalComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.Interceptable;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
+import edu.cmu.inmind.multiuser.controller.plugin.StateType;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import edu.cmu.inmind.multiuser.controller.session.ServiceComponent;
@@ -34,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  * Created by oscarr on 3/10/17.
  * 
  */
-public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, BlackboardListener {
+public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, BlackboardListener, DestroyableCallback {
 
     @Inject Set<PluggableComponent> componentsSet;
     protected Set<PluggableComponent> components;
@@ -44,15 +46,22 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     protected Session session;
     protected MessageLog logger;
     protected ServiceManager statefullServManager;
+    private CopyOnWriteArrayList closeableObjects;
     private String sessionId;
     private boolean isClosed;
     private Config config;
     private String fullAddress;
     private boolean initialized = false;
+    private DestroyableCallback callback;
 
     public ProcessOrchestratorImpl(){
-        blackboard = new Blackboard( );
+        if( logger == null ){
+            logger = new FileLogger();
+        }
+        blackboard = new Blackboard( logger );
         components = new CopyOnWriteArraySet();
+        closeableObjects = new CopyOnWriteArrayList();
+        orchestratorListeners = new CopyOnWriteArrayList<>();
     }
 
     public Session getSession() {
@@ -130,7 +139,6 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
 
     @Override
     public void initialize( Session session ) throws Throwable{
-        this.orchestratorListeners = new CopyOnWriteArrayList<>();
         this.session = session;
         this.config = session.getConfig();
         this.fullAddress = session.getFullAddress();
@@ -138,10 +146,12 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         Log4J.info(this, String.format("Creating Process Orchestrator for session: %s", sessionId));
         components.addAll(componentsSet);
         components.addAll( createExternalComponents() );
+        addOnlyStatefullToCloseable();
         //by default we use a file messageLogger
-        if( logger == null ){
-            logger = new FileLogger();
+        if( logger != null ){
             logger.setPath( config.getPathLogs() );
+        }else{
+            ExceptionHandler.handle(new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "logger: " + logger));
         }
         logger.setId( sessionId );
         ResourceLocator.addServiceToComponent(components, sessionId, fullAddress );
@@ -157,6 +167,14 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         blackboard.setLogger( logger );
         initServiceManager();
         initialized = true;
+    }
+
+    private void addOnlyStatefullToCloseable() throws Throwable{
+        for(PluggableComponent component : components) {
+            if( Utils.getAnnotation(component.getClass(), StateType.class).state().equals(Constants.STATEFULL) ){
+                closeableObjects.add( component );
+            }
+        }
     }
 
     private void initServiceManager() throws Throwable{
@@ -182,6 +200,12 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     }
 
     @Override
+    public void close(DestroyableCallback callback) throws Throwable{
+        this.callback = callback;
+        close();
+    }
+
+    @Override
     public void close() throws Throwable{
         if( !isClosed && initialized ) {
             Log4J.info(this, String.format("Closing Process Orchestrator for session: %s", sessionId));
@@ -192,11 +216,19 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
                 statefullServManager.stopAsync().awaitStopped(20, TimeUnit.SECONDS);
             }
             for(PluggableComponent component : components ){
-                component.close( sessionId );
+                component.close( sessionId, this );
             }
+        }
+    }
+
+
+    @Override
+    public void destroyInCascade(Object destroyedObject) throws Throwable{
+        closeableObjects.remove( destroyedObject );
+        if( closeableObjects.isEmpty() ) {
             orchestratorListeners.forEach(this::unsubscribe);
-            blackboard.remove(this, Constants.REMOVE_ALL);
-            if( blackboard != null ) {
+            if (blackboard != null) {
+                blackboard.remove(this, Constants.REMOVE_ALL);
                 blackboard.reset();
             }
             blackboard = null;
@@ -204,6 +236,8 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
             components = null;
             componentsSet = null;
             session = null;
+            Log4J.info(this, String.format("Process Orchestrator for session %s is destroyed!", sessionId));
+            if (callback != null) callback.destroyInCascade(this);
         }
     }
 
@@ -388,7 +422,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         List<ExternalComponent> externalComponents = new ArrayList<>();
         for(ServiceComponent service : ResourceLocator.getServiceRegistry().values() ) {
             if( service.getSubMessages() != null && service.getSubMessages().length > 0 ) {
-                externalComponents.add(new ExternalComponent(service.getServiceURL(), fullAddress, sessionId,
+                externalComponents.add(new ExternalComponent(service.getServiceInfo(), fullAddress, sessionId,
                         service.getMsgTemplate(), service.getSubMessages()));
             }else{
                 ExceptionHandler.handle( new MultiuserException(ErrorMessages.NO_SUBSCRIPTION_MESSSAGES,

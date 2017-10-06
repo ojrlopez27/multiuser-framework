@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.session;
 
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
+import edu.cmu.inmind.multiuser.controller.communication.ServiceInfo;
 import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
@@ -9,7 +10,7 @@ import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 /**
  * Created by oscarr on 3/14/17.
  * This class is used to control a remote service that connects to the MUF. Usually, this remote service
- * behaves as a local components, that's the reason why it has a PluggableComponent instance.
+ * behaves as a local component, that's the reason why it has a PluggableComponent instance.
  *
  */
 public class ServiceComponent{
@@ -17,14 +18,27 @@ public class ServiceComponent{
     private String serviceURL;
     private ZMsgWrapper msgTemplate;
     private String[] subMessages;
+    private ServiceInfo serviceInfo;
 
-    public ServiceComponent(Class<? extends PluggableComponent> component, String url, ZMsgWrapper msgTemplate) {
-        if( url == null || url.isEmpty()){
-            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "url: " + url) );
+    public ServiceComponent(Class<? extends PluggableComponent> component, ServiceInfo serviceInfo, ZMsgWrapper msgTemplate) {
+        if( serviceInfo == null || serviceInfo.getSlaveMUFAddress() == null || serviceInfo.getSlaveMUFAddress().isEmpty()){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "serviceInfo: " + serviceInfo,
+                    "url: " + serviceInfo.getSlaveMUFAddress()) );
         }
+        this.serviceInfo = serviceInfo;
         this.component = component;
-        this.serviceURL = url;
+        this.serviceURL = serviceInfo.getSlaveMUFAddress();
         this.msgTemplate = msgTemplate;
+    }
+
+    public ServiceInfo getServiceInfo() {
+        return serviceInfo;
+    }
+
+    public ServiceComponent setServiceInfo(ServiceInfo serviceInfo) {
+        this.serviceInfo = serviceInfo;
+        setServiceURL( serviceInfo.getSlaveMUFAddress() );
+        return this;
     }
 
     public ServiceComponent setServiceURL(String serviceURL) {

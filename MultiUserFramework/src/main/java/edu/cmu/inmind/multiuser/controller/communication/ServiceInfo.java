@@ -1,5 +1,9 @@
 package edu.cmu.inmind.multiuser.controller.communication;
 
+import edu.cmu.inmind.multiuser.common.ErrorMessages;
+import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
+
 /**
  * Created by oscarr on 4/4/17.
  * Use this class to specify information about a slave MUF, that is, a MUF that
@@ -7,12 +11,12 @@ package edu.cmu.inmind.multiuser.controller.communication;
  */
 public class ServiceInfo {
     /** URL of the master MUF */
-    private String serverAddress;
+    private String masterMUFAddress;
     /** name of the slave MUF */
     private String serviceName;
     /** URL of the slave MUF */
-    private String clientAddress;
-    /** connection, disconenction, etc. */
+    private String slaveMUFAddress;
+    /** connection, disconnection, etc. */
     private String requestType;
     /** wrapper of the messages between master and slave MUF's */
     private ZMsgWrapper msgWrapper;
@@ -22,25 +26,28 @@ public class ServiceInfo {
     private ResponseListener responseListener;
 
     public ServiceInfo(Builder builder) {
-        this.serverAddress = builder.serverAddress;
+        this.masterMUFAddress = builder.masterMUFAddress;
         this.serviceName = builder.serviceName;
-        this.clientAddress = builder.clientAddress;
+        this.slaveMUFAddress = builder.slaveMUFAddress;
         this.requestType = builder.requestType;
         this.msgWrapper = builder.msgWrapper;
         this.msgSubscriptions = builder.msgSubscriptions;
         this.responseListener = builder.responseListener;
     }
 
-    public String getServerAddress() {
-        return serverAddress;
+    public String getMasterMUFAddress() {
+        if( masterMUFAddress == null ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.MASTER_ADDRESS_IS_NULL) );
+        }
+        return masterMUFAddress;
     }
 
     public String getServiceName() {
         return serviceName;
     }
 
-    public String getClientAddress() {
-        return clientAddress;
+    public String getSlaveMUFAddress() {
+        return slaveMUFAddress;
     }
 
     public String getRequestType() {
@@ -60,16 +67,16 @@ public class ServiceInfo {
     }
 
     public static class Builder{
-        private String serverAddress;
+        private String masterMUFAddress;
         private String serviceName;
-        private String clientAddress;
+        private String slaveMUFAddress;
         private String requestType;
         private ZMsgWrapper msgWrapper;
         private String[] msgSubscriptions;
         private ResponseListener responseListener;
 
-        public Builder setServerAddress(String serverAddress) {
-            this.serverAddress = serverAddress;
+        public Builder setMasterMUFAddress(String masterMUFAddress) {
+            this.masterMUFAddress = masterMUFAddress;
             return this;
         }
 
@@ -78,8 +85,8 @@ public class ServiceInfo {
             return this;
         }
 
-        public Builder setClientAddress(String clientAddress) {
-            this.clientAddress = clientAddress;
+        public Builder setSlaveMUFAddress(String slaveMUFAddress) {
+            this.slaveMUFAddress = slaveMUFAddress;
             return this;
         }
 

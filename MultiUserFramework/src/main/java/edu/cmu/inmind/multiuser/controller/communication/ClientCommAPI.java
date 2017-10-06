@@ -1,25 +1,24 @@
 package edu.cmu.inmind.multiuser.controller.communication;
 
-import edu.cmu.inmind.multiuser.controller.log.Log4J;
+import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
-import zmq.ZError;
-
-import java.nio.channels.ClosedByInterruptException;
 
 /**
  * Created by oscarr on 3/29/17.
  */
 
-public class ClientCommAPI {
+public class ClientCommAPI implements DestroyableCallback {
     private String broker;
     private ZContext ctx;
     private ZMQ.Socket clientSocket;
     private long timeout = 10000; // ten seconds
     private int highWaterMark = 10 * 1000; //amount of enqueued messages
     private ZMQ.Poller items; // Poll socket for a reply, with timeout
+    private boolean isAlreadyDestroyed;
+    private DestroyableCallback callback;
 
     public ClientCommAPI(String broker) throws Throwable{
         this.broker = broker;
@@ -82,11 +81,8 @@ public class ClientCommAPI {
             }
             return reply;
         }catch (Exception e){
-            if( e instanceof ZError.IOException){
-                return null;
-            }else{
-                throw e;
-            }
+            destroyInCascade( this );
+            return null;
         }
     }
 
@@ -95,22 +91,39 @@ public class ClientCommAPI {
      * request message and destroys it when sent.
      */
     public boolean send(String service, ZMsg request) throws Throwable{
-        assert (request != null);
-
-        // Prefix request with protocol frames
-        // Frame 0: empty (REQ emulation)
-        // Frame 1: "MDPCxy" (six bytes, MDP/Client x.y)
-        // Frame 2: Service name (printable string)
-        request.addFirst(service);
-        request.addFirst(MDP.C_CLIENT.newFrame());
-        request.addFirst("");
-        if( !request.send(clientSocket) ){
+        try {
+            assert (request != null);
+            // Prefix request with protocol frames
+            // Frame 0: empty (REQ emulation)
+            // Frame 1: "MDPCxy" (six bytes, MDP/Client x.y)
+            // Frame 2: Service name (printable string)
+            request.addFirst(service);
+            request.addFirst(MDP.C_CLIENT.newFrame());
+            request.addFirst("");
+            if (!request.send(clientSocket)) {
+                return false;
+            }
+            return true;
+        }catch (Throwable e){
+            destroyInCascade(this);
             return false;
         }
-        return true;
     }
 
-    public void destroy() throws Throwable{
-        ctx.destroy();
+    public void close(DestroyableCallback callback) throws Throwable{
+        this.callback = callback;
+        destroyInCascade(this);
+    }
+
+    @Override
+    public void destroyInCascade(Object destroyedObj) throws Throwable{
+        if (clientSocket != null) {
+            ctx.destroySocket(clientSocket);
+        }
+        if( !isAlreadyDestroyed ) {
+            isAlreadyDestroyed = true;
+            ctx.destroy();
+            if(callback != null) callback.destroyInCascade( this );
+        }
     }
 }

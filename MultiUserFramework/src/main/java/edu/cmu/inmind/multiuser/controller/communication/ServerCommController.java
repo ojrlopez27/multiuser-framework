@@ -1,5 +1,6 @@
 package edu.cmu.inmind.multiuser.controller.communication;
 
+import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
@@ -13,7 +14,7 @@ import org.zeromq.ZMsg;
 /**
  * Created by oscarr on 3/28/17.
  */
-public class ServerCommController {
+public class ServerCommController implements DestroyableCallback {
     private static final int HEARTBEAT_LIVENESS = 3; // 3-5 is reasonable
 
     private String serverAddress;
@@ -34,6 +35,8 @@ public class ServerCommController {
 
     // Return address, if any
     private ZFrame replyTo;
+    private boolean isAlreadyDestroyed;
+    private DestroyableCallback callback;
 
     public ServerCommController(String serverAddress, String serviceId, ZMsgWrapper msgTemplate) {
         try {
@@ -93,94 +96,104 @@ public class ServerCommController {
      * Send reply, if any, to broker and wait for next request.
      */
     public ZMsgWrapper receive(ZMsg reply) throws Throwable{
-
-        // Format and send the reply if we were provided one
-        //assert ( reply != null || !expectReply);
-        expectReply = true;
-        while (!Thread.currentThread().isInterrupted()) {
-            try {
-                // Poll socket for a reply, with timeout
-                ZMQ.Poller items = new ZMQ.Poller(1);
-                items.register(workerSocket, ZMQ.Poller.POLLIN);
-                if (items.poll(timeout) == -1)
-                    break; // Interrupted
-
-                if (items.pollin(0)) {
-                    ZMsg msg = ZMsg.recvMsg(workerSocket);
-                    if (msg == null)
+        try {
+            // Format and send the reply if we were provided one
+            //assert ( reply != null || !expectReply);
+            expectReply = true;
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    // Poll socket for a reply, with timeout
+                    ZMQ.Poller items = new ZMQ.Poller(1);
+                    items.register(workerSocket, ZMQ.Poller.POLLIN);
+                    if (items.poll(timeout) == -1)
                         break; // Interrupted
-                    liveness = HEARTBEAT_LIVENESS;
-                    // Don't try to handle errors, just assert noisily
-                    ExceptionHandler.checkAssert(msg != null && msg.size() >= 3);
 
-                    ZFrame empty = msg.pop();
-                    ExceptionHandler.checkAssert(empty.getData().length == 0);
-                    empty.destroy();
+                    if (items.pollin(0)) {
+                        ZMsg msg = ZMsg.recvMsg(workerSocket);
+                        if (msg == null)
+                            break; // Interrupted
+                        liveness = HEARTBEAT_LIVENESS;
+                        // Don't try to handle errors, just assert noisily
+                        ExceptionHandler.checkAssert(msg != null && msg.size() >= 3);
 
-                    ZFrame header = msg.pop();
-                    ExceptionHandler.checkAssert(MDP.S_ORCHESTRATOR.frameEquals(header));
-                    header.destroy();
+                        ZFrame empty = msg.pop();
+                        ExceptionHandler.checkAssert(empty.getData().length == 0);
+                        empty.destroy();
 
-                    ZFrame command = msg.pop();
-                    if (MDP.S_REQUEST.frameEquals(command)) {
-                        // We should pop and save as many addresses as there are
-                        // up to a null part, but for now, just save one
-                        replyTo = msg.unwrap();
+                        ZFrame header = msg.pop();
+                        ExceptionHandler.checkAssert(MDP.S_ORCHESTRATOR.frameEquals(header));
+                        header.destroy();
+
+                        ZFrame command = msg.pop();
+                        if (MDP.S_REQUEST.frameEquals(command)) {
+                            // We should pop and save as many addresses as there are
+                            // up to a null part, but for now, just save one
+                            replyTo = msg.unwrap();
+                            command.destroy();
+                            return new ZMsgWrapper(msg, replyTo); // We have a request to process
+                        } else if (MDP.S_HEARTBEAT.frameEquals(command)) {
+                            // Do nothing for heartbeats
+                        } else if (MDP.S_DISCONNECT.frameEquals(command)) {
+                            reconnectToBroker();
+                        } else {
+                            Log4J.error(this, "invalid input message: " + command.toString());
+                        }
                         command.destroy();
-                        return new ZMsgWrapper(msg, replyTo); // We have a request to process
-                    } else if (MDP.S_HEARTBEAT.frameEquals(command)) {
-                        // Do nothing for heartbeats
-                    } else if (MDP.S_DISCONNECT.frameEquals(command)) {
+                        msg.destroy();
+                    } else if (--liveness == 0) {
+                        try {
+                            Thread.sleep(reconnect);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt(); // Restore the
+                            // interrupted status
+                            break;
+                        }
                         reconnectToBroker();
-                    } else {
-                        Log4J.error(this, "invalid input message: " + command.toString());
                     }
-                    command.destroy();
-                    msg.destroy();
-                } else if (--liveness == 0) {
-                    try {
-                        Thread.sleep(reconnect);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt(); // Restore the
-                        // interrupted status
-                        break;
+                    // Send HEARTBEAT if it's time
+                    if (System.currentTimeMillis() > heartbeatAt) {
+                        sendToBroker(MDP.S_HEARTBEAT, null, null);
+                        heartbeatAt = System.currentTimeMillis() + heartbeat;
                     }
-                    reconnectToBroker();
+                } catch (Throwable error) {
+                    //Log4J.error(this, "*** receive. 1 error: " + error.getMessage());
+                    destroyInCascade(this);
+                    ExceptionHandler.handle(error);
+                    break;
                 }
-                // Send HEARTBEAT if it's time
-                if (System.currentTimeMillis() > heartbeatAt) {
-                    sendToBroker(MDP.S_HEARTBEAT, null, null);
-                    heartbeatAt = System.currentTimeMillis() + heartbeat;
-                }
-            }catch (Throwable error){
-                ExceptionHandler.handle( error );
-                break;
             }
-            if (Thread.currentThread().isInterrupted())
-                Log4J.warn(this, "interrupt received, killing workerSocket");
+            return null;
+        }catch (Throwable e){
+            //Log4J.error(this, "*** receive. 2 error: " + e.getMessage());
+            destroyInCascade(this);
+            return null;
         }
-        return null;
     }
 
 
     public void send(ZMsgWrapper reply, Object message) throws Throwable{
-        if (reply != null) {
-            if( replyTo == null || replyTo.toString().isEmpty() ){
-                if( reply.getReplyTo() != null && !reply.getReplyTo().toString().isEmpty() ){
-                    replyTo = reply.getReplyTo();
-                }else{
-                    ExceptionHandler.checkAssert( replyTo != null);
+        try {
+            if (reply != null) {
+                if (replyTo == null || replyTo.toString().isEmpty()) {
+                    if (reply.getReplyTo() != null && !reply.getReplyTo().toString().isEmpty()) {
+                        replyTo = reply.getReplyTo();
+                    } else {
+                        ExceptionHandler.checkAssert(replyTo != null);
+                    }
                 }
+                reply.getMsg().wrap(replyTo);
+                if (reply.getMsg().peekLast() != null) {
+                    reply.getMsg().peekLast().reset(Utils.toJson(message));
+                } else {
+                    reply.getMsg().addLast(Utils.toJson(message));
+                }
+                //Log4J.debug(this, "sending " + reply.toString());
+                sendToBroker(MDP.S_REPLY, null, reply.getMsg());
+                reply.destroy();
             }
-            reply.getMsg().wrap(replyTo);
-            if( reply.getMsg().peekLast() != null ){
-                reply.getMsg().peekLast().reset(Utils.toJson(message));
-            }else {
-                reply.getMsg().addLast(Utils.toJson(message));
-            }
-            //Log4J.debug(this, "sending " + reply.toString());
-            sendToBroker(MDP.S_REPLY, null, reply.getMsg());
-            reply.destroy();
+        }catch (Throwable e){
+            //Log4J.error(this, "*** send. error: " + e.getMessage());
+            destroyInCascade(this);
         }
     }
 
@@ -192,15 +205,30 @@ public class ServerCommController {
     }
 
 
-    public void close() throws Throwable{
+    public void close(DestroyableCallback callback) throws Throwable{
+        this.callback = callback;
+        Log4J.error(this, "Closing ServerCommController...");
+        destroyInCascade(this);
+    }
+
+    @Override
+    public void destroyInCascade(Object destroyedObj) throws Throwable{
         try {
             if (msgTemplate != null) msgTemplate.destroy();
             if (replyTo != null) replyTo.destroy();
-            if (ctx != null) ctx.destroy();
+            if (workerSocket != null) {
+                ctx.destroySocket(workerSocket);
+            }
+            if( !isAlreadyDestroyed ) {
+                isAlreadyDestroyed = true;
+                if (ctx != null) ctx.destroy();
+                if(callback != null) callback.destroyInCascade(this);
+            }
         }catch (Throwable e){
-            //ExceptionHandler.handle(e);
+            ExceptionHandler.handle(e);
         }
     }
+
 
     // ==============   getters and setters =================
     public int getHeartbeat() {

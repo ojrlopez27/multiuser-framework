@@ -1,10 +1,7 @@
 
 package edu.cmu.inmind.multiuser.controller.communication;
 
-import edu.cmu.inmind.multiuser.common.Constants;
-import edu.cmu.inmind.multiuser.common.ErrorMessages;
-import edu.cmu.inmind.multiuser.common.Pair;
-import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.common.*;
 import edu.cmu.inmind.multiuser.controller.MultiuserFramework;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
@@ -15,15 +12,13 @@ import org.zeromq.ZMsg;
 
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ClosedChannelException;
-import java.util.Arrays;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 /**
  * Created by oscarr on 3/29/17.
  */
 
-public class ClientCommController{
+public class ClientCommController implements DestroyableCallback {
     private static final String TOKEN = "TOKEN";
     private static final String STOP_FLAG = "STOP_FLAG";
     private ClientCommAPI clientCommAPI;
@@ -61,6 +56,7 @@ public class ClientCommController{
     private boolean shouldProcessReply;
     private boolean isTCPon;
     private MultiuserFramework muf;
+    private List<DestroyableCallback> callbacks;
 
     public ClientCommController( Builder builder ){
         this.isTCPon = builder.isTCPon;
@@ -76,6 +72,7 @@ public class ClientCommController{
         this.sessionManagerService = builder.sessionManagerService;
         this.muf = builder.muf;
         this.context = new ZContext();
+        this.callbacks = new ArrayList<>();
         //  Bind to inproc: endpoint, then start upstream thread
         this.clientSocket = context.createSocket(ZMQ.PAIR);
         this.clientSocket.bind("inproc://sender-thread");
@@ -237,26 +234,32 @@ public class ClientCommController{
                 }
             }
         }catch (Throwable e){
-            //ExceptionHandler.handle(e);
+            ExceptionHandler.handle(e);
         }
     }
 
-    public void close(){
-        new Thread(() -> {
-            try {
-                stop = true;
-                timer.cancel();
-                timer.purge();
-                //let's wait for all messages to be sent
-                Thread.sleep( 1000 );
-                clientCommAPI.destroy();
-                clientCommAPI = null;
-                context.destroySocket(clientSocket);
-                context.destroy();
-            }catch (Throwable e) {
-                //ExceptionHandler.handle(e);
-            }
-        }).start();
+    public void close(DestroyableCallback callback){
+        callbacks.add(callback);
+        try {
+            Log4J.info(ClientCommController.this, "Closing ClientCommController...");
+            stop = true;
+            timer.cancel();
+            timer.purge();
+            clientCommAPI.close(this);
+        }catch (Throwable e) {
+            ExceptionHandler.handle(e);
+        }
+    }
+
+
+    @Override
+    public void destroyInCascade(Object destroyedObj) throws Throwable{
+        clientCommAPI = null;
+        context.destroySocket(clientSocket);
+        context.destroy();
+        for (DestroyableCallback callback : callbacks) {
+            callback.destroyInCascade(this);
+        }
     }
 
     /********************************* SEND THREAD **************************************/
@@ -286,7 +289,7 @@ public class ClientCommController{
                 checkReconnect();
             }
         }catch (Throwable e){
-            //ExceptionHandler.handle(e);
+            ExceptionHandler.handle(e);
         }
     }
 
@@ -323,6 +326,11 @@ public class ClientCommController{
             senderSocket.connect("inproc://sender-thread");
         }
 
+        private void clean(){
+            senderSocket.send(STOP_FLAG, 0);
+            context.destroySocket(senderSocket);
+        }
+
         public void run() {
             try{
                 senderSocket.send(Constants.CONNECTION_STARTED, 0);
@@ -337,15 +345,23 @@ public class ClientCommController{
                         //  Signal downstream to client-thread
                         senderSocket.send("ACK", 0);
                     } catch (Throwable e) {
-                        //ExceptionHandler.handle(e);
+                        //Log4J.error("SenderThread", "*** 1 error: " + e.getMessage());
+                        clean();
+                        destroyInCascade(this);
+                        ExceptionHandler.handle(e);
                     }
                 }
                 if( !stop ) {
-                    senderSocket.send(STOP_FLAG, 0);
-                    context.destroySocket(senderSocket);
+                    clean();
                 }
             }catch (Throwable e){
-                //ExceptionHandler.handle( e );
+                try{
+                    //Log4J.error("SenderThread", "*** 2 error: " + e.getMessage());
+                    clean();
+                    destroyInCascade(this);
+                }catch (Throwable e1) {
+                    ExceptionHandler.handle(e1);
+                }
             }
         }
     }
@@ -372,8 +388,9 @@ public class ClientCommController{
                 Log4J.debug("ClientCommController.receive", "Exception 1");
             }else{
                 Log4J.debug("ClientCommController.receive", "Exception 2. Exception: " + e.getMessage());
-                ExceptionHandler.handle( e );
             }
+            destroyInCascade(this);
+            ExceptionHandler.handle( e );
         }
         return STOP_FLAG;
     }
@@ -399,6 +416,8 @@ public class ClientCommController{
                                 }
                             }
                         } catch (Throwable e) {
+                            //Log4J.error("ReceiveThread", "*** 1 error: " + e.getMessage());
+                            destroyInCascade(this);
                             ExceptionHandler.handle(e);
                         }
                     }
@@ -408,6 +427,12 @@ public class ClientCommController{
                     receiveState = checkFSM(receiveState, Constants.CONNECTION_FINISHED);
                     checkReconnect();
                 }catch (Throwable e){
+                    //Log4J.error("ReceiveThread", "*** 2 error: " + e.getMessage());
+                    try{
+                        destroyInCascade(this);
+                    }catch (Throwable e1){
+                        ExceptionHandler.handle( e1 );
+                    }
                     ExceptionHandler.handle( e );
                 }
             }

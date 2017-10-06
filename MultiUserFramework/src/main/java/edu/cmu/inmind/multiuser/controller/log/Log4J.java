@@ -43,6 +43,17 @@ public class Log4J{
         }
     }
 
+    public static void trace(Object caller, String message){
+        String sessionId = getSessionId(caller);
+        if (turnedOn){
+            if( sessionId != null ){
+                trace( caller, sessionId, message);
+            }else{
+                getLogger(caller).trace(message);
+            }
+        }
+    }
+
     public static void debug(Object caller, String message){
         String sessionId = getSessionId(caller);
         if (turnedOn){
@@ -60,7 +71,7 @@ public class Log4J{
             if( sessionId != null ){
                 error( caller, sessionId, message);
             }else{
-                getLogger(caller).info(message);
+                getLogger(caller).error(message);
             }
         }
     }
@@ -78,6 +89,10 @@ public class Log4J{
 
     public static void info(Object caller, String sessionId, String message){
         if( turnedOn ) getLogger(caller).info( getSessionAndMsg(sessionId, message ));
+    }
+
+    public static void trace(Object caller, String sessionId, String message){
+        if( turnedOn ) getLogger(caller).trace( getSessionAndMsg(sessionId, message ));
     }
 
     public static void debug(Object caller, String sessionId, String message){

@@ -1,5 +1,6 @@
 package edu.cmu.inmind.multiuser.controller.orchestrator;
 
+import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.session.Session;
@@ -16,6 +17,7 @@ public interface ProcessOrchestrator {
     void start();
     void pause();
     void resume();
+    void close(DestroyableCallback callback) throws Throwable;
     void close() throws Throwable;
     void subscribe(OrchestratorListener listener);
     void unsubscribe(OrchestratorListener listener);

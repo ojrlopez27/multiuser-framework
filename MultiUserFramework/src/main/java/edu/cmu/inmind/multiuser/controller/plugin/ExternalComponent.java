@@ -4,10 +4,7 @@ import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
-import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
-import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
-import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
-import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
+import edu.cmu.inmind.multiuser.controller.communication.*;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
@@ -21,16 +18,18 @@ import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 @BlackboardSubscription( messages = {} )
 @StateType( state = Constants.STATEFULL )
 public class ExternalComponent extends PluggableComponent implements ResponseListener{
+    private ServiceInfo serviceInfo;
 
-    public ExternalComponent(String serviceURL, String clientAddress, String sessionId, ZMsgWrapper zMsgWrapper,
+    public ExternalComponent(ServiceInfo serviceInfo, String clientAddress, String sessionId, ZMsgWrapper zMsgWrapper,
                              String[] messages){
         try {
             //if we override annotations, it will affect all instances of ExternalComponent, so every
             //ExternalComponent will have the same subscription messages
             //Utils.addOrChangeAnnotation(getClass().getAnnotation(BlackboardSubscription.class), "messages", messages);
+            this.serviceInfo = serviceInfo;
             ResourceLocator.addComponentSubscriptions( this.hashCode(), messages );
             setClientCommController( new ClientCommController.Builder()
-                .setServerAddress(serviceURL)
+                .setServerAddress(serviceInfo.getSlaveMUFAddress())
                 .setServiceName(sessionId)
                 .setClientAddress( clientAddress )
                 .setMsgTemplate( zMsgWrapper )
@@ -71,7 +70,6 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
     @Override
     public void shutDown() {
         sendCloseMessage();
-        super.shutDown();
     }
 
     /**
@@ -87,7 +85,7 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
                     sessionMessage.setRequestType(Constants.REQUEST_DISCONNECT);
                     sessionMessage.setSessionId(getSessionId());
                     getClientCommController().send(getSessionId(), sessionMessage);
-                    Utils.sleep(1000);
+                    ExternalComponent.super.shutDown();
                 }catch (Throwable e){
                     ExceptionHandler.handle(e);
                 }
@@ -104,7 +102,6 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
                         "sure you send a message with a proper id, otherwise it won't be delivered through the Blackboard. " +
                         "Message: " + sessionMessage.getPayload();
                 Log4J.error(this, msg);
-                System.err.println(msg);
             }
             blackboard().post(this, sessionMessage.getMessageId(), sessionMessage.getPayload());
         }catch (Throwable e){

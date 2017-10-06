@@ -26,21 +26,20 @@ public class ErrorMessages {
             "check that";
     public static final String BLACKBOARD_KEY_NULL = "You are posting a null message id through the Blackboard. Please " +
             "check that";
-    public static final String NOBODY_IS_SUBSCRIBED = "There are no components subscribed to message: %s. Noboby will " +
-            "listen to you! Check your services.json file or the @BlackboardSubscription annotation";
+    public static final String NOBODY_IS_SUBSCRIBED = "There are no components/orchestrators subscribed to message: %s. " +
+            "Check your services.json file OR make sure your components have the @BlackboardSubscription annotation";
     public static final String PAIR_VALUE_NULL = "One (or both) of the Pair variables is null. var1: &s, var2: %s";
     public static final String COMPONENTS_NULL = "The list of components is empty or null.";
     public static final String BLACKBOARD_SUBSCRIBER_NULL = "Blackboard subscriber is null";
 
     public static final String BLACKBOARD_MESSAGES_NULL = "The list of subscription messages is empty or null";
-    public static final String BLACKBOARD_SUBSCRIBERS_NULL = "There are no blackboard subscribers for message: %s";
     public static final String BLACKBOARD_SENDER_NULL = "Blackboard sender is null";
     public static final String BLACKBOARD_EVENT = "Blackboard event contains a null or empty parameter. status: %, " +
             "id: %s, element: %s";
     public static final String NO_SUBSCRIPTION_MESSSAGES = "The service '%s' has no subscription messages. Please " +
             "check your services.json file";
-    public static final String ANY_ELEMENT_IS_NULL = "One or more of these elements is/are null (or empty): %s, %s, %s";
-    public static final String INCORRECT_IP_ADDRESS = "The ip address for %s is incorrect: %s";
+    public static final StringBuffer ANY_ELEMENT_IS_NULL = new StringBuffer("One or more of these elements is/are null (or empty):");
+    public static final String INCORRECT_IP_ADDRESS = "The ip address: %s is incorrect. The correct format is: tcp://xxx.xxx.xxx.xxx";
     public static final String UNKNOWN_EXCEPTION_TRACE_LEVEL = "Unknown Exception trace level: %s. It should be a value " +
             "between 1-4";
     public static final String DUPLICATED_SERVICE_DEFINITION = "The service %s has been defined in multiple places. " +
@@ -48,4 +47,7 @@ public class ErrorMessages {
             "(services.json is preferred)";
     public static final String SERVICES_FILE_EMPTY = "The json file that contains remote service configuration " +
             "(e.g., services.json, on path: %s) is empty. Check whether the json attribute \"services\": is empty";
+    public static final String MASTER_ADDRESS_IS_NULL = "You have to specify the ip address for the master MUF " +
+            "when creating the ServiceInfo object.";
+    public static final String NOT_EXPECTED_DESTROYED_OBJ = "The destroyed object has an unexpected type. Received: %s, Expected: %s";
 }

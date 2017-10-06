@@ -4,7 +4,7 @@ package edu.cmu.inmind.multiuser.controller.communication;
  * Created by oscarr on 3/28/17.
  */
 
-import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import org.zeromq.ZContext;
@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *  Majordomo Protocol broker
  *  A minimal implementation of http://rfc.zeromq.org/spec:7 and spec:8
  */
-public class Broker extends Thread {
+public class Broker extends Thread implements DestroyableCallback {
 
     // We'd normally pull these from config data
     private static final String INTERNAL_SERVICE_PREFIX = "mmi.";
@@ -28,6 +28,8 @@ public class Broker extends Thread {
     private static final int HEARTBEAT_EXPIRY = HEARTBEAT_INTERVAL * HEARTBEAT_LIVENESS;
     private boolean isTerminated = false;
     private int port;
+    private DestroyableCallback callback;
+
 
     // ---------------------------------------------------------------------
 
@@ -104,7 +106,7 @@ public class Broker extends Thread {
             bind("tcp://*:" + port);
             mediate();
         }catch (Throwable e){
-            //ExceptionHandler.handle( e );
+            ExceptionHandler.handle( e );
         }
     }
 
@@ -147,13 +149,20 @@ public class Broker extends Thread {
             purgeWorkers();
             sendHeartbeats();
         }
-        close(); // interrupted
+        destroyInCascade(this); // interrupted
     }
 
     /**
      * Disconnect all workers, destroy context.
      */
-    public void close() throws Throwable{
+    public void close(DestroyableCallback callback) throws Throwable{
+        this.callback = callback;
+        destroyInCascade(this);
+    }
+
+
+    @Override
+    public void destroyInCascade(Object destroyedObj) throws Throwable {
         if (!isTerminated) {
             isTerminated = true;
             ArrayList<Worker> wrkrs = new ArrayList(workers.values());
@@ -164,10 +173,9 @@ public class Broker extends Thread {
                     throwable.printStackTrace();
                 }
             });
-            //let's wait for all workers to close
-            Utils.sleep(1000);
+            ctx.destroySocket(socket);
             ctx.destroy();
-            Log4J.debug(this, "Broker is now closing down.");
+            callback.destroyInCascade(this);
         }
     }
 

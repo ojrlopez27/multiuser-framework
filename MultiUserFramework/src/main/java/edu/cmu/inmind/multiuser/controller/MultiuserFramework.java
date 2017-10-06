@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.controller;
 
 
+import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.communication.ServiceInfo;
@@ -21,7 +22,7 @@ import java.util.List;
  * Created by oscarr on 3/20/17.
  * Use this class to control the lifecycle of the MUF framework.
  */
-public class MultiuserFramework{
+public class MultiuserFramework implements DestroyableCallback {
     private String id;
     private SessionManager sessionManager;
     private boolean stopping;
@@ -35,6 +36,7 @@ public class MultiuserFramework{
         ClassLoader.getSystemClassLoader().setPackageAssertionStatus("zmq",false);
         this.id = id;
         this.config = config;
+
         addShutDown();
         if( config.getPathExceptionLogger() != null ){
             ExceptionHandler.setLog( config.getPathExceptionLogger() );
@@ -117,11 +119,22 @@ public class MultiuserFramework{
                 if (config.isTCPon()) {
                     sessionManager.stop();
                 } else {
-                    session.close();
+                    session.close( this );
                 }
             }
         }catch (Throwable e) {
             ExceptionHandler.handle(e);
         }
+    }
+
+    @Override
+    public void destroyInCascade(Object destroyedObj) throws Throwable {
+        //TODO some logic to release resources
+        sessionManager = null;
+        session = null;
+        config = null;
+        dependencyManager = null;
+        client = null;
+        hooks = null;
     }
 }

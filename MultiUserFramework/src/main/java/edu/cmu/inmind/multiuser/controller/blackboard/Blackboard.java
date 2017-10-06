@@ -32,14 +32,19 @@ public class Blackboard {
     private boolean keepModel = true;
     private boolean notifySubscribers = true;
 
-    public Blackboard(){
-        subscribers = new ArrayList<>();
-        model = new ConcurrentHashMap<>();
-        subscriptions = new ConcurrentHashMap<>();
+    private Blackboard(){
+        this.subscribers = new ArrayList<>();
+        this.model = new ConcurrentHashMap<>();
+        this.subscriptions = new ConcurrentHashMap<>();
     }
 
-    public Blackboard(Set<PluggableComponent> components, String sessionId) {
+    public Blackboard( MessageLog logger ){
         this();
+        this.logger = logger;
+    }
+
+    public Blackboard(Set<PluggableComponent> components, String sessionId, MessageLog logger) {
+        this(logger);
         setComponents(components, sessionId);
     }
 
@@ -50,9 +55,7 @@ public class Blackboard {
             }
             for (PluggableComponent component : components) {
                 subscribe(component);
-                if (component instanceof PluggableComponent) {
-                    component.addBlackboard(sessionId, this);
-                }
+                component.addBlackboard(sessionId, this);
             }
         }catch (Throwable e){
             ExceptionHandler.handle( e );
@@ -63,7 +66,7 @@ public class Blackboard {
         this.keepModel = keepModel;
     }
 
-    public void setNotifySubscribers(boolean notifySubscribers) {
+    public void setnotifySubscribers(boolean notifySubscribers) {
         this.notifySubscribers = notifySubscribers;
     }
 
@@ -216,15 +219,15 @@ public class Blackboard {
                     final String sessionId = sender.getSessionId();
 
                     for(BlackboardListener subscriber : listeners ){
+                        if( subscriber == null ){
+                            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
+                                    "subscriber: " + subscriber));
+                        }
                         Utils.execObsParallel(blackboardListener -> {
                             if (subscriber instanceof PluggableComponent) {
                                 ((PluggableComponent) subscriber).setActiveSession(sessionId);
                             }
                             try {
-//                                Log4J.debug( Blackboard.this, sessionId,
-//                                        String.format("Component [%s] sends the following message to component [%s]: %s",
-//                                                sender.getClass().getSimpleName(), subscriber.getClass().getSimpleName(),
-//                                                element == null? "" : element.toString()) );
                                 subscriber.onEvent(event);
                                 if (subscriber instanceof PluggableComponent && subscriber.getClass()
                                         .isAnnotationPresent(ConnectRemoteService.class)) {
