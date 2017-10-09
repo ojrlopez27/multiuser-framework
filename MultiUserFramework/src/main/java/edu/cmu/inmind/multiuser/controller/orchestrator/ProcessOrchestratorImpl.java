@@ -212,9 +212,6 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
             isClosed = true;
             logger.store();
             status = Constants.ORCHESTRATOR_STOPPED;
-            if( statefullServManager != null ) {
-                statefullServManager.stopAsync().awaitStopped(20, TimeUnit.SECONDS);
-            }
             for(PluggableComponent component : components ){
                 component.close( sessionId, this );
             }
@@ -226,6 +223,9 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     public void destroyInCascade(Object destroyedObject) throws Throwable{
         closeableObjects.remove( destroyedObject );
         if( closeableObjects.isEmpty() ) {
+            if( statefullServManager != null ) {
+                statefullServManager.stopAsync().awaitStopped(20, TimeUnit.SECONDS);
+            }
             orchestratorListeners.forEach(this::unsubscribe);
             if (blackboard != null) {
                 blackboard.remove(this, Constants.REMOVE_ALL);

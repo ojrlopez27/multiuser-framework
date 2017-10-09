@@ -156,7 +156,6 @@ public class ServerCommController implements DestroyableCallback {
                         heartbeatAt = System.currentTimeMillis() + heartbeat;
                     }
                 } catch (Throwable error) {
-                    //Log4J.error(this, "*** receive. 1 error: " + error.getMessage());
                     destroyInCascade(this);
                     ExceptionHandler.handle(error);
                     break;
@@ -164,7 +163,6 @@ public class ServerCommController implements DestroyableCallback {
             }
             return null;
         }catch (Throwable e){
-            //Log4J.error(this, "*** receive. 2 error: " + e.getMessage());
             destroyInCascade(this);
             return null;
         }
@@ -187,12 +185,10 @@ public class ServerCommController implements DestroyableCallback {
                 } else {
                     reply.getMsg().addLast(Utils.toJson(message));
                 }
-                //Log4J.debug(this, "sending " + reply.toString());
                 sendToBroker(MDP.S_REPLY, null, reply.getMsg());
                 reply.destroy();
             }
         }catch (Throwable e){
-            //Log4J.error(this, "*** send. error: " + e.getMessage());
             destroyInCascade(this);
         }
     }
@@ -207,7 +203,7 @@ public class ServerCommController implements DestroyableCallback {
 
     public void close(DestroyableCallback callback) throws Throwable{
         this.callback = callback;
-        Log4J.error(this, "Closing ServerCommController...");
+        Log4J.info(this, "Closing ServerCommController...");
         destroyInCascade(this);
     }
 
@@ -221,7 +217,9 @@ public class ServerCommController implements DestroyableCallback {
             }
             if( !isAlreadyDestroyed ) {
                 isAlreadyDestroyed = true;
-                if (ctx != null) ctx.destroy();
+                if (ctx != null){
+                    ctx.destroy();
+                }
                 if(callback != null) callback.destroyInCascade(this);
             }
         }catch (Throwable e){

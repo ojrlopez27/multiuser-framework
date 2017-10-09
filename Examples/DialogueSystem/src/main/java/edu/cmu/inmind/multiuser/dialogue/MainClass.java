@@ -23,7 +23,8 @@ public class MainClass {
     private static String saraServerAddress = Utils.getProperty("saraServerAddress");
     private static String dialogueAddress = Utils.getProperty("dialogueAddress");
     private static MultiuserFramework muf;
-    private static boolean isMasterMUFCallingMe = true;
+    public static boolean isMasterMUFCallingMe = true;
+    public static boolean usePythonDialogue = false;
 
     /**
      * This method controls the whole app. If shutdown is entered, it will completely stop the system.
@@ -93,9 +94,9 @@ public class MainClass {
         // TODO: Example09_RemoteServiceAutomaticSubscription and Ex15_WholePipeline. Note that this time we are
         // TODO: including a list of subscriptions setMsgSubscriptions(new String[]{SaraCons.MSG_ASR}
         return new ServiceInfo.Builder()
-                .setServerAddress( saraServerAddress)
+                .setMasterMUFAddress( saraServerAddress)
                 .setServiceName(SaraCons.NLU_SERVICE)
-                .setClientAddress(dialogueAddress)
+                .setSlaveMUFAddress(dialogueAddress)
                 .setRequestType(Constants.REGISTER_REMOTE_SERVICE)
                 .setMsgWrapper( new ZMsgWrapper() )
                 .setMsgSubscriptions(new String[]{SaraCons.MSG_ASR})

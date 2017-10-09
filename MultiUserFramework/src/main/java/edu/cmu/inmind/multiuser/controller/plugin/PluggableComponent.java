@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.AbstractIdleService;
 import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
+import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardListener;
@@ -34,6 +35,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
     private boolean isShutDown;
     private ClientCommController clientCommController;
     private CopyOnWriteArrayList<DestroyableCallback> callbacks;
+    private String type;
 
     public PluggableComponent(){
         blackboards = new ConcurrentHashMap<>();
@@ -41,8 +43,16 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         sessions = new ConcurrentHashMap<>();//a component may be shared by several sessions (Stateless)
         callbacks = new CopyOnWriteArrayList();
         isShutDown = false;
+        try {
+            type = Utils.getAnnotation(getClass(), StateType.class).state();
+        }catch (Throwable e){
+            e.printStackTrace();
+        }
     }
 
+    public String getType() {
+        return type;
+    }
 
     public void addBlackboard(String sessionId, Blackboard blackboard) {
         if( blackboards == null || sessionId == null || blackboard == null ){
@@ -58,7 +68,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
     }
 
     public void postCreate(){
-        // do something after creation of this component
+        //TODO: this method may be implemented by subclasses
     }
 
 
@@ -69,7 +79,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
      */
     @Override
     public void execute(){
-        //do nothing
+        //TODO: this method has to be implemented by subclasses
     }
 
     /**
@@ -133,10 +143,6 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         this.clientCommController = clientCommController;
     }
 
-    public ClientCommController getClientCommController() {
-        return clientCommController;
-    }
-
 
     public void send( SessionMessage sessionMessage ){
         send( sessionMessage, true );
@@ -147,13 +153,13 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
             if (clientCommController == null) {
                 throw new MultiuserException( ErrorMessages.NO_REMOTE_ANNOTATION, getClass().getSimpleName() );
             }
-            Log4J.debug(this, "4.1. shouldProcessRequest: " + shouldProcessReply);
             clientCommController.setShouldProcessReply( shouldProcessReply );
             clientCommController.send( getSessionId(), sessionMessage);
         }catch (Throwable e){
             ExceptionHandler.handle( e );
         }
     }
+
 
     public void receive(ResponseListener responseListener){
         try {
@@ -214,13 +220,12 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
 
     public void close(String sessionId, DestroyableCallback callback) throws Throwable{
         callbacks.add(callback);
-        Session currentSession = sessions.remove( sessionId );
+        sessions.remove( sessionId );
         if( clientCommController != null ) {
-            clientCommController.send(currentSession.getId(), new SessionMessage(Constants.SESSION_CLOSED));
-            // if this is a stateless component, we can only close it if all sessions have stopped
-            if (sessions.isEmpty()) {
-                clientCommController.close(this);
-            }
+            SessionMessage sessionMessage = new SessionMessage();
+            sessionMessage.setRequestType(Constants.REQUEST_DISCONNECT);
+            sessionMessage.setSessionId(getSessionId());
+            send(sessionMessage, true);
         }else{
             destroyInCascade(this);
         }
@@ -228,6 +233,9 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
 
     @Override
     public void destroyInCascade(Object destroyedObj) throws Throwable{
+        if( clientCommController != null ){
+            clientCommController.close(null);
+        }
         for(DestroyableCallback callback : callbacks){
             callback.destroyInCascade( this );
         }

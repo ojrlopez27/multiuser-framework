@@ -37,5 +37,6 @@ public class DialogueOrchestrator extends ProcessOrchestratorImpl {
         // once you have a response, notify the orchestrator's listeners (session, etc.) which in turns sends a response
         // to the client (i.e., SaraProject)
         sendResponse( new SessionMessage(SaraCons.MSG_DIALOGUE_RESPONSE, Utils.toJson(output) ) );
+        Log4J.error(this, "sending response to SaraMUF: " + Utils.toJson(output));
     }
 }

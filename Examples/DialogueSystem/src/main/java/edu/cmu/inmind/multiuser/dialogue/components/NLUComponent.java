@@ -12,6 +12,7 @@ import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.StateType;
+import edu.cmu.inmind.multiuser.dialogue.MainClass;
 
 /**
  * Created by oscarr on 3/14/17.
@@ -24,14 +25,16 @@ public class NLUComponent extends PluggableComponent {
     private String serviceName;
     @Override
     public void postCreate(){
-        serviceName = getSessionId();
-        pythonDialogueAddress = Utils.getProperty("pythonDialogueAddress");
-        commController = new ClientCommController.Builder()
-                .setServerAddress( Utils.getProperty("dialogueAddress") )
-                .setClientAddress( pythonDialogueAddress )
-                .setServiceName( serviceName )
-                .setRequestType( Constants.REQUEST_CONNECT)
-                .build();
+        if( !MainClass.isMasterMUFCallingMe ) {
+            serviceName = getSessionId();
+            pythonDialogueAddress = Utils.getProperty("pythonDialogueAddress");
+            commController = new ClientCommController.Builder()
+                    .setServerAddress(Utils.getProperty("dialogueAddress"))
+                    .setClientAddress(pythonDialogueAddress)
+                    .setServiceName(serviceName)
+                    .setRequestType(Constants.REQUEST_CONNECT)
+                    .build();
+        }
     }
 
     @Override
@@ -41,18 +44,26 @@ public class NLUComponent extends PluggableComponent {
 
     @Override
     public void onEvent(BlackboardEvent blackboardEvent) {
-        // let's forward the ASR message to DialoguePython:
-        commController.send( serviceName, blackboardEvent.getElement() );
+        if( MainClass.usePythonDialogue ){
+            // let's forward the ASR message to DialoguePython:
+            commController.send( serviceName, blackboardEvent.getElement() );
 
-        // here we receive the response from DialoguePython:
-        commController.receive(message -> blackboard().post( NLUComponent.this, SaraCons.MSG_NLU,
-                Utils.fromJson( message, SaraOutput.class )));
+            // here we receive the response from DialoguePython:
+            commController.setResponseListener(message -> blackboard().post( NLUComponent.this, SaraCons.MSG_NLU,
+                    Utils.fromJson( message, SaraOutput.class )));
+        }else{
+            SaraOutput output = new SaraOutput();
+            output.setUserIntent( new UserIntent("greeting", null) );
+            blackboard().post( NLUComponent.this, SaraCons.MSG_NLU, output);
+        }
     }
 
     @Override
     public void shutDown(){
         SessionMessage sessionMessage = new SessionMessage();
         sessionMessage.setRequestType( Constants.REQUEST_DISCONNECT );
-        commController.send( serviceName, sessionMessage );
+        if( MainClass.usePythonDialogue ) {
+            commController.send(serviceName, sessionMessage);
+        }
     }
 }

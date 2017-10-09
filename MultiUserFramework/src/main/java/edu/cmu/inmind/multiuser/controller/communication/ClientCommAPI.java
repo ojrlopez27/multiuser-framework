@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.communication;
 
 import edu.cmu.inmind.multiuser.common.DestroyableCallback;
+import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
@@ -59,9 +60,7 @@ public class ClientCommAPI implements DestroyableCallback {
                 return null; // Interrupted
 
             if (items.pollin(0)) {
-                //Log4J.debug(this, "attempting to receive ... ");
                 ZMsg msg = ZMsg.recvMsg(clientSocket, ZMQ.DONTWAIT);
-                //            Log4J.debug(this, "received message " + msg.toString());
 
                 // Don't try to handle errors, just assert noisily
                 assert (msg.size() >= 4);

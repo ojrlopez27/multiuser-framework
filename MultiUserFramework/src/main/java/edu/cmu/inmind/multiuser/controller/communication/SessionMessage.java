@@ -1,5 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.communication;
 
+import edu.cmu.inmind.multiuser.common.Constants;
+
 /**
  * Created by oscarr on 3/3/17.
  */
@@ -34,6 +36,9 @@ public class SessionMessage {
 
     public SessionMessage(String requestType) {
         this.requestType = requestType;
+        if( requestType.equals(Constants.SESSION_CLOSED) ){
+            messageId = requestType;
+        }
     }
 
     public String getRequestType() {

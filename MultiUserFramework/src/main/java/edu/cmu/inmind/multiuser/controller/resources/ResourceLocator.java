@@ -78,7 +78,6 @@ public class ResourceLocator {
         if( serviceInfo.getMsgSubscriptions() != null ){
             serviceComponent.setSubMessages( serviceInfo.getMsgSubscriptions() );
         }
-        Log4J.debug("ResourceLocator", "registerService");
         serviceRegistry.put(serviceInfo.getServiceName() , serviceComponent);
     }
 
@@ -261,19 +260,16 @@ public class ResourceLocator {
 
         if( services != null && !services.isEmpty() && serviceManager == null ) {
             Service service = services.toArray(new PluggableComponent[services.size()])[0];
-            Annotation annotation = service.getClass().getAnnotation(StateType.class);
-            if( annotation == null ){
-                annotation = Utils.getAnnotation( service.getClass(), StateType.class );
-            }
-            final boolean isStatefull = ((StateType) annotation).state().equals(Constants.STATEFULL);
+            final boolean isStatefull = ((PluggableComponent)service).getType().equals(Constants.STATEFULL);
             serviceManager = new ServiceManager(services);
             final ServiceManager sm = serviceManager;
             serviceManager.addListener(
                 new ServiceManager.Listener() {
                     public void stopped() {
                         try {
-                            Log4J.info(orchestrator, String.format("All components have been shut down. " +
-                                    "Closing ServiceManager for Session: %s", orchestrator.getSessionId()));
+                            Log4J.info(orchestrator, String.format("All %s components have been shut down. " +
+                                            "Closing ServiceManager for Session: %s", isStatefull? "statefull" : "stateless",
+                                    orchestrator.getSessionId()));
                             if (isStatefull) orchestrator.setStatus(Constants.ORCHESTRATOR_STOPPED);
                             ResourceLocator.addServiceManager(sm, Constants.SERVICE_MANAGER_STOPPED);
                         } catch (Throwable e) {
@@ -284,8 +280,9 @@ public class ResourceLocator {
                     public void healthy() {
                         try {
                             // Services have been initialized and are healthy, start accepting requests...
-                            Log4J.info(orchestrator, String.format("ServiceManager has initialized all the " +
-                                    "services for session: %s", orchestrator.getSessionId()));
+                            Log4J.info(orchestrator, String.format("ServiceManager has initialized all the %s " +
+                                    "components for session: %s", isStatefull? "statefull" : "stateless",
+                                    orchestrator.getSessionId()));
                             if (isStatefull) orchestrator.setStatus(Constants.ORCHESTRATOR_STARTED);
                         } catch (Throwable e) {
                             ExceptionHandler.handle(e);
@@ -296,7 +293,7 @@ public class ResourceLocator {
                         try {
                             // Something failed, at this point we could log it, notify a load balancer, or take
                             // some other action.  For now we will just exit.
-                            Log4J.error(orchestrator, String.format("There was a failure with service: %s " +
+                            Log4J.error(orchestrator, String.format("There was a failure with service/component: %s " +
                                     "in session: %s", service.getClass().getName(), orchestrator.getSessionId()));
                         } catch (Throwable e) {
                             ExceptionHandler.handle(e);

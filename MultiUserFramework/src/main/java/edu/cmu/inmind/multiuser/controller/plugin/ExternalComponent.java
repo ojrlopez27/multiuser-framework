@@ -55,42 +55,10 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
             sessionMessage.setRequestType(event.getStatus());
             sessionMessage.setMessageId(event.getId());
             sessionMessage.setPayload( Utils.toJson(event.getElement() ));
-            getClientCommController().setShouldProcessReply( true );
-            getClientCommController().send( sessionId, sessionMessage );
+            send( sessionMessage, true );
         }catch (Throwable e){
             ExceptionHandler.handle( e );
         }
-    }
-
-    @Override
-    public void startUp(){
-        super.startUp();
-    }
-
-    @Override
-    public void shutDown() {
-        sendCloseMessage();
-    }
-
-    /**
-     * We need to send this message to the Python Dialogue System on a separate thread, otherwise
-     * we will get some TimeOut exceptions because the communication process takes longer than the
-     * shuttingdown process
-     */
-    private void sendCloseMessage(){
-        new Thread("send-message-close-python-dialogue") {
-            public void run(){
-                try {
-                    SessionMessage sessionMessage = new SessionMessage();
-                    sessionMessage.setRequestType(Constants.REQUEST_DISCONNECT);
-                    sessionMessage.setSessionId(getSessionId());
-                    getClientCommController().send(getSessionId(), sessionMessage);
-                    ExternalComponent.super.shutDown();
-                }catch (Throwable e){
-                    ExceptionHandler.handle(e);
-                }
-            }
-        }.start();
     }
 
     @Override
@@ -103,7 +71,12 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
                         "Message: " + sessionMessage.getPayload();
                 Log4J.error(this, msg);
             }
-            blackboard().post(this, sessionMessage.getMessageId(), sessionMessage.getPayload());
+            if( !sessionMessage.getRequestType().equals(Constants.SESSION_CLOSED)
+                    && !sessionMessage.getRequestType().equals(Constants.REQUEST_SHUTDOWN_SYSTEM) ) {
+                blackboard().post(this, sessionMessage.getMessageId(), sessionMessage.getPayload());
+            }else{
+                destroyInCascade( this );
+            }
         }catch (Throwable e){
             ExceptionHandler.handle(e);
         }

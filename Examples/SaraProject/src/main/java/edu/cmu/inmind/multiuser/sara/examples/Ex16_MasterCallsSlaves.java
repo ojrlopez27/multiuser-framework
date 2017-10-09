@@ -48,8 +48,8 @@ public class Ex16_MasterCallsSlaves extends Main {
         return new PluginModule[]{
                 new PluginModule.Builder(SaraOrchestratorEx15.class,
                         //comment out the line below if you want to use remote DialogueSystem
-                        NLUComponent.class, SaraCons.ID_NLU)
-                        .addPlugin(TaskReasonerComponent.class, SaraCons.ID_TR)
+                        //NLUComponent.class, SaraCons.ID_NLU)
+                        TaskReasonerComponent.class, SaraCons.ID_TR)
                         .addPlugin(SocialReasonerComponent.class, SaraCons.ID_SR)
                         .addPlugin(NLGComponent.class, SaraCons.ID_NLG)
                         .addPlugin(UserModelComponent.class, SaraCons.ID_UM)

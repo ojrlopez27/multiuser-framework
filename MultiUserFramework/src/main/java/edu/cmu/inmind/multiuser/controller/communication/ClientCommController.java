@@ -29,7 +29,7 @@ public class ClientCommController implements DestroyableCallback {
     private String requestType;
     private String[] subscriptionMessages;
     private ZMsgWrapper msgTemplate;
-    private Thread sendThread;
+    private SenderThread sendThread;
     private Thread receiveThread;
     private ResponseTimer timer;
     private long timeout = 10000; //we should receive a response from server within 10 seconds
@@ -39,6 +39,7 @@ public class ClientCommController implements DestroyableCallback {
     private int receivedMessages = 0;
 //    private final ClientMessage clientMessage;
     private ZContext context;
+    private boolean isDestroyed;
     /**
      * We use this socket to communicate with senderSocket, which is running on another
      * thread (SenderThread).
@@ -57,6 +58,7 @@ public class ClientCommController implements DestroyableCallback {
     private boolean isTCPon;
     private MultiuserFramework muf;
     private List<DestroyableCallback> callbacks;
+
 
     public ClientCommController( Builder builder ){
         this.isTCPon = builder.isTCPon;
@@ -245,6 +247,7 @@ public class ClientCommController implements DestroyableCallback {
             stop = true;
             timer.cancel();
             timer.purge();
+            //sendThread.clean();
             clientCommAPI.close(this);
         }catch (Throwable e) {
             ExceptionHandler.handle(e);
@@ -254,11 +257,13 @@ public class ClientCommController implements DestroyableCallback {
 
     @Override
     public void destroyInCascade(Object destroyedObj) throws Throwable{
-        clientCommAPI = null;
-        context.destroySocket(clientSocket);
-        context.destroy();
-        for (DestroyableCallback callback : callbacks) {
-            callback.destroyInCascade(this);
+        if( !isDestroyed ) {
+            isDestroyed = true;
+            clientCommAPI = null;
+            context.destroy();
+            for (DestroyableCallback callback : callbacks) {
+                if(callback != null) callback.destroyInCascade(this);
+            }
         }
     }
 
@@ -317,18 +322,12 @@ public class ClientCommController implements DestroyableCallback {
          * on the SenderThread.
          */
         private ZMQ.Socket senderSocket;
-        private boolean stop;
 
         public SenderThread(String threadName, ZContext context){
             super(threadName);
             this.context = context;
             senderSocket = this.context.createSocket(ZMQ.PAIR);
             senderSocket.connect("inproc://sender-thread");
-        }
-
-        private void clean(){
-            senderSocket.send(STOP_FLAG, 0);
-            context.destroySocket(senderSocket);
         }
 
         public void run() {
@@ -345,23 +344,11 @@ public class ClientCommController implements DestroyableCallback {
                         //  Signal downstream to client-thread
                         senderSocket.send("ACK", 0);
                     } catch (Throwable e) {
-                        //Log4J.error("SenderThread", "*** 1 error: " + e.getMessage());
-                        clean();
-                        destroyInCascade(this);
                         ExceptionHandler.handle(e);
                     }
                 }
-                if( !stop ) {
-                    clean();
-                }
             }catch (Throwable e){
-                try{
-                    //Log4J.error("SenderThread", "*** 2 error: " + e.getMessage());
-                    clean();
-                    destroyInCascade(this);
-                }catch (Throwable e1) {
-                    ExceptionHandler.handle(e1);
-                }
+                //ExceptionHandler.handle(e);
             }
         }
     }
@@ -385,9 +372,9 @@ public class ClientCommController implements DestroyableCallback {
             }
         }catch (Throwable e){
             if( e instanceof ClosedByInterruptException || e instanceof ClosedChannelException){
-                Log4J.debug("ClientCommController.receive", "Exception 1");
+                Log4J.error("ClientCommController.receive", "Exception 1");
             }else{
-                Log4J.debug("ClientCommController.receive", "Exception 2. Exception: " + e.getMessage());
+                Log4J.error("ClientCommController.receive", "Exception 2. Exception: " + e.getMessage());
             }
             destroyInCascade(this);
             ExceptionHandler.handle( e );
@@ -416,7 +403,6 @@ public class ClientCommController implements DestroyableCallback {
                                 }
                             }
                         } catch (Throwable e) {
-                            //Log4J.error("ReceiveThread", "*** 1 error: " + e.getMessage());
                             destroyInCascade(this);
                             ExceptionHandler.handle(e);
                         }
@@ -427,7 +413,6 @@ public class ClientCommController implements DestroyableCallback {
                     receiveState = checkFSM(receiveState, Constants.CONNECTION_FINISHED);
                     checkReconnect();
                 }catch (Throwable e){
-                    //Log4J.error("ReceiveThread", "*** 2 error: " + e.getMessage());
                     try{
                         destroyInCascade(this);
                     }catch (Throwable e1){
