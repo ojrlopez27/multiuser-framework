@@ -220,6 +220,7 @@ public class ServerCommController implements DestroyableCallback {
                 if (ctx != null){
                     ctx.destroy();
                 }
+                Log4J.info(this, "Gracefully destroying...");
                 if(callback != null) callback.destroyInCascade(this);
             }
         }catch (Throwable e){

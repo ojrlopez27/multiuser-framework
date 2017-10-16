@@ -136,5 +136,6 @@ public class MultiuserFramework implements DestroyableCallback {
         dependencyManager = null;
         client = null;
         hooks = null;
+        Log4J.info(this, "Gracefully destroying...");
     }
 }

@@ -247,7 +247,6 @@ public class ClientCommController implements DestroyableCallback {
             stop = true;
             timer.cancel();
             timer.purge();
-            //sendThread.clean();
             clientCommAPI.close(this);
         }catch (Throwable e) {
             ExceptionHandler.handle(e);
@@ -261,6 +260,7 @@ public class ClientCommController implements DestroyableCallback {
             isDestroyed = true;
             clientCommAPI = null;
             context.destroy();
+            Log4J.info(this, "Gracefully destroying...");
             for (DestroyableCallback callback : callbacks) {
                 if(callback != null) callback.destroyInCascade(this);
             }
@@ -344,7 +344,7 @@ public class ClientCommController implements DestroyableCallback {
                         //  Signal downstream to client-thread
                         senderSocket.send("ACK", 0);
                     } catch (Throwable e) {
-                        ExceptionHandler.handle(e);
+                        //ExceptionHandler.handle(e);
                     }
                 }
             }catch (Throwable e){
@@ -377,7 +377,7 @@ public class ClientCommController implements DestroyableCallback {
                 Log4J.error("ClientCommController.receive", "Exception 2. Exception: " + e.getMessage());
             }
             destroyInCascade(this);
-            ExceptionHandler.handle( e );
+            //ExceptionHandler.handle( e );
         }
         return STOP_FLAG;
     }
@@ -404,7 +404,7 @@ public class ClientCommController implements DestroyableCallback {
                             }
                         } catch (Throwable e) {
                             destroyInCascade(this);
-                            ExceptionHandler.handle(e);
+                            //ExceptionHandler.handle(e);
                         }
                     }
                     if (sendThread.isAlive()) {
@@ -416,9 +416,9 @@ public class ClientCommController implements DestroyableCallback {
                     try{
                         destroyInCascade(this);
                     }catch (Throwable e1){
-                        ExceptionHandler.handle( e1 );
+                        //ExceptionHandler.handle( e1 );
                     }
-                    ExceptionHandler.handle( e );
+                    //ExceptionHandler.handle( e );
                 }
             }
         };

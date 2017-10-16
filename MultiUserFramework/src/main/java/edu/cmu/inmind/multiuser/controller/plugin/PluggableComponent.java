@@ -36,6 +36,8 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
     private ClientCommController clientCommController;
     private CopyOnWriteArrayList<DestroyableCallback> callbacks;
     private String type;
+    private String defaultSessionId;
+    private boolean isClosed = false;
 
     public PluggableComponent(){
         blackboards = new ConcurrentHashMap<>();
@@ -117,8 +119,14 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
      */
     @Override
     public String getSessionId(){
-        checkActiveSession();
-        return activeSession.getId();
+        if( !isClosed ) {
+            checkActiveSession();
+            System.out.println("*** is not closed. sessionId: " + activeSession.getId() );
+            return activeSession.getId();
+        }else{
+            System.out.println("*** is closed. sessionId: " + defaultSessionId );
+            return defaultSessionId;
+        }
     }
 
     /** ================================================ END OVERRIDE ============================================ **/
@@ -126,11 +134,16 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
 
     public Blackboard blackboard(){
         Blackboard bb = null;
-        if( activeSession != null && activeSession.getId() != null && blackboards != null ) {
-            bb = blackboards.get(activeSession.getId());
+        Log4J.debug(this, "*** isClosed? " + isClosed);
+        if( !isClosed ) {
+            if (activeSession != null && activeSession.getId() != null && blackboards != null) {
+                bb = blackboards.get(activeSession.getId());
+            } else {
+                ExceptionHandler.handle(new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
+                        "blackboards: " + blackboards, "activeSession: " + activeSession));
+            }
         }else{
-            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
-                    "blackboards: " + blackboards, "activeSession: " + activeSession));
+            bb = blackboards.get(defaultSessionId);
         }
         //TODO: why blackboard is null?
         if( bb == null ){
@@ -174,16 +187,22 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
 
     public void setActiveSession(Session activeSession){
         this.activeSession = activeSession;
+        if( this.activeSession != null && this.activeSession.getId() != null ) defaultSessionId = this.activeSession.getId();
     }
 
     public void setActiveSession(String sessionId){
         this.activeSession = sessions.get( sessionId );
+        if( activeSession != null && activeSession.getId() != null ) defaultSessionId = activeSession.getId();
     }
 
     public MessageLog getMessageLogger(){
         try {
-            checkActiveSession();
-            return messageLoggers.get( activeSession.getId() );
+            if( !isClosed ) {
+                checkActiveSession();
+                return messageLoggers.get(activeSession.getId());
+            }else {
+                return messageLoggers.get( defaultSessionId );
+            }
         }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
@@ -194,6 +213,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         if (activeSession == null){
             if( sessions != null && sessions.size() > 0 ){
                 activeSession = new ArrayList<>( sessions.values() ).get( sessions.size() - 1 );
+                if( activeSession != null && activeSession.getId() != null ) defaultSessionId = activeSession.getId();
             }else {
                 ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "activeSession: "
                         + activeSession, "sessions: " + sessions) );
@@ -219,12 +239,13 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
     }
 
     public void close(String sessionId, DestroyableCallback callback) throws Throwable{
+        isClosed = true;
         callbacks.add(callback);
         sessions.remove( sessionId );
         if( clientCommController != null ) {
             SessionMessage sessionMessage = new SessionMessage();
             sessionMessage.setRequestType(Constants.REQUEST_DISCONNECT);
-            sessionMessage.setSessionId(getSessionId());
+            sessionMessage.setSessionId(sessionId);
             send(sessionMessage, true);
         }else{
             destroyInCascade(this);
@@ -236,6 +257,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         if( clientCommController != null ){
             clientCommController.close(null);
         }
+        Log4J.info(this, "Gracefully destroying...");
         for(DestroyableCallback callback : callbacks){
             callback.destroyInCascade( this );
         }

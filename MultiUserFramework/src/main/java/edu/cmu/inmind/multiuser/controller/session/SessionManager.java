@@ -371,6 +371,7 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
         closeableObjects.remove( destroyedObj );
         if( closeableObjects.isEmpty() ){
             ResourceLocator.stopStatlessComp();
+            Log4J.info(this, "Gracefully destroying...");
             thread.interrupt();
         }
     }

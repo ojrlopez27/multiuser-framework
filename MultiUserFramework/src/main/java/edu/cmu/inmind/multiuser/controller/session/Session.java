@@ -144,9 +144,10 @@ public class Session implements Runnable, OrchestratorListener, DestroyableCallb
                 sessionCommController = null;
                 timer.cancel();
                 timer.purge();
-                Log4J.info(this, String.format("Session: %s has been disconnected!", id));
                 thread.interrupt();
                 thread = null;
+                Log4J.info(this, "Gracefully destroying...");
+                Log4J.info(this, String.format("Session: %s has been disconnected!", id));
                 callback.destroyInCascade(this);
             }
         }

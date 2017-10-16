@@ -115,7 +115,6 @@ public class Broker extends Thread implements DestroyableCallback {
      */
     public void mediate() throws Throwable{
         while (!Thread.currentThread().isInterrupted()) {
-            //Log4J.debug(this, "polling ZMQ");
             ZMQ.Poller items = new ZMQ.Poller(1);
             items.register(socket, ZMQ.Poller.POLLIN);
             if (items.poll(HEARTBEAT_INTERVAL) == -1)
@@ -123,7 +122,6 @@ public class Broker extends Thread implements DestroyableCallback {
             if (items.pollin(0)) {
                 ZMsg msg = ZMsg.recvMsg(socket);
                 if (msg == null) {
-                    Log4J.debug(this, "interrupted while receiving mesage.");
                     break; // Interrupted
                 }
 
@@ -131,16 +129,18 @@ public class Broker extends Thread implements DestroyableCallback {
                 ZFrame empty = msg.pop();
                 ZFrame header = msg.pop();
 
-                if (MDP.C_CLIENT.frameEquals(header)) {
-                    processClient(sender, msg);
-                } else if (MDP.S_ORCHESTRATOR.frameEquals(header)) {
-                    processWorker(sender, msg);
-                }else {
-                    msg.destroy();
+                if( sender != null && empty != null && header != null ) {
+                    if (MDP.C_CLIENT.frameEquals(header)) {
+                        processClient(sender, msg);
+                    } else if (MDP.S_ORCHESTRATOR.frameEquals(header)) {
+                        processWorker(sender, msg);
+                    } else {
+                        msg.destroy();
+                    }
+                    sender.destroy();
+                    empty.destroy();
+                    header.destroy();
                 }
-                sender.destroy();
-                empty.destroy();
-                header.destroy();
 
             }
             purgeWorkers();
@@ -170,8 +170,8 @@ public class Broker extends Thread implements DestroyableCallback {
                     throwable.printStackTrace();
                 }
             });
-            //ctx.destroySocket(socket);
             ctx.destroy();
+            Log4J.info(this, "Gracefully destroying...");
             callback.destroyInCascade(this);
         }
     }

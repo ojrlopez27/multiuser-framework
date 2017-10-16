@@ -236,6 +236,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
             components = null;
             componentsSet = null;
             session = null;
+            Log4J.info(this, "Gracefully destroying...");
             Log4J.info(this, String.format("Process Orchestrator for session %s is destroyed!", sessionId));
             if (callback != null) callback.destroyInCascade(this);
         }

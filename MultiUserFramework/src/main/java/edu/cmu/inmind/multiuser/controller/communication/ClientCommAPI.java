@@ -122,6 +122,7 @@ public class ClientCommAPI implements DestroyableCallback {
         if( !isAlreadyDestroyed ) {
             isAlreadyDestroyed = true;
             ctx.destroy();
+            Log4J.info(this, "Gracefully destroying...");
             if(callback != null) callback.destroyInCascade( this );
         }
     }
