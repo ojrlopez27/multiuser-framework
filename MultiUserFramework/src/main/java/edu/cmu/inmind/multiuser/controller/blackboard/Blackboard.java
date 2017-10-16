@@ -237,7 +237,6 @@ public class Blackboard {
                                     sessionMessage.setMessageId(key);
                                     sessionMessage.setPayload(Utils.toJson( event.getElement() ));
                                     ((PluggableComponent) subscriber).send(sessionMessage);
-                                    //((PluggableComponent) subscriber).send(sessionMessage, true);
                                 }
                             }catch (Throwable e){
                                 ExceptionHandler.handle( e );
