@@ -18,6 +18,15 @@ public class TestUtils {
         };
     }
 
+
+    public static PluginModule[] getModulesPerf(Class<? extends ProcessOrchestratorImpl> orchestrator){
+        return new PluginModule[]{
+                new PluginModule.Builder( orchestrator, PerformanceTestPC.class, "test")
+                        .build()
+        };
+    }
+
+
     public static PluginModule[] getModules(Class<? extends ProcessOrchestratorImpl> orchestrator, Class[] pluggins){
         PluginModule.Builder builder = new PluginModule.Builder( orchestrator );
         for( Class clazz : pluggins ){

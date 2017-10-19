@@ -122,7 +122,7 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
                     }
                 }
                 ExceptionHandler.storeLog();
-                Log4J.info(this, "Session Manager stopped. Bye bye!");
+                //Log4J.info(this, "Session Manager stopped. Bye bye!");
                 if (config.executeExit()) {
                     System.exit(0);
                 }
@@ -168,7 +168,9 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
             } else if (request.getRequestType().equals(Constants.UNREGISTER_REMOTE_SERVICE)) {
                 unregisterRemoteService(request, msgRequest);
             } else {
-                send(msgRequest, new SessionMessage(Constants.RESPONSE_UNKNOWN_SESSION));
+                if(request.getRequestType() != null && !request.getRequestType().isEmpty() ) {
+                    send(msgRequest, new SessionMessage(Constants.RESPONSE_UNKNOWN_SESSION));
+                }
             }
         }
     }
@@ -372,6 +374,7 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
         if( closeableObjects.isEmpty() ){
             ResourceLocator.stopStatlessComp();
             Log4J.info(this, "Gracefully destroying...");
+            Log4J.info(this, "Session Manager stopped. Bye bye!");
             thread.interrupt();
         }
     }

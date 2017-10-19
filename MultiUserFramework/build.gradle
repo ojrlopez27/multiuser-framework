@@ -22,6 +22,8 @@ configurations {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
+    testCompile group: 'org.awaitility', name: 'awaitility', version: '3.0.0'
+
     compile fileTree(dir: 'libs', include: ['*.jar'])
     deployerJars 'org.apache.maven.wagon:wagon-ssh:2.9'
 
@@ -37,7 +39,6 @@ dependencies {
     compile group: 'org.objenesis', name: 'objenesis', version: '2.5.1'
     compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.8.2'
     compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.8.2'
-//    compile 'io.reactivex.rxjava2:rxjava:2.0.0-DP0-SNAPSHOT'
     compile group: 'io.reactivex.rxjava2', name: 'rxjava', version: '2.1.4'
 }
 
@@ -63,8 +64,10 @@ uploadArchives {
             pom.project {
                 name 'MultiuserFramework'
                 packaging 'jar'
-                description 'Multiuser Framework for Plugable Components. It loads services from services.json'
-                pom.version = '3.0-beta-cascade-destroy-v3'
+                description 'Multiuser Framework. rc = Release Candidate, probably feature complete and should be ' +
+                        'pretty stable - problems should be relatively rare and minor, but worth reporting to try to ' +
+                        'get them fixed for release.'
+                pom.version = '3.0-rc1'
                 pom.artifactId = 'multiuser'
                 pom.groupId = "edu.cmu.inmind.framework"
 

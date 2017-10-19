@@ -121,10 +121,8 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
     public String getSessionId(){
         if( !isClosed ) {
             checkActiveSession();
-            System.out.println("*** is not closed. sessionId: " + activeSession.getId() );
             return activeSession.getId();
         }else{
-            System.out.println("*** is closed. sessionId: " + defaultSessionId );
             return defaultSessionId;
         }
     }
@@ -134,7 +132,6 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
 
     public Blackboard blackboard(){
         Blackboard bb = null;
-        Log4J.debug(this, "*** isClosed? " + isClosed);
         if( !isClosed ) {
             if (activeSession != null && activeSession.getId() != null && blackboards != null) {
                 bb = blackboards.get(activeSession.getId());

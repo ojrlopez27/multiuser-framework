@@ -123,7 +123,13 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         }
     }
 
-    protected void sendResponse(SessionMessage output){
+    /**
+     * This method sends the response from MUF to the client
+     * @param output ideally this attribute should be an instance of SessionMessage class, however, you can define
+     *               whichever format you want to exchange messages with the client (e.g., you can just send a String)
+     *               but make sure that client correctly parses this message.
+     */
+    protected void sendResponse(Object output){
         try {
             orchestratorListeners.forEach(listener -> {
                 try {

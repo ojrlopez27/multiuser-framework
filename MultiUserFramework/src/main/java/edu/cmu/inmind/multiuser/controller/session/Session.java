@@ -200,7 +200,7 @@ public class Session implements Runnable, OrchestratorListener, DestroyableCallb
      * @param output
      */
     @Override
-    public void processOutput(SessionMessage output) throws Throwable{
+    public void processOutput(Object output) throws Throwable{
         if( output == null ){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "output: " + output));
         }

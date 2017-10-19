@@ -27,6 +27,7 @@ public class ServerCommController implements DestroyableCallback {
     private int heartbeat = 2500;// Heartbeat delay, msecs
     private int reconnect = 2500; // Reconnect delay, msecs
     private ZMsgWrapper msgTemplate;
+    private ZMQ.Poller items;
 
     // Internal state
     private boolean expectReply = false; // false only at start
@@ -48,7 +49,9 @@ public class ServerCommController implements DestroyableCallback {
                 this.msgTemplate = msgTemplate.duplicate();
             }
             ctx = new ZContext();
+            items = new ZMQ.Poller(1);
             reconnectToBroker();
+            items.register(workerSocket, ZMQ.Poller.POLLIN);
         }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
@@ -103,8 +106,6 @@ public class ServerCommController implements DestroyableCallback {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
                     // Poll socket for a reply, with timeout
-                    ZMQ.Poller items = new ZMQ.Poller(1);
-                    items.register(workerSocket, ZMQ.Poller.POLLIN);
                     if (items.poll(timeout) == -1)
                         break; // Interrupted
 
@@ -171,9 +172,9 @@ public class ServerCommController implements DestroyableCallback {
 
     public void send(ZMsgWrapper reply, Object message) throws Throwable{
         try {
-            if (reply != null) {
-                if (replyTo == null || replyTo.toString().isEmpty()) {
-                    if (reply.getReplyTo() != null && !reply.getReplyTo().toString().isEmpty()) {
+            if (reply != null && message != null) {
+                if (replyTo == null || replyTo.toString().isEmpty() ) {
+                    if (reply.getReplyTo() != null && !reply.getReplyTo().toString().isEmpty() ) {
                         replyTo = reply.getReplyTo();
                     } else {
                         ExceptionHandler.checkAssert(replyTo != null);
@@ -181,12 +182,15 @@ public class ServerCommController implements DestroyableCallback {
                 }
                 reply.getMsg().wrap(replyTo);
                 if (reply.getMsg().peekLast() != null) {
-                    reply.getMsg().peekLast().reset(Utils.toJson(message));
+                    reply.getMsg().peekLast().reset( message instanceof String? (String) message : Utils.toJson(message));
                 } else {
                     reply.getMsg().addLast(Utils.toJson(message));
                 }
                 sendToBroker(MDP.S_REPLY, null, reply.getMsg());
                 reply.destroy();
+            }else{
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
+                        "reply: " + reply, "message: " + message));
             }
         }catch (Throwable e){
             destroyInCascade(this);

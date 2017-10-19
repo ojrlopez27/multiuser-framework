@@ -73,7 +73,7 @@ public class ClientCommController implements DestroyableCallback {
         this.responseListener = builder.responseListener;
         this.sessionManagerService = builder.sessionManagerService;
         this.muf = builder.muf;
-        this.context = new ZContext();
+        this.context = new ZContext(1);
         this.callbacks = new ArrayList<>();
         //  Bind to inproc: endpoint, then start upstream thread
         this.clientSocket = context.createSocket(ZMQ.PAIR);
@@ -228,6 +228,8 @@ public class ClientCommController implements DestroyableCallback {
                                 || reply.getRequestType().equals(Constants.RESPONSE_NOT_VALID_OPERATION)
                                 || reply.getRequestType().equals(Constants.RESPONSE_UNKNOWN_SESSION)) {
                             throw new Exception(reply.getRequestType());
+                        }else{
+                            responseListener.process(reply.getRequestType());
                         }
                     } else {
                         stop = true;
@@ -280,7 +282,8 @@ public class ClientCommController implements DestroyableCallback {
 
     public void send(Pair<String, Object> message) throws Throwable{
         try {
-            clientSocket.send(message.fst + TOKEN + Utils.toJson(message.snd));
+            clientSocket.send(message.fst + TOKEN + (message.snd instanceof String? (String) message.snd
+                    : Utils.toJson(message.snd) ));
             String response = clientSocket.recvStr();
             if (response.equals(Constants.CONNECTION_STARTED)) {
                 sendState = checkFSM(sendState, Constants.CONNECTION_STARTED);

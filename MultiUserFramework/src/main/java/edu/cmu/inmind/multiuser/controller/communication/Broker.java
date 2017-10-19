@@ -29,6 +29,7 @@ public class Broker extends Thread implements DestroyableCallback {
     private boolean isTerminated = false;
     private int port;
     private DestroyableCallback callback;
+    private ZMQ.Poller items;
 
 
     // ---------------------------------------------------------------------
@@ -97,6 +98,8 @@ public class Broker extends Thread implements DestroyableCallback {
         this.ctx = new ZContext();
         this.socket = ctx.createSocket(ZMQ.ROUTER);
         this.port = port;
+        this.items = new ZMQ.Poller(1);
+        this.items.register(socket, ZMQ.Poller.POLLIN);
     }
 
     // ---------------------------------------------------------------------
@@ -115,8 +118,6 @@ public class Broker extends Thread implements DestroyableCallback {
      */
     public void mediate() throws Throwable{
         while (!Thread.currentThread().isInterrupted()) {
-            ZMQ.Poller items = new ZMQ.Poller(1);
-            items.register(socket, ZMQ.Poller.POLLIN);
             if (items.poll(HEARTBEAT_INTERVAL) == -1)
                 break; // Interrupted
             if (items.pollin(0)) {
