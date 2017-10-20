@@ -13,6 +13,8 @@ import org.zeromq.ZMsg;
 
 /**
  * Created by oscarr on 3/28/17.
+ *
+ * This is the implementation of a Worker according to the Majordomo Pattern
  */
 public class ServerCommController implements DestroyableCallback {
     private static final int HEARTBEAT_LIVENESS = 3; // 3-5 is reasonable
@@ -28,9 +30,6 @@ public class ServerCommController implements DestroyableCallback {
     private int reconnect = 2500; // Reconnect delay, msecs
     private ZMsgWrapper msgTemplate;
     private ZMQ.Poller items;
-
-    // Internal state
-    private boolean expectReply = false; // false only at start
 
     private long timeout = 2500;
 
@@ -49,7 +48,7 @@ public class ServerCommController implements DestroyableCallback {
                 this.msgTemplate = msgTemplate.duplicate();
             }
             ctx = new ZContext();
-            items = new ZMQ.Poller(1);
+            items = new ZMQ.Poller(1);//ctx.createPoller(1);
             reconnectToBroker();
             items.register(workerSocket, ZMQ.Poller.POLLIN);
         }catch (Throwable e){
@@ -102,7 +101,6 @@ public class ServerCommController implements DestroyableCallback {
         try {
             // Format and send the reply if we were provided one
             //assert ( reply != null || !expectReply);
-            expectReply = true;
             while (!Thread.currentThread().isInterrupted()) {
                 try {
                     // Poll socket for a reply, with timeout

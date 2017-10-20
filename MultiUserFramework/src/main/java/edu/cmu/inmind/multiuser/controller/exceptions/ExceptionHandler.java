@@ -124,10 +124,15 @@ public class ExceptionHandler {
 
 
     public static void checkIpAddress(String address, int port){
+        checkIpAddress(address + ":" + port);
+    }
+
+    public static void checkIpAddress(String address){
         if( address == null || address.isEmpty() || !Utils.isURLvalid(address)){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.INCORRECT_IP_ADDRESS, address));
         }
     }
+
 
     public static void checkPath(String path) {
         if( path == null || path.isEmpty() || !(new File(path).exists())){

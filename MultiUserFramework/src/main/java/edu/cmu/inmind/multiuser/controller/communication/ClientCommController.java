@@ -10,8 +10,6 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
-import java.nio.channels.ClosedByInterruptException;
-import java.nio.channels.ClosedChannelException;
 import java.util.*;
 
 /**
@@ -37,7 +35,6 @@ public class ClientCommController implements DestroyableCallback {
     //we need to keep the state in case of failure and reconnection
     private int sentMessages = 0;
     private int receivedMessages = 0;
-//    private final ClientMessage clientMessage;
     private ZContext context;
     private boolean isDestroyed;
     /**
@@ -68,7 +65,6 @@ public class ClientCommController implements DestroyableCallback {
         this.msgTemplate = builder.msgTemplate != null? builder.msgTemplate.duplicate() : null;
         this.requestType = builder.requestType;
         this.subscriptionMessages = builder.subscriptionMessages;
-        //Thread.dumpStack();
         this.shouldProcessReply = builder.shouldProcessReply;
         this.responseListener = builder.responseListener;
         this.sessionManagerService = builder.sessionManagerService;
@@ -118,11 +114,13 @@ public class ClientCommController implements DestroyableCallback {
         }
 
         public Builder setServerAddress(String serverAddress) {
+            ExceptionHandler.checkIpAddress(serverAddress);
             this.serverAddress = serverAddress;
             return this;
         }
 
         public Builder setClientAddress(String clientAddress) {
+            ExceptionHandler.checkIpAddress(clientAddress);
             this.clientAddress = clientAddress;
             return this;
         }
@@ -234,7 +232,6 @@ public class ClientCommController implements DestroyableCallback {
                     } else {
                         stop = true;
                     }
-
                 }
             }
         }catch (Throwable e){
@@ -274,7 +271,12 @@ public class ClientCommController implements DestroyableCallback {
 
     public void send(String serviceId, Object message){
         try {
-            send(new Pair<>(serviceId, message));
+            if( !isDestroyed ) {
+                send(new Pair<>(serviceId, message));
+            }else{
+                Log4J.error(this, "It is destroyed!");
+                reconnect();
+            }
         }catch (Throwable e){
             ExceptionHandler.handle(e   );
         }
@@ -313,6 +315,7 @@ public class ClientCommController implements DestroyableCallback {
     }
 
     private void sendThread() throws Throwable{
+        //https://github.com/zeromq/jeromq/wiki/Sharing-ZContext-between-thread
         sendThread = new SenderThread("ClientSendMsgsThread", context);
         sendThread.start();
     }
@@ -347,10 +350,12 @@ public class ClientCommController implements DestroyableCallback {
                         //  Signal downstream to client-thread
                         senderSocket.send("ACK", 0);
                     } catch (Throwable e) {
+                        context.destroy();
                         //ExceptionHandler.handle(e);
                     }
                 }
             }catch (Throwable e){
+                context.destroy();
                 //ExceptionHandler.handle(e);
             }
         }
@@ -373,12 +378,11 @@ public class ClientCommController implements DestroyableCallback {
             }else{
                 return STOP_FLAG;
             }
+        }catch (java.lang.AssertionError e) {
+            Log4J.error("ClientCommController.receive", "Exception 2. Exception: " + e.getMessage());
+            reconnect();
         }catch (Throwable e){
-            if( e instanceof ClosedByInterruptException || e instanceof ClosedChannelException){
-                Log4J.error("ClientCommController.receive", "Exception 1");
-            }else{
-                Log4J.error("ClientCommController.receive", "Exception 2. Exception: " + e.getMessage());
-            }
+            Log4J.error("ClientCommController.receive", "Exception 1");
             destroyInCascade(this);
             //ExceptionHandler.handle( e );
         }

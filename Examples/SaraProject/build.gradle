@@ -36,7 +36,7 @@ configurations.all {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'edu.cmu.inmind.framework:multiuser:3.0-beta-cascade-destroy'        // this is the Multiuser Framework
+    compile 'edu.cmu.inmind.framework:multiuser:3.0-rc1'        // this is the Multiuser Framework
     compile 'edu.cmu.inmind.framework:saracommons:1.0'      // this is the Sara Commons Catalog
 
     compile group: 'aopalliance', name: 'aopalliance', version: '1.0'

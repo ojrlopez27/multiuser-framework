@@ -98,7 +98,7 @@ public class Broker extends Thread implements DestroyableCallback {
         this.ctx = new ZContext();
         this.socket = ctx.createSocket(ZMQ.ROUTER);
         this.port = port;
-        this.items = new ZMQ.Poller(1);
+        this.items = new ZMQ.Poller(1);//ctx.createPoller(1);
         this.items.register(socket, ZMQ.Poller.POLLIN);
     }
 

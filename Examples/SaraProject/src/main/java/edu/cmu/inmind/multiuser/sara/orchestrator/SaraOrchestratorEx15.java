@@ -25,7 +25,6 @@ public class SaraOrchestratorEx15 extends ProcessOrchestratorImpl {
     @Override
     public void process(String message) {
         super.process(message);
-
         SessionMessage inputMessage = Utils.fromJson(message, SessionMessage.class);
         SaraInput saraInput = new SaraInput();
         saraInput.setASRinput( inputMessage.getPayload() );

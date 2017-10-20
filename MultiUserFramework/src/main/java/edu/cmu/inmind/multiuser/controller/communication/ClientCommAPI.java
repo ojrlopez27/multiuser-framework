@@ -15,7 +15,7 @@ public class ClientCommAPI implements DestroyableCallback {
     private String broker;
     private ZContext ctx;
     private ZMQ.Socket clientSocket;
-    private long timeout = 10000; // ten seconds
+    private long timeout = 2500; //10000; // ten seconds
     private int highWaterMark = 10 * 1000; //amount of enqueued messages
     private ZMQ.Poller items; // Poll socket for a reply, with timeout
     private boolean isAlreadyDestroyed;
@@ -25,7 +25,6 @@ public class ClientCommAPI implements DestroyableCallback {
         this.broker = broker;
         ctx = new ZContext();
         reconnectToBroker();
-        initialize();
     }
 
     /**
@@ -40,11 +39,12 @@ public class ClientCommAPI implements DestroyableCallback {
         clientSocket.setHWM(highWaterMark); //  Set a high-water mark that allows for reasonable activity
         clientSocket.setRcvHWM(highWaterMark);
         clientSocket.connect(broker);
+        initialize();
     }
 
     public void initialize() throws Throwable{
         // Poll socket for a reply, with timeout
-        items = new ZMQ.Poller(1);
+        items = new ZMQ.Poller(1);//ctx.createPoller(1);
         items.register(clientSocket, ZMQ.Poller.POLLIN);
     }
 
@@ -104,6 +104,7 @@ public class ClientCommAPI implements DestroyableCallback {
             }
             return true;
         }catch (Throwable e){
+            e.printStackTrace();
             destroyInCascade(this);
             return false;
         }

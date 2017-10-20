@@ -255,15 +255,11 @@ public class Blackboard {
     }
 
     public void reset(){
-        new Thread("BlackboardResetThread"){
-            public void run(){
-                try {
-                    model.clear();
-                }catch (Throwable e){
-                    ExceptionHandler.handle(e);
-                }
-            }
-        }.start();
+        try {
+            model.clear();
+        }catch (Throwable e){
+            ExceptionHandler.handle(e);
+        }
     }
 
 

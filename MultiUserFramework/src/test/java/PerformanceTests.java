@@ -5,11 +5,8 @@ import edu.cmu.inmind.multiuser.controller.MultiuserFrameworkContainer;
 import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
-import io.reactivex.functions.Consumer;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -23,20 +20,19 @@ public class PerformanceTests {
     static AtomicInteger receivedMsgs = new AtomicInteger(0);
     static AtomicInteger initializedAgents = new AtomicInteger(0);
     static MultiuserFramework muf;
-    static boolean useExternalMUF = false;
+    static boolean useExternalMUF = true;
     final long timeout = 1000 * 60 * 3;
     boolean verbose = false;
 
     @Test(timeout = timeout)
     public void testPerformanceOneAgent() throws Throwable{
-        runAgents(10, 10);
+        runAgents(1, 1000);
     }
 
 
     private void runAgents(int numAgents, int numMessages) throws Throwable{
         int totalMessages = numMessages * numAgents;
         Agent[] agents = new Agent[numAgents];
-        ExecutorService executor = Executors.newWorkStealingPool();
 
         // creates a MUF and set TCP to on or off
         if( !useExternalMUF ) {
@@ -51,9 +47,9 @@ public class PerformanceTests {
             String agentId = "agent-" + i;
             agents[i] = new Agent( agentId, numMessages,
                     new ClientCommController.Builder()
-                        .setServerAddress("tcp://127.0.0.1:5555")
+                        .setServerAddress("tcp://34.203.160.208:5666")
                         .setServiceName( agentId )
-                        .setClientAddress("tcp://127.0.0.1:5555")
+                        .setClientAddress("tcp://34.203.160.208:5666")
                         .setRequestType(Constants.REQUEST_CONNECT)
                         .build() );
         }
@@ -77,6 +73,8 @@ public class PerformanceTests {
 
 
 
+
+
     class Agent{
         private String agentId;
         private ClientCommController ccc;
@@ -95,14 +93,14 @@ public class PerformanceTests {
                         if(verbose)
                             Log4J.debug(this, String.format("initialized agent %s  total: %s", agentId,
                                     initializedAgents.get() ) );
-                    }else if( !message.contains(Constants.SESSION_CLOSED)){
+                    }else if( !message.contains(Constants.SESSION_CLOSED) && !message.contains(Constants.SESSION_RECONNECTED)){
                         receivedMsgs.incrementAndGet();
                         receivedMessages++;
                         if( receivedMessages != Integer.valueOf( message ) ){
                             Log4J.error(this, String.format("receivedMessages: %s and payload: %s", receivedMessages,
                                     message));
                         }
-                        if(verbose)
+                        if(receivedMsgs.get() % 10 == 0)//if(verbose)
                             Log4J.debug(this, String.format("%s receives: %s receivedMessages: %s total: %s", agentId,
                                     message, receivedMessages, receivedMsgs.get()));
                     }
@@ -113,12 +111,16 @@ public class PerformanceTests {
         }
 
         public void run(){
-            for( int i = 0; i < numMessages; i++ ){
-                //we send plain strings instead of SessionMessage to avoid json parsing
-                String message = "" + (i+1);
-                ccc.send( agentId, message);
-                if(verbose)
-                    Log4J.debug(this, String.format("%s sends: %s ", agentId, message));
+            try {
+                for (int i = 0; i < numMessages; i++) {
+                    //we send plain strings instead of SessionMessage to avoid json parsing
+                    String message = "" + (i + 1);
+                    ccc.send(agentId, message);
+                    if (verbose)
+                        Log4J.debug(this, String.format("%s sends: %s ", agentId, message));
+                }
+            }catch (Exception e){
+                e.printStackTrace();
             }
         }
     }
