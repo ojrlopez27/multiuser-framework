@@ -22,7 +22,7 @@ configurations {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
-    testCompile group: 'org.awaitility', name: 'awaitility', version: '3.0.0'
+    compile group: 'org.awaitility', name: 'awaitility', version: '3.0.0'
 
     compile fileTree(dir: 'libs', include: ['*.jar'])
     deployerJars 'org.apache.maven.wagon:wagon-ssh:2.9'
