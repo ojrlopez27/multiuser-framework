@@ -120,7 +120,7 @@ public class Session implements Runnable, OrchestratorListener, DestroyableCallb
      * @throws Throwable
      */
     public void close(DestroyableCallback callback) throws Throwable{
-        this.callback = callback;
+        if(this.callback == null && this.callback != this) this.callback = callback;
         if( !isClosed ) {
             notifyObservers();
             Log4J.info(this, String.format("Closing session: %s", id));
@@ -145,6 +145,7 @@ public class Session implements Runnable, OrchestratorListener, DestroyableCallb
                 timer.cancel();
                 timer.purge();
                 thread.interrupt();
+                thread.join();
                 thread = null;
                 Log4J.info(this, "Gracefully destroying...");
                 Log4J.info(this, String.format("Session: %s has been disconnected!", id));

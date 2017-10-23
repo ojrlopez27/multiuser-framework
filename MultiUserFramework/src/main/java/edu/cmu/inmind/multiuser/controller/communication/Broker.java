@@ -7,13 +7,11 @@ package edu.cmu.inmind.multiuser.controller.communication;
 import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
-import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
-import org.zeromq.ZMsg;
+import org.zeromq.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  *  Majordomo Protocol broker
@@ -26,7 +24,7 @@ public class Broker extends Thread implements DestroyableCallback {
     private static final int HEARTBEAT_LIVENESS = 5; // 3-5 is reasonable
     private static final int HEARTBEAT_INTERVAL = 2500; // msecs
     private static final int HEARTBEAT_EXPIRY = HEARTBEAT_INTERVAL * HEARTBEAT_LIVENESS;
-    private boolean isTerminated = false;
+    private AtomicBoolean isAlreadyDestroyed = new AtomicBoolean(false);
     private int port;
     private DestroyableCallback callback;
     private ZMQ.Poller items;
@@ -96,9 +94,9 @@ public class Broker extends Thread implements DestroyableCallback {
         this.waiting = new ArrayDeque<>();
         this.heartbeatAt = System.currentTimeMillis() + HEARTBEAT_INTERVAL;
         this.ctx = new ZContext();
-        this.socket = ctx.createSocket(ZMQ.ROUTER);
+        this.socket = ctx.createSocket(ZMQ.ROUTER); //new ZSocket(ZMQ.ROUTER);
         this.port = port;
-        this.items = new ZMQ.Poller(1);//ctx.createPoller(1);
+        this.items = ctx.createPoller(1); //new ZMQ.Poller(1);
         this.items.register(socket, ZMQ.Poller.POLLIN);
     }
 
@@ -125,11 +123,9 @@ public class Broker extends Thread implements DestroyableCallback {
                 if (msg == null) {
                     break; // Interrupted
                 }
-
                 ZFrame sender = msg.pop();
                 ZFrame empty = msg.pop();
                 ZFrame header = msg.pop();
-
                 if( sender != null && empty != null && header != null ) {
                     if (MDP.C_CLIENT.frameEquals(header)) {
                         processClient(sender, msg);
@@ -161,8 +157,7 @@ public class Broker extends Thread implements DestroyableCallback {
 
     @Override
     public void destroyInCascade(Object destroyedObj) throws Throwable {
-        if (!isTerminated) {
-            isTerminated = true;
+        if ( !isAlreadyDestroyed.getAndSet(true ) ) {
             ArrayList<Worker> wrkrs = new ArrayList(workers.values());
             wrkrs.forEach(worker -> {
                 try {
@@ -200,7 +195,6 @@ public class Broker extends Thread implements DestroyableCallback {
         ZFrame command = msg.pop();
         boolean workerReady = workers.containsKey(sender.strhex());
         Worker worker = requireWorker(sender);
-
         if (MDP.S_READY.frameEquals(command)) {
             // Not first command in session || Reserved service name
             if (workerReady

@@ -11,6 +11,7 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by oscarr on 3/29/17.
@@ -36,7 +37,7 @@ public class ClientCommController implements DestroyableCallback {
     private int sentMessages = 0;
     private int receivedMessages = 0;
     private ZContext context;
-    private boolean isDestroyed;
+    private AtomicBoolean isAlreadyDestroyed = new AtomicBoolean(false);
     /**
      * We use this socket to communicate with senderSocket, which is running on another
      * thread (SenderThread).
@@ -255,8 +256,7 @@ public class ClientCommController implements DestroyableCallback {
 
     @Override
     public void destroyInCascade(Object destroyedObj) throws Throwable{
-        if( !isDestroyed ) {
-            isDestroyed = true;
+        if( !isAlreadyDestroyed.getAndSet(true) ) {
             clientCommAPI = null;
             context.destroy();
             Log4J.info(this, "Gracefully destroying...");
@@ -271,7 +271,7 @@ public class ClientCommController implements DestroyableCallback {
 
     public void send(String serviceId, Object message){
         try {
-            if( !isDestroyed ) {
+            if( !isAlreadyDestroyed.get() ) {
                 send(new Pair<>(serviceId, message));
             }else{
                 Log4J.error(this, "It is destroyed!");
@@ -294,6 +294,7 @@ public class ClientCommController implements DestroyableCallback {
             if (response.equals(STOP_FLAG)) {
                 if (receiveThread.isAlive()) {
                     receiveThread.interrupt();
+                    receiveThread.join();
                 }
                 sendState = checkFSM(sendState, Constants.CONNECTION_FINISHED);
                 checkReconnect();
@@ -416,6 +417,7 @@ public class ClientCommController implements DestroyableCallback {
                     }
                     if (sendThread.isAlive()) {
                         sendThread.interrupt();
+                        sendThread.join();
                     }
                     receiveState = checkFSM(receiveState, Constants.CONNECTION_FINISHED);
                     checkReconnect();

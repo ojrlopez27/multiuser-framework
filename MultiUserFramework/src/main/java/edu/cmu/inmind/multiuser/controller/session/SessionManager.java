@@ -272,6 +272,7 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
         session.setConfig( config );
         session.setId(key, msgRequest, fullAddress);
         sessions.put( key, session );
+        closeableObjects.add(session);
         send( msgRequest, new SessionMessage( Constants.SESSION_INITIATED) );
     }
 
@@ -376,6 +377,7 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
             Log4J.info(this, "Gracefully destroying...");
             Log4J.info(this, "Session Manager stopped. Bye bye!");
             thread.interrupt();
+            thread.join();
         }
     }
 }

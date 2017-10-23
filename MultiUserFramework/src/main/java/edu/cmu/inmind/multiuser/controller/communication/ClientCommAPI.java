@@ -7,6 +7,8 @@ import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * Created by oscarr on 3/29/17.
  */
@@ -18,8 +20,10 @@ public class ClientCommAPI implements DestroyableCallback {
     private long timeout = 2500; //10000; // ten seconds
     private int highWaterMark = 10 * 1000; //amount of enqueued messages
     private ZMQ.Poller items; // Poll socket for a reply, with timeout
-    private boolean isAlreadyDestroyed;
+    private AtomicBoolean isAlreadyDestroyed = new AtomicBoolean(false);
     private DestroyableCallback callback;
+    private AtomicBoolean canUseSocket = new AtomicBoolean( true );
+    private String whoPrevious;
 
     public ClientCommAPI(String broker) throws Throwable{
         this.broker = broker;
@@ -31,6 +35,7 @@ public class ClientCommAPI implements DestroyableCallback {
      * Connect or reconnect to broker
      */
     void reconnectToBroker() throws Throwable{
+        checkAndSleep("reconnectToBroker");
         if (clientSocket != null) {
             ctx.destroySocket(clientSocket);
         }
@@ -40,11 +45,12 @@ public class ClientCommAPI implements DestroyableCallback {
         clientSocket.setRcvHWM(highWaterMark);
         clientSocket.connect(broker);
         initialize();
+        canUseSocket.getAndSet(true);
     }
 
     public void initialize() throws Throwable{
         // Poll socket for a reply, with timeout
-        items = new ZMQ.Poller(1);//ctx.createPoller(1);
+        items = ctx.createPoller(1); //new ZMQ.Poller(1);
         items.register(clientSocket, ZMQ.Poller.POLLIN);
     }
 
@@ -60,7 +66,9 @@ public class ClientCommAPI implements DestroyableCallback {
                 return null; // Interrupted
 
             if (items.pollin(0)) {
+                checkAndSleep("recv");
                 ZMsg msg = ZMsg.recvMsg(clientSocket, ZMQ.DONTWAIT);
+                canUseSocket.getAndSet(true);
 
                 // Don't try to handle errors, just assert noisily
                 assert (msg.size() >= 4);
@@ -99,7 +107,10 @@ public class ClientCommAPI implements DestroyableCallback {
             request.addFirst(service);
             request.addFirst(MDP.C_CLIENT.newFrame());
             request.addFirst("");
-            if (!request.send(clientSocket)) {
+            checkAndSleep("send");
+            boolean wentWell = request.send(clientSocket);
+            canUseSocket.getAndSet(true);
+            if (!wentWell) {
                 return false;
             }
             return true;
@@ -117,14 +128,34 @@ public class ClientCommAPI implements DestroyableCallback {
 
     @Override
     public void destroyInCascade(Object destroyedObj) throws Throwable{
-        if (clientSocket != null) {
-            ctx.destroySocket(clientSocket);
-        }
-        if( !isAlreadyDestroyed ) {
-            isAlreadyDestroyed = true;
+        if( !isAlreadyDestroyed.getAndSet(true) ) {
+            checkAndSleep("destroyInCascade");
+            if (clientSocket != null) {
+                ctx.destroySocket(clientSocket);
+            }
             ctx.destroy();
             Log4J.info(this, "Gracefully destroying...");
             if(callback != null) callback.destroyInCascade( this );
         }
+        canUseSocket.getAndSet(true);
     }
+
+    private void checkAndSleep(String who){
+        try {
+            int times = 0;
+            while (!canUseSocket.get() && times++ < 200) { // 200 * 5 = 1000 milliseconds
+                Log4J.error(this, "waiting for atomic boolean: " + who + "\tbefore: " + whoPrevious);
+                Thread.sleep(5);
+                if(times == 200){
+                    System.currentTimeMillis();
+                }
+            }
+            canUseSocket.getAndSet(false);
+            whoPrevious = who;
+            //Log4J.warn(this, "setting to false: " + who);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
 }

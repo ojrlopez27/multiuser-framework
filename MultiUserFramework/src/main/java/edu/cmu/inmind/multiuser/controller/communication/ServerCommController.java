@@ -11,6 +11,8 @@ import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * Created by oscarr on 3/28/17.
  *
@@ -35,7 +37,7 @@ public class ServerCommController implements DestroyableCallback {
 
     // Return address, if any
     private ZFrame replyTo;
-    private boolean isAlreadyDestroyed;
+    private AtomicBoolean isAlreadyDestroyed = new AtomicBoolean(false);
     private DestroyableCallback callback;
 
     public ServerCommController(String serverAddress, String serviceId, ZMsgWrapper msgTemplate) {
@@ -48,7 +50,7 @@ public class ServerCommController implements DestroyableCallback {
                 this.msgTemplate = msgTemplate.duplicate();
             }
             ctx = new ZContext();
-            items = new ZMQ.Poller(1);//ctx.createPoller(1);
+            items = ctx.createPoller(1); //new ZMQ.Poller(1);
             reconnectToBroker();
             items.register(workerSocket, ZMQ.Poller.POLLIN);
         }catch (Throwable e){
@@ -65,7 +67,6 @@ public class ServerCommController implements DestroyableCallback {
      */
     void sendToBroker(MDP command, String option, ZMsg msg) throws Throwable{
         msg = msg != null ? msg.duplicate() : new ZMsg();
-
         // Stack protocol envelope to start of message
         if (option != null)
             msg.addFirst(new ZFrame(option));
@@ -145,6 +146,7 @@ public class ServerCommController implements DestroyableCallback {
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt(); // Restore the
                             // interrupted status
+                            Thread.currentThread().join();
                             break;
                         }
                         reconnectToBroker();
@@ -212,13 +214,9 @@ public class ServerCommController implements DestroyableCallback {
     @Override
     public void destroyInCascade(Object destroyedObj) throws Throwable{
         try {
-            if (msgTemplate != null) msgTemplate.destroy();
-            if (replyTo != null) replyTo.destroy();
-            if (workerSocket != null) {
-                ctx.destroySocket(workerSocket);
-            }
-            if( !isAlreadyDestroyed ) {
-                isAlreadyDestroyed = true;
+            if( !isAlreadyDestroyed.getAndSet(true) ) {
+                if (msgTemplate != null) msgTemplate.destroy();
+                if (replyTo != null) replyTo.destroy();
                 if (ctx != null){
                     ctx.destroy();
                 }

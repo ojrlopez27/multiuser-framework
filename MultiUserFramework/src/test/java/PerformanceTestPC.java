@@ -21,7 +21,7 @@ public class PerformanceTestPC extends PluggableComponent {
 
     @Override
     public void onEvent(BlackboardEvent event) {
-        if(verbose)
+        //if(verbose)
             Log4J.debug( this, String.format("PC for %s receives message: %s and messageCount is: %s",
                     agentId, event.getElement(), messageCount) );
         if( messageCount != Integer.valueOf( event.getElement().toString()) ){
