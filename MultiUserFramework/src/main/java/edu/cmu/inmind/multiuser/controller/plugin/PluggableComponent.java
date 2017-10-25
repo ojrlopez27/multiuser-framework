@@ -15,12 +15,14 @@ import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
+import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.session.Session;
 import edu.cmu.inmind.multiuser.controller.sync.SynchronizableEvent;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by oscarr on 3/16/17.
@@ -32,19 +34,19 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
     protected ConcurrentHashMap<String, MessageLog> messageLoggers;
     protected ConcurrentHashMap<String, Session> sessions;
     private Session activeSession;
-    private boolean isShutDown;
+    private AtomicBoolean isShutDown = new AtomicBoolean(false);
+    private AtomicBoolean isClosed = new AtomicBoolean(false);
     private ClientCommController clientCommController;
     private CopyOnWriteArrayList<DestroyableCallback> callbacks;
     private String type;
     private String defaultSessionId;
-    private boolean isClosed = false;
 
     public PluggableComponent(){
         blackboards = new ConcurrentHashMap<>();
         messageLoggers = new ConcurrentHashMap<>();
         sessions = new ConcurrentHashMap<>();//a component may be shared by several sessions (Stateless)
         callbacks = new CopyOnWriteArrayList();
-        isShutDown = false;
+        isShutDown.getAndSet(false);
         try {
             type = Utils.getAnnotation(getClass(), StateType.class).state();
         }catch (Throwable e){
@@ -107,7 +109,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
     public void shutDown() {
         Log4J.info(this, "Shutting down component: " + this.getClass().getSimpleName() +
                 " instantiation " + this.hashCode());
-        isShutDown = true;
+        isShutDown.getAndSet(true);
         if(blackboards != null) blackboards.clear();
         blackboards = null;
         if(messageLoggers != null) messageLoggers.clear();
@@ -119,7 +121,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
      */
     @Override
     public String getSessionId(){
-        if( !isClosed ) {
+        if( !isClosed.get() ) {
             checkActiveSession();
             return activeSession.getId();
         }else{
@@ -132,7 +134,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
 
     public Blackboard blackboard(){
         Blackboard bb = null;
-        if( !isClosed ) {
+        if( !isClosed.get() ) {
             if (activeSession != null && activeSession.getId() != null && blackboards != null) {
                 bb = blackboards.get(activeSession.getId());
             } else {
@@ -194,7 +196,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
 
     public MessageLog getMessageLogger(){
         try {
-            if( !isClosed ) {
+            if( !isClosed.get() ) {
                 checkActiveSession();
                 return messageLoggers.get(activeSession.getId());
             }else {
@@ -236,17 +238,13 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
     }
 
     public void close(String sessionId, DestroyableCallback callback) throws Throwable{
-        isClosed = true;
+        isClosed.getAndSet(true);
         callbacks.add(callback);
         sessions.remove( sessionId );
         if( clientCommController != null ) {
-            SessionMessage sessionMessage = new SessionMessage();
-            sessionMessage.setRequestType(Constants.REQUEST_DISCONNECT);
-            sessionMessage.setSessionId(sessionId);
-            send(sessionMessage, true);
-        }else{
-            destroyInCascade(this);
+            clientCommController.disconnect(sessionId);
         }
+        destroyInCascade(sessionId);
     }
 
     @Override

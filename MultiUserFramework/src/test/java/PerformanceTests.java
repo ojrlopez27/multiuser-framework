@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -23,6 +24,7 @@ public class PerformanceTests {
     static AtomicInteger initializedAgents = new AtomicInteger(0);
     static MultiuserFramework muf;
     static boolean useExternalMUF = false;
+    static Set<Thread> threadSet;
     final long timeout = 1000 * 60 * 5;
     final long delay = 10;
     boolean verbose = false;
@@ -43,7 +45,7 @@ public class PerformanceTests {
 //                }
 //            }
 //        }
-        runAgents(10, 1);
+        runAgents(100, 10);
         printWriter.flush();
         printWriter.close();
     }
@@ -130,6 +132,16 @@ public class PerformanceTests {
 
             ccc.setResponseListener(message -> {
                 try {
+//                    if( threadSet != null ){
+//                        Set<Thread> threadSetNow = Thread.getAllStackTraces().keySet();
+//                        threadSetNow.removeAll(threadSet);
+//                        for ( Thread t : threadSetNow){
+//                            Log4J.debug(this, "Thread :"+t+":"+"state:"+t.getState()+"  hashcode: " + t.hashCode());
+//                        }
+//                    }
+//                    threadSet = Thread.getAllStackTraces().keySet();
+
+                    Log4J.error(this, "Active: "+Thread.activeCount());
                     //System.out.println(String.format("Thread: %s inside setResponseListener", Thread.currentThread().getName()));
                     if( message.contains(Constants.SESSION_INITIATED) ){
                         initializedAgents.incrementAndGet();

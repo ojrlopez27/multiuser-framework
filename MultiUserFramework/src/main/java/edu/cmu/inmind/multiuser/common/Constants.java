@@ -17,11 +17,9 @@ public class Constants {
     //lifecycle
     public static final String REQUEST_PAUSE = "REQUEST_PAUSE";
     public static final String REQUEST_RESUME = "REQUEST_RESUME";
-    public static final String REQUEST_PUBLISH = "REQUEST_PUBLISH";
     public static final String REQUEST_CONNECT = "REQUEST_CONNECT";
     public static final String REQUEST_DISCONNECT = "REQUEST_DISCONNECT";
     public static final String REQUEST_SHUTDOWN_SYSTEM = "REQUEST_SHUTDOWN_SYSTEM";
-    public static final String RESPONSE_SUBSCRIBE = "RESPONSE_SUBSCRIBE";
     public static final boolean VERBOSE = true;
 
     //communication

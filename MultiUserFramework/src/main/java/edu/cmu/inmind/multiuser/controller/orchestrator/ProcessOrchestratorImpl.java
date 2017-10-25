@@ -31,6 +31,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by oscarr on 3/10/17.
@@ -48,10 +49,10 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     protected ServiceManager statefullServManager;
     private CopyOnWriteArrayList closeableObjects;
     private String sessionId;
-    private boolean isClosed;
+    private AtomicBoolean isClosed = new AtomicBoolean(false);
+    private AtomicBoolean initialized = new AtomicBoolean(false);
     private Config config;
     private String fullAddress;
-    private boolean initialized = false;
     private DestroyableCallback callback;
 
     public ProcessOrchestratorImpl(){
@@ -173,7 +174,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         }
         blackboard.setLogger( logger );
         initServiceManager();
-        initialized = true;
+        initialized.getAndSet(true);
     }
 
     private void addOnlyStatefullToCloseable() throws Throwable{
@@ -214,9 +215,8 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
 
     @Override
     public void close() throws Throwable{
-        if( !isClosed && initialized ) {
+        if( !isClosed.getAndSet(true) && initialized.get() ) {
             Log4J.info(this, String.format("Closing Process Orchestrator for session: %s", sessionId));
-            isClosed = true;
             logger.store();
             status = Constants.ORCHESTRATOR_STOPPED;
             for(PluggableComponent component : components ){

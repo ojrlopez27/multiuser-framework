@@ -7,6 +7,7 @@ package edu.cmu.inmind.multiuser.controller.communication;
 import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
+import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import org.zeromq.*;
 
 import java.util.*;
@@ -24,7 +25,7 @@ public class Broker extends Thread implements DestroyableCallback {
     private static final int HEARTBEAT_LIVENESS = 5; // 3-5 is reasonable
     private static final int HEARTBEAT_INTERVAL = 2500; // msecs
     private static final int HEARTBEAT_EXPIRY = HEARTBEAT_INTERVAL * HEARTBEAT_LIVENESS;
-    private AtomicBoolean isAlreadyDestroyed = new AtomicBoolean(false);
+    private AtomicBoolean isDestroyed = new AtomicBoolean(false);
     private int port;
     private DestroyableCallback callback;
     private ZMQ.Poller items;
@@ -88,16 +89,17 @@ public class Broker extends Thread implements DestroyableCallback {
      * Initialize broker state.
      */
     public Broker(int port) {
-        super("broker thread");
+        super("broker-thread-" + port);
         this.services = new ConcurrentHashMap<>();
         this.workers = new ConcurrentHashMap<>();
         this.waiting = new ArrayDeque<>();
         this.heartbeatAt = System.currentTimeMillis() + HEARTBEAT_INTERVAL;
-        this.ctx = new ZContext();
+        this.ctx = DependencyManager.getInstance().getContext();
         this.socket = ctx.createSocket(ZMQ.ROUTER); //new ZSocket(ZMQ.ROUTER);
         this.port = port;
         this.items = ctx.createPoller(1); //new ZMQ.Poller(1);
         this.items.register(socket, ZMQ.Poller.POLLIN);
+        Log4J.info(this, "creating broker: " + port);
     }
 
     // ---------------------------------------------------------------------
@@ -114,36 +116,42 @@ public class Broker extends Thread implements DestroyableCallback {
     /**
      * Main broker work happens here
      */
-    public void mediate() throws Throwable{
-        while (!Thread.currentThread().isInterrupted()) {
-            if (items.poll(HEARTBEAT_INTERVAL) == -1)
-                break; // Interrupted
-            if (items.pollin(0)) {
-                ZMsg msg = ZMsg.recvMsg(socket);
-                if (msg == null) {
+    public void mediate(){
+        while (!isDestroyed.get()) {
+            try {
+                if (items.poll(HEARTBEAT_INTERVAL) == -1)
                     break; // Interrupted
-                }
-                ZFrame sender = msg.pop();
-                ZFrame empty = msg.pop();
-                ZFrame header = msg.pop();
-                if( sender != null && empty != null && header != null ) {
-                    if (MDP.C_CLIENT.frameEquals(header)) {
-                        processClient(sender, msg);
-                    } else if (MDP.S_ORCHESTRATOR.frameEquals(header)) {
-                        processWorker(sender, msg);
-                    } else {
-                        msg.destroy();
+                if (items.pollin(0)) {
+                    ZMsg msg = ZMsg.recvMsg(socket);
+                    if (msg == null) {
+                        break; // Interrupted
                     }
-                    sender.destroy();
-                    empty.destroy();
-                    header.destroy();
-                }
+                    ZFrame sender = msg.pop();
+                    ZFrame empty = msg.pop();
+                    ZFrame header = msg.pop();
+                    if (sender != null && empty != null && header != null) {
+                        if (MDP.C_CLIENT.frameEquals(header)) {
+                            processClient(sender, msg);
+                        } else if (MDP.S_ORCHESTRATOR.frameEquals(header)) {
+                            processWorker(sender, msg);
+                        } else {
+                            msg.destroy();
+                        }
+                        sender.destroy();
+                        empty.destroy();
+                        header.destroy();
+                    }
 
+                }
+                purgeWorkers();
+                sendHeartbeats();
+            }catch (Throwable e){
+                try {
+                    destroyInCascade(this); // interrupted
+                }catch (Throwable t){
+                }
             }
-            purgeWorkers();
-            sendHeartbeats();
         }
-        destroyInCascade(this); // interrupted
     }
 
     /**
@@ -157,7 +165,7 @@ public class Broker extends Thread implements DestroyableCallback {
 
     @Override
     public void destroyInCascade(Object destroyedObj) throws Throwable {
-        if ( !isAlreadyDestroyed.getAndSet(true ) ) {
+        if ( !isDestroyed.get() ) {
             ArrayList<Worker> wrkrs = new ArrayList(workers.values());
             wrkrs.forEach(worker -> {
                 try {
@@ -166,7 +174,9 @@ public class Broker extends Thread implements DestroyableCallback {
                     throwable.printStackTrace();
                 }
             });
-            ctx.destroy();
+            ctx.destroySocket(socket);
+            ctx = null;
+            isDestroyed.getAndSet(true);
             Log4J.info(this, "Gracefully destroying...");
             callback.destroyInCascade(this);
         }

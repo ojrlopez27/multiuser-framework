@@ -17,6 +17,7 @@ import edu.cmu.inmind.multiuser.controller.session.SessionManager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by oscarr on 3/20/17.
@@ -25,7 +26,7 @@ import java.util.List;
 public class MultiuserFramework implements DestroyableCallback {
     private String id;
     private SessionManager sessionManager;
-    private boolean stopping;
+    private AtomicBoolean stopping = new AtomicBoolean(false);
     private Session session;
     private Config config;
     private DependencyManager dependencyManager;
@@ -107,14 +108,12 @@ public class MultiuserFramework implements DestroyableCallback {
 
     void stop(){
         try {
-            if (!stopping) {
+            if (!stopping.getAndSet(true)) {
                 if (hooks != null) {
                     for (ShutdownHook hook : hooks) {
                         hook.execute();
                     }
                 }
-                stopping = true;
-                DependencyManager.reset();
 
                 if (config.isTCPon()) {
                     sessionManager.stop();

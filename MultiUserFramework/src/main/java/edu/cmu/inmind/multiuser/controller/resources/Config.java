@@ -27,6 +27,8 @@ public class Config {
     private boolean isTCPon;
     private String serviceConfigPath;
     private Class<? extends ProcessOrchestratorImpl> orchestrator;
+    private int numOfSockets;
+
 
     private Config( Builder builder) {
         this.sessionManagerPort = builder.sessionManagerPort;
@@ -41,6 +43,7 @@ public class Config {
         this.isTCPon = builder.isTCPon;
         this.orchestrator = builder.orchestrator;
         this.serviceConfigPath = builder.serviceConfigPath;
+        this.numOfSockets = builder.numOfSockets;
     }
 
     public int getSessionManagerPort() {
@@ -93,6 +96,15 @@ public class Config {
 
     public boolean isTCPon() {
         return isTCPon;
+    }
+
+    public int getNumOfSockets() {
+        return numOfSockets;
+    }
+
+    public Config setNumOfSockets(int numOfSockets) {
+        this.numOfSockets = numOfSockets;
+        return this;
     }
 
     public Class<? extends ProcessOrchestratorImpl> getOrchestrator() {
@@ -168,6 +180,7 @@ public class Config {
         private String serverAddress = "127.0.0.1";
         private String serviceConfigPath;
         private Class<? extends ProcessOrchestratorImpl> orchestrator;
+        public int numOfSockets = 1;
 
         public Builder setSessionManagerPort(int sessionManagerPort) {
             if( sessionManagerPort <= 0 ){
@@ -267,6 +280,14 @@ public class Config {
         public Builder setJsonServicesConfig(String path) {
             ExceptionHandler.checkPath(path);
             this.serviceConfigPath = path;
+            return this;
+        }
+
+        public Builder setNumOfSockets(int numOfSockets){
+            if( numOfSockets < 1 || numOfSockets > 200 ){
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.INCORRECT_NUM_SOCKETS) );
+            }
+            this.numOfSockets = numOfSockets;
             return this;
         }
     }

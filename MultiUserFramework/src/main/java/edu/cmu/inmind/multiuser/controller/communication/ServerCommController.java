@@ -6,6 +6,7 @@ import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
+import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
@@ -37,7 +38,7 @@ public class ServerCommController implements DestroyableCallback {
 
     // Return address, if any
     private ZFrame replyTo;
-    private AtomicBoolean isAlreadyDestroyed = new AtomicBoolean(false);
+    private AtomicBoolean isDestroyed = new AtomicBoolean(false);
     private DestroyableCallback callback;
 
     public ServerCommController(String serverAddress, String serviceId, ZMsgWrapper msgTemplate) {
@@ -49,7 +50,7 @@ public class ServerCommController implements DestroyableCallback {
             if (msgTemplate != null) {
                 this.msgTemplate = msgTemplate.duplicate();
             }
-            ctx = new ZContext();
+            ctx = DependencyManager.getInstance().getContext();
             items = ctx.createPoller(1); //new ZMQ.Poller(1);
             reconnectToBroker();
             items.register(workerSocket, ZMQ.Poller.POLLIN);
@@ -66,15 +67,19 @@ public class ServerCommController implements DestroyableCallback {
      * @param msg
      */
     void sendToBroker(MDP command, String option, ZMsg msg) throws Throwable{
-        msg = msg != null ? msg.duplicate() : new ZMsg();
-        // Stack protocol envelope to start of message
-        if (option != null)
-            msg.addFirst(new ZFrame(option));
+        try {
+            msg = msg != null ? msg.duplicate() : new ZMsg();
+            // Stack protocol envelope to start of message
+            if (option != null)
+                msg.addFirst(new ZFrame(option));
 
-        msg.addFirst(command.newFrame());
-        msg.addFirst(MDP.S_ORCHESTRATOR.newFrame());
-        msg.addFirst(new ZFrame(new byte[0]));
-        msg.send(workerSocket);
+            msg.addFirst(command.newFrame());
+            msg.addFirst(MDP.S_ORCHESTRATOR.newFrame());
+            msg.addFirst(new ZFrame(new byte[0]));
+            msg.send(workerSocket);
+        }catch (Exception e){
+            //e.printStackTrace();
+        }
     }
 
     /**
@@ -98,11 +103,11 @@ public class ServerCommController implements DestroyableCallback {
     /**
      * Send reply, if any, to broker and wait for next request.
      */
-    public ZMsgWrapper receive(ZMsg reply) throws Throwable{
+    public ZMsgWrapper receive(ZMsg reply){
         try {
             // Format and send the reply if we were provided one
             //assert ( reply != null || !expectReply);
-            while (!Thread.currentThread().isInterrupted()) {
+            while ( !isDestroyed.get() ) {
                 try {
                     // Poll socket for a reply, with timeout
                     if (items.poll(timeout) == -1)
@@ -136,7 +141,7 @@ public class ServerCommController implements DestroyableCallback {
                         } else if (MDP.S_DISCONNECT.frameEquals(command)) {
                             reconnectToBroker();
                         } else {
-                            Log4J.error(this, "invalid input message: " + command.toString());
+                            Log4J.error(this, "invalid input message: " + command.toString() + ". hashcode: " + hashCode());
                         }
                         command.destroy();
                         msg.destroy();
@@ -144,9 +149,9 @@ public class ServerCommController implements DestroyableCallback {
                         try {
                             Thread.sleep(reconnect);
                         } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt(); // Restore the
+                            //Thread.currentThread().interrupt(); // Restore the
                             // interrupted status
-                            Thread.currentThread().join();
+                            //Thread.currentThread().join();
                             break;
                         }
                         reconnectToBroker();
@@ -157,15 +162,21 @@ public class ServerCommController implements DestroyableCallback {
                         heartbeatAt = System.currentTimeMillis() + heartbeat;
                     }
                 } catch (Throwable error) {
+                    ctx.destroySocket(workerSocket);
                     destroyInCascade(this);
-                    ExceptionHandler.handle(error);
+                    //ExceptionHandler.handle(error);
                     break;
                 }
             }
             return null;
         }catch (Throwable e){
-            destroyInCascade(this);
-            return null;
+            try {
+                ctx.destroySocket(workerSocket);
+                destroyInCascade(this);
+            }catch (Throwable e1){
+            }finally {
+                return null;
+            }
         }
     }
 
@@ -207,19 +218,18 @@ public class ServerCommController implements DestroyableCallback {
 
     public void close(DestroyableCallback callback) throws Throwable{
         this.callback = callback;
-        Log4J.info(this, "Closing ServerCommController...");
+        Log4J.info(this, "Closing ServerCommController... Callback: " + callback);
         destroyInCascade(this);
     }
 
     @Override
     public void destroyInCascade(Object destroyedObj) throws Throwable{
         try {
-            if( !isAlreadyDestroyed.getAndSet(true) ) {
+            if( !isDestroyed.get() ) {
                 if (msgTemplate != null) msgTemplate.destroy();
                 if (replyTo != null) replyTo.destroy();
-                if (ctx != null){
-                    ctx.destroy();
-                }
+                ctx = null;
+                isDestroyed.getAndSet(true);
                 Log4J.info(this, "Gracefully destroying...");
                 if(callback != null) callback.destroyInCascade(this);
             }

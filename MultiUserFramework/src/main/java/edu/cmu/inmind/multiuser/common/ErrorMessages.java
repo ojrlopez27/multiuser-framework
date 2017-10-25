@@ -50,4 +50,5 @@ public class ErrorMessages {
     public static final String MASTER_ADDRESS_IS_NULL = "You have to specify the ip address for the master MUF " +
             "when creating the ServiceInfo object.";
     public static final String NOT_EXPECTED_DESTROYED_OBJ = "The destroyed object has an unexpected type. Received: %s, Expected: %s";
+    public static final String INCORRECT_NUM_SOCKETS = "A valid number of sockets should be a value between 1 - 200";
 }

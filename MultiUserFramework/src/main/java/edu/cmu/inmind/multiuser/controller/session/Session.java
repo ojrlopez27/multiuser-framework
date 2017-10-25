@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by oscarr on 3/3/17.
@@ -32,7 +33,7 @@ public class Session implements Runnable, OrchestratorListener, DestroyableCallb
     private String status;
     private ProcessOrchestrator orchestrator;
     private Thread thread;
-    private boolean isClosed;
+    private AtomicBoolean isClosed = new AtomicBoolean(false);
     private InactivityTimer timer;
     private ServerCommController sessionCommController;
     private ZMsgWrapper replyMsg = new ZMsgWrapper();
@@ -121,11 +122,9 @@ public class Session implements Runnable, OrchestratorListener, DestroyableCallb
      */
     public void close(DestroyableCallback callback) throws Throwable{
         if(this.callback == null && this.callback != this) this.callback = callback;
-        if( !isClosed ) {
+        if( !isClosed.getAndSet(true) ) {
             notifyObservers();
             Log4J.info(this, String.format("Closing session: %s", id));
-            isClosed = true;
-            status = Constants.SESSION_CLOSED;
             if( sessionCommController != null ) { // it is null when TCP is off
                 //notify the client
                 sessionCommController.send(new SessionMessage(Constants.SESSION_CLOSED));
@@ -144,9 +143,9 @@ public class Session implements Runnable, OrchestratorListener, DestroyableCallb
                 sessionCommController = null;
                 timer.cancel();
                 timer.purge();
-                thread.interrupt();
-                thread.join();
+                //thread.join();
                 thread = null;
+                status = Constants.SESSION_CLOSED;
                 Log4J.info(this, "Gracefully destroying...");
                 Log4J.info(this, String.format("Session: %s has been disconnected!", id));
                 callback.destroyInCascade(this);

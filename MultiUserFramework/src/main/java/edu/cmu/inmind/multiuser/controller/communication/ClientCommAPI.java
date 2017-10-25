@@ -2,6 +2,7 @@ package edu.cmu.inmind.multiuser.controller.communication;
 
 import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
+import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
@@ -20,14 +21,14 @@ public class ClientCommAPI implements DestroyableCallback {
     private long timeout = 2500; //10000; // ten seconds
     private int highWaterMark = 10 * 1000; //amount of enqueued messages
     private ZMQ.Poller items; // Poll socket for a reply, with timeout
-    private AtomicBoolean isAlreadyDestroyed = new AtomicBoolean(false);
+    private AtomicBoolean isDestroyed = new AtomicBoolean(false);
     private DestroyableCallback callback;
     private AtomicBoolean canUseSocket = new AtomicBoolean( true );
     private String whoPrevious;
 
     public ClientCommAPI(String broker) throws Throwable{
         this.broker = broker;
-        ctx = new ZContext();
+        ctx = DependencyManager.getInstance().getContext();
         reconnectToBroker();
     }
 
@@ -59,7 +60,7 @@ public class ClientCommAPI implements DestroyableCallback {
      * to recover from a broker failure, this is not possible without storing
      * all unanswered requests and resending them all…
      */
-    public ZMsg recv() throws Throwable{
+    public ZMsg recv(){
         ZMsg reply = null;
         try {
             if (items.poll(timeout * 1000) == -1)
@@ -88,8 +89,12 @@ public class ClientCommAPI implements DestroyableCallback {
             }
             return reply;
         }catch (Exception e){
-            destroyInCascade( this );
-            return null;
+            try {
+                destroyInCascade(this);
+            }catch (Throwable t){
+            }finally {
+                return null;
+            }
         }
     }
 
@@ -128,12 +133,11 @@ public class ClientCommAPI implements DestroyableCallback {
 
     @Override
     public void destroyInCascade(Object destroyedObj) throws Throwable{
-        if( !isAlreadyDestroyed.getAndSet(true) ) {
+        if( !isDestroyed.get() ) {
             checkAndSleep("destroyInCascade");
-            if (clientSocket != null) {
-                ctx.destroySocket(clientSocket);
-            }
-            ctx.destroy();
+            ctx.destroySocket(clientSocket);
+            ctx = null;
+            isDestroyed.getAndSet(true);
             Log4J.info(this, "Gracefully destroying...");
             if(callback != null) callback.destroyInCascade( this );
         }

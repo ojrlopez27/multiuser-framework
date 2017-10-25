@@ -17,6 +17,8 @@ import org.zeromq.ZMsg;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by oscarr on 3/3/17.
@@ -38,12 +40,16 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
      * processed by the session manager
      */
     private String serviceId = Constants.SESSION_MANAGER_SERVICE;
-    private Broker broker;
+    private Broker[] brokers;
+    private Broker managerBroker;
+    private AtomicLong portIncrease = new AtomicLong(0);
 
-    private int port;
+    private int numOfPorts;
+    private int sessionMngPort;
     private String address;
     private String fullAddress;
-    private boolean stopped;
+    private AtomicBoolean stopped = new AtomicBoolean(false);
+    private AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
 
     public SessionManager(PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws Throwable{
@@ -52,6 +58,7 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "modules: " + modules,
                     "config: " + config));
         }
+        DependencyManager.getInstance(modules);
         this.config = config;
         if( config == null ){
             throw new MultiuserException(ErrorMessages.OBJECT_NULL, "config");
@@ -67,30 +74,43 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
         sessions = new ConcurrentHashMap<>();
         extractConfig();
         if( config.isTCPon() ) {
-            initializeBroker();
+            initializeBrokers();
             serverCommController = new ServerCommController(fullAddress, serviceId, null);
-            closeableObjects.add( serverCommController );
+            closeableObjects.add(serverCommController);
         }
-        DependencyManager.getInstance(modules);
     }
 
     /**
      * settings information that belongs to the session manager
      */
     private void extractConfig(){
-        port = config.getSessionManagerPort();
+        sessionMngPort = config.getSessionManagerPort();
         address = config.getServerAddress(); //"tcp://*";
-        fullAddress = (address.startsWith("tcp:")? address : "tcp://" + address )
-                + (address.lastIndexOf(":") == address.length() -1? port : ":" + port);
-
+        fullAddress = (address.startsWith("tcp:") ? address : "tcp://" + address)
+                    + (address.lastIndexOf(":") == address.length() - 1 ? sessionMngPort : ":" + sessionMngPort);
         // ...
     }
 
-    public void initializeBroker(){
-        broker = new Broker(port);
-        closeableObjects.add( broker );
-        // Can be called multiple times with different endpoints
-        broker.start();
+    /**
+     * ZMQ docs: It can be extended to run multiple threads, each managing one socket and one set of clients and
+     * workers. This could be interesting for segmenting large architectures. The C code is already organized around
+     * a broker class to make this trivial.
+     */
+    public void initializeBrokers(){
+        numOfPorts = config.getNumOfSockets();
+        //if numOfPorts is <= 1, use managerBroker
+        if( numOfPorts > 1 ) {
+            brokers = new Broker[numOfPorts];
+            for (int i = 0; i < numOfPorts; i++) {
+                // Can be called multiple times with different endpoints
+                brokers[i] = new Broker(sessionMngPort + (i + 1));
+                brokers[i].start();
+                closeableObjects.add(brokers[i]);
+            }
+        }
+        managerBroker = new Broker(sessionMngPort);
+        closeableObjects.add(managerBroker);
+        managerBroker.start();
     }
 
     /**
@@ -102,7 +122,7 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
         try {
             reply = null;
             loadRemoteServices();
-            while (!Thread.currentThread().isInterrupted() && !stopped ) {
+            while (!isDestroyed.get() && !stopped.get() ) {
                 processRequest( );
             }
         }catch (Throwable e){
@@ -138,7 +158,7 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
      * and also requests from remote services.
      */
     private void processRequest( ) throws Throwable{
-        if( !stopped ) {
+        if( !stopped.get() ) {
             ZMsgWrapper msgRequest = null;
             SessionMessage request;
             if( config.isTCPon() ){
@@ -265,15 +285,20 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
      * number on which it should be sending (pushing information to) and listening (pulling information from).
      */
     private void createSession(ZMsgWrapper msgRequest, SessionMessage request) throws Throwable{
+        //if numOfPorts is <= 1, then use sessionMngPort and only one broker (managerBroker)
+        final int port = sessionMngPort + (int)(portIncrease.getAndIncrement() % numOfPorts) + (numOfPorts > 1? 1 : 0);
+        final String address = fullAddress.replace("" + sessionMngPort, "" + port);
         String key = request.getSessionId();
         Log4J.info(this, "Creating session: " + key);
         Session session = DependencyManager.getInstance().getComponent(Session.class);
         session.onClose(this);
         session.setConfig( config );
-        session.setId(key, msgRequest, fullAddress);
+        session.setId(key, msgRequest, address);
         sessions.put( key, session );
         closeableObjects.add(session);
-        send( msgRequest, new SessionMessage( Constants.SESSION_INITIATED) );
+        SessionMessage sm = new SessionMessage( Constants.SESSION_INITIATED);
+        sm.setPayload(address);
+        send( msgRequest, sm );
     }
 
     /**
@@ -335,20 +360,26 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
      * It disconnects all sessions, closes all sockets and stop the multiuser framework.
      */
     public void stop() throws Throwable{
-        stopped = true;
-        Log4J.info(this, "Start closing all sessions...");
-        for( Session session : sessions.values() ){
-            session.close(this);
-        }
+        stopped.getAndSet(true);
+        Log4J.info(this, "Start closing all external services (slave MUF's)...");
         SessionMessage sessionMessage = new SessionMessage();
         sessionMessage.setRequestType( Constants.REQUEST_SHUTDOWN_SYSTEM );
         sessionMessage.setMessageId( Constants.SESSION_MANAGER_SERVICE );
         for( ServiceComponent serviceComponent : ResourceLocator.getServiceRegistry().values() ){
             send( serviceComponent.getMsgTemplate(), sessionMessage );
         }
+        Log4J.info(this, "Start closing all sessions...");
+        for( Session session : sessions.values() ){
+            session.close(this);
+        }
         if( config.isTCPon() ) {
             serverCommController.close(this);
-            broker.close( this );
+            if( numOfPorts > 0 && brokers != null ) {
+                for (Broker broker : brokers) {
+                    broker.close(this);
+                }
+            }
+            managerBroker.close(this);
         }
     }
 
@@ -374,10 +405,11 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
         closeableObjects.remove( destroyedObj );
         if( closeableObjects.isEmpty() ){
             ResourceLocator.stopStatlessComp();
+            DependencyManager.getInstance().release();
+            //thread.join();
+            isDestroyed.getAndSet(true);
             Log4J.info(this, "Gracefully destroying...");
             Log4J.info(this, "Session Manager stopped. Bye bye!");
-            thread.interrupt();
-            thread.join();
         }
     }
 }

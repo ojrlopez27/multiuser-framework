@@ -13,6 +13,7 @@ import edu.cmu.inmind.multiuser.controller.log.LoggerInterceptor;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorFactory;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
+import org.zeromq.ZContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +48,6 @@ public class PluginModule extends AbstractModule {
         if (message != null && component != null) {
             ResourceLocator.addMsgMapping(message, component);
         }
-
         if (component.isAnnotationPresent(StateType.class)) {
             String state = component.getAnnotation(StateType.class).state();
             if ( state.equals(Constants.STATELESS) ){

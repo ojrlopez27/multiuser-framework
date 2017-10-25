@@ -66,7 +66,7 @@ public class Blackboard {
         this.keepModel = keepModel;
     }
 
-    public void setnotifySubscribers(boolean notifySubscribers) {
+    public void setNotifySubscribers(boolean notifySubscribers) {
         this.notifySubscribers = notifySubscribers;
     }
 
