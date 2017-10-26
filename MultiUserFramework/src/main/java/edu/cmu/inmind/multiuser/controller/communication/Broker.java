@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *  Majordomo Protocol broker
  *  A minimal implementation of http://rfc.zeromq.org/spec:7 and spec:8
  */
-public class Broker extends Thread implements DestroyableCallback {
+public class Broker implements DestroyableCallback, ZThread.IAttachedRunnable {
 
     // We'd normally pull these from config data
     private static final String INTERNAL_SERVICE_PREFIX = "mmi.";
@@ -29,6 +29,7 @@ public class Broker extends Thread implements DestroyableCallback {
     private int port;
     private DestroyableCallback callback;
     private ZMQ.Poller items;
+
 
 
     // ---------------------------------------------------------------------
@@ -56,7 +57,7 @@ public class Broker extends Thread implements DestroyableCallback {
     /**
      * This defines one worker, idle or active (orchestrator).
      */
-    private static class Worker {
+    private static class Worker{
         String identity;// Identity of worker
         ZFrame address;// Address frame to route to
         Service service; // Owning service, if known
@@ -85,11 +86,12 @@ public class Broker extends Thread implements DestroyableCallback {
 
     // ---------------------------------------------------------------------
 
+
     /**
      * Initialize broker state.
      */
     public Broker(int port) {
-        super("broker-thread-" + port);
+        //super("broker-thread-" + port);
         this.services = new ConcurrentHashMap<>();
         this.workers = new ConcurrentHashMap<>();
         this.waiting = new ArrayDeque<>();
@@ -104,7 +106,7 @@ public class Broker extends Thread implements DestroyableCallback {
 
     // ---------------------------------------------------------------------
     @Override
-    public void run(){
+    public void run(Object[] args, ZContext ctx, ZMQ.Socket pipe) {
         try {
             bind("tcp://*:" + port);
             mediate();

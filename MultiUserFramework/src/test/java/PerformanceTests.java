@@ -22,6 +22,7 @@ import static org.awaitility.Awaitility.*;
 public class PerformanceTests {
     static AtomicInteger receivedMsgs = new AtomicInteger(0);
     static AtomicInteger initializedAgents = new AtomicInteger(0);
+    static AtomicInteger sentMessages = new AtomicInteger(0);
     static MultiuserFramework muf;
     static boolean useExternalMUF = false;
     static Set<Thread> threadSet;
@@ -175,9 +176,10 @@ public class PerformanceTests {
                     String message = "" + (i + 1);
                     times.put( (i + 1), System.nanoTime() );
                     ccc.send(agentId, message);
+                    int sent = sentMessages.incrementAndGet();
                     Thread.sleep(delay);
                     //if (verbose)
-                        Log4J.debug(this, String.format("%s sends: %s ", agentId, message));
+                        Log4J.debug(this, String.format("%s sends: %s Total sent: %s", agentId, message, sent));
                 }
             }catch (Exception e){
                 e.printStackTrace();

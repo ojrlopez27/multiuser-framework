@@ -46,7 +46,7 @@ public class TestUtils {
                 .setServerAddress(serverAddress)
 //                .setJsonServicesConfig("services.json")
                 .setExceptionTraceLevel(Constants.SHOW_ALL_EXCEPTIONS)
-                .setNumOfSockets(10)
+                .setNumOfSockets(1)
                 .build();
     }
 }

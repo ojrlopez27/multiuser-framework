@@ -13,7 +13,10 @@ import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
+import org.zeromq.ZContext;
+import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
+import org.zeromq.ZThread;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -98,19 +101,20 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
      */
     public void initializeBrokers(){
         numOfPorts = config.getNumOfSockets();
+        ZContext context = DependencyManager.getInstance().getContext();
         //if numOfPorts is <= 1, use managerBroker
         if( numOfPorts > 1 ) {
             brokers = new Broker[numOfPorts];
             for (int i = 0; i < numOfPorts; i++) {
                 // Can be called multiple times with different endpoints
                 brokers[i] = new Broker(sessionMngPort + (i + 1));
-                brokers[i].start();
+                ZMQ.Socket requestPipe = ZThread.fork(context, brokers[i]);
                 closeableObjects.add(brokers[i]);
             }
         }
         managerBroker = new Broker(sessionMngPort);
+        ZThread.fork(context, managerBroker);
         closeableObjects.add(managerBroker);
-        managerBroker.start();
     }
 
     /**
