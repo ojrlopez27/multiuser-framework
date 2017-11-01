@@ -3,6 +3,7 @@ package edu.cmu.inmind.multiuser.controller;
 
 import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
+import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.communication.ServiceInfo;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
@@ -35,6 +36,7 @@ public class MultiuserFramework implements DestroyableCallback {
 
     MultiuserFramework(String id, PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws Throwable{
         ClassLoader.getSystemClassLoader().setPackageAssertionStatus("zmq",false);
+        Utils.initThreadExecutor();
         this.id = id;
         this.config = config;
 
@@ -78,6 +80,8 @@ public class MultiuserFramework implements DestroyableCallback {
         Runtime.getRuntime().addShutdownHook(new Thread("FrameworkShutdownThread-" + id) {
             public void run() {
                 try {
+                    Log4J.error(this, "Closing 1");
+                    System.out.println("Closing 1");
                     MultiuserFramework.this.stop();
                 }catch (Throwable e){
                     ExceptionHandler.handle(e);
@@ -108,18 +112,38 @@ public class MultiuserFramework implements DestroyableCallback {
 
     void stop(){
         try {
+            close(null);
+        }catch (Throwable e){
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void close(DestroyableCallback callback) throws Throwable {
+        try {
+            Log4J.error(this, "Closing 2");
+            System.out.println("Closing 2");
             if (!stopping.getAndSet(true)) {
+                Log4J.error(this, "Closing 3");
+                System.out.println("Closing 3");
                 if (hooks != null) {
                     for (ShutdownHook hook : hooks) {
                         hook.execute();
                     }
                 }
+                Log4J.error(this, "Closing 4");
+                System.out.println("Closing 4");
 
                 if (config.isTCPon()) {
-                    sessionManager.stop();
+                    Log4J.error(this, "Closing 5");
+                    System.out.println("Closing 5");
+                    sessionManager.close(this);
                 } else {
                     session.close( this );
                 }
+            }else{
+                Log4J.error(this, "Closing 2.1");
+                System.out.println("Closing 2.1");
             }
         }catch (Throwable e) {
             ExceptionHandler.handle(e);
@@ -127,7 +151,7 @@ public class MultiuserFramework implements DestroyableCallback {
     }
 
     @Override
-    public void destroyInCascade(Object destroyedObj) throws Throwable {
+    public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable {
         //TODO some logic to release resources
         sessionManager = null;
         session = null;
@@ -135,6 +159,7 @@ public class MultiuserFramework implements DestroyableCallback {
         dependencyManager = null;
         client = null;
         hooks = null;
+        DependencyManager.setIamDone( this );
         Log4J.info(this, "Gracefully destroying...");
     }
 }

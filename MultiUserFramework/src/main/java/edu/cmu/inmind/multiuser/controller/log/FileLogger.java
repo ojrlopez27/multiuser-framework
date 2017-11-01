@@ -37,12 +37,12 @@ public class FileLogger implements MessageLog {
 
     @Override
     public void store() throws Throwable{
-        Utils.execObsParallel(stringBuffer -> {
+        Utils.execObsParallel( () -> {
             try {
-                if (turnedOn && !stringBuffer.toString().isEmpty()) {
+                if (turnedOn && !log.toString().isEmpty()) {
                     File file = new File(path + id + "-" + Utils.getDateString() + ".log");
                     PrintWriter printWriter = new PrintWriter(file);
-                    printWriter.write(stringBuffer.toString());
+                    printWriter.write(log.toString());
                     printWriter.flush();
                     printWriter.close();
                 }
@@ -50,6 +50,7 @@ public class FileLogger implements MessageLog {
                 ExceptionHandler.handle( e );
             }
         });
+
     }
 
     @Override

@@ -9,7 +9,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -23,13 +22,22 @@ public class PerformanceTests {
     static AtomicInteger receivedMsgs = new AtomicInteger(0);
     static AtomicInteger initializedAgents = new AtomicInteger(0);
     static AtomicInteger sentMessages = new AtomicInteger(0);
+    static int totalMessages;
     static MultiuserFramework muf;
-    static boolean useExternalMUF = false;
-    static Set<Thread> threadSet;
-    final long timeout = 1000 * 60 * 5;
-    final long delay = 10;
-    boolean verbose = false;
-    PrintWriter printWriter;
+    static Agent[] agents;
+    static Integer[] ids;
+    static PrintWriter printWriter;
+    // constants:
+    static boolean          useExternalMUF = false;
+    static final long       timeout = 1000 * 60 * 5; // 5 minutes
+    static final long       delaySendMsg = 200;
+    static final boolean    verbose = false;
+    static final int        numAgents = 10;
+    static final int        numMessages = 10;
+    static final String     url = useExternalMUF? "tcp://34.203.160.208" : "tcp://127.0.0.1";
+    static final long       delayMUF = 2000;
+    static final int        portMUF = 5666;
+    static final long       delayAgentCreation = 100;
 
     @Test(timeout = timeout)
     public void testPerformanceOneAgent() throws Throwable{
@@ -46,47 +54,45 @@ public class PerformanceTests {
 //                }
 //            }
 //        }
-        runAgents(100, 10);
+        runAgents();
         printWriter.flush();
         printWriter.close();
     }
 
 
-    private void runAgents(int numAgents, int numMessages) throws Throwable{
-        int totalMessages = numMessages * numAgents;
-        Agent[] agents = new Agent[numAgents];
-        String url = useExternalMUF? "tcp://34.203.160.208" : "tcp://127.0.0.1";
+    private void runAgents() throws Throwable{
+        totalMessages = numMessages * numAgents;
+        agents = new Agent[numAgents];
+        ids = new Integer[numAgents];
 
         // creates a MUF and set TCP to on or off
         if( !useExternalMUF ) {
             muf = MultiuserFrameworkContainer.startFramework(
                     TestUtils.getModulesPerf(PerformanceTestOrchestrator.class),
-                    TestUtils.createConfig(url, 5666));
-            Utils.sleep(2000); //give some time to initialize the MUF
+                    TestUtils.createConfig(url, portMUF));
+            Utils.sleep(delayMUF); //give some time to initialize the MUF
         }
 
         // let's create a client(s) that sends messages to MUF
         for( int i = 0; i < numAgents; i++) {
             String agentId = "agent-" + i;
-            agents[i] = new Agent( agentId, numMessages,
-                    new ClientCommController.Builder()
-                        .setServerAddress(url + ":5666")
-                        .setServiceName( agentId )
-                        .setClientAddress(url + ":5666")
-                        .setRequestType(Constants.REQUEST_CONNECT)
-                        .build() );
-            Thread.sleep(100);
+            agents[i] = new Agent( agentId, numMessages);
+            ids[i] = i;
+            Utils.sleep(delayAgentCreation);
         }
 
         // let's run the agents...
         long time = System.currentTimeMillis();
-        for(int i = 0; i < numAgents; i++ ){
+        for(int i = 0; i < numAgents; i++ ) {
             final int idx = i;
-            Utils.execObsParallel(o -> agents[idx].run());
+            //Utils.execute(() -> agents[idx].run());
+            agents[idx].setName("agent-"+idx);
+            Utils.execute(agents[idx]);
         }
 
         //awaitility
         await().atMost(timeout, TimeUnit.MILLISECONDS).until( () -> receivedMsgs.get() == totalMessages);
+        //Utils.sleep(5000);
 
         time = System.currentTimeMillis() - time;
         System.out.println("Total time: " + time + " and total received: " + receivedMsgs.get()+ " total: " + totalMessages );
@@ -98,19 +104,21 @@ public class PerformanceTests {
         }
         System.out.println("Total time by sections: " + total);
         printWriter.write( String.format("%s\t%s\t%s\n", numAgents, numMessages, total ) );
+
+//        for(Agent agent : agents){
+//            agent.destroy();
+//        }
         if( !useExternalMUF ) {
             MultiuserFrameworkContainer.stopFramework(muf);
             muf = null;
         }
     }
-
-
-
-
-
-
-    class Agent{
+    /**
+     * This class wraps the agent/client that sends requests to and receives responses from MUF
+     */
+    class Agent extends Utils.MyRunnable{
         private String agentId;
+        private int id;
         private ClientCommController ccc;
         private int numMessages;
         int receivedMessages = 0;
@@ -120,53 +128,60 @@ public class PerformanceTests {
             long totalTime = 0;
             for( Long time : times.values() ){
                 totalTime += time;
-                Log4J.debug(this, "totalTime: " + totalTime + "  time: " + time);
             }
             return TimeUnit.NANOSECONDS.toMillis(totalTime);
         }
 
-        Agent(String agentId, int numMessages, ClientCommController ccc){
+        Agent(String agentId, int numMessages){
             this.agentId = agentId;
-            this.ccc = ccc;
+            this.id = Integer.valueOf(agentId.split("-")[1]);
             this.numMessages = numMessages;
             this.times = new ConcurrentHashMap<>();
 
-            ccc.setResponseListener(message -> {
-                try {
-//                    if( threadSet != null ){
-//                        Set<Thread> threadSetNow = Thread.getAllStackTraces().keySet();
-//                        threadSetNow.removeAll(threadSet);
-//                        for ( Thread t : threadSetNow){
-//                            Log4J.debug(this, "Thread :"+t+":"+"state:"+t.getState()+"  hashcode: " + t.hashCode());
-//                        }
-//                    }
-//                    threadSet = Thread.getAllStackTraces().keySet();
-
-                    Log4J.error(this, "Active: "+Thread.activeCount());
-                    //System.out.println(String.format("Thread: %s inside setResponseListener", Thread.currentThread().getName()));
-                    if( message.contains(Constants.SESSION_INITIATED) ){
-                        initializedAgents.incrementAndGet();
-                        if(verbose)
-                            Log4J.debug(this, String.format("initialized agent %s  total: %s", agentId,
-                                    initializedAgents.get() ) );
-                    }else if( !message.contains(Constants.SESSION_CLOSED) && !message.contains(Constants.SESSION_RECONNECTED)){
-                        int key = Integer.valueOf(message);
-                        long value = times.get(key);
-                        times.put( key,  System.nanoTime() - value );
-                        receivedMsgs.incrementAndGet();
-                        receivedMessages++;
-                        if( receivedMessages != key ){
-                            Log4J.error(this, String.format("receivedMessages: %s and payload: %s", receivedMessages,
-                                    message));
+            ccc = new ClientCommController.Builder()
+                    .setServerAddress(url + ":" + portMUF)
+                    .setServiceName( agentId )
+                    .setClientAddress(url + ":" + portMUF)
+                    .setRequestType(Constants.REQUEST_CONNECT)
+                    .setResponseListener(message -> {
+                        try {
+                            //Utils.printNewAddedThreads();
+                            Log4J.error(this, "Active: "+Thread.activeCount());
+                            if( message.contains(Constants.SESSION_INITIATED) ){
+                                initializedAgents.incrementAndGet();
+                                //if(verbose)
+                                    Log4J.debug(this, String.format("initialized agent %s  total: %s", agentId,
+                                            initializedAgents.get() ) );
+                            }else if( !message.contains(Constants.SESSION_CLOSED) && !message.contains(Constants.SESSION_RECONNECTED)){
+                                int key = Integer.valueOf(message);
+                                long value = times.get(key);
+                                times.put( key,  System.nanoTime() - value );
+                                receivedMsgs.incrementAndGet();
+                                receivedMessages++;
+                                if( receivedMessages != key ){
+                                    Log4J.error(this, String.format("receivedMessages: %s and payload: %s", receivedMessages,
+                                            message));
+                                }
+                                if(receivedMsgs.get() % 1 == 0)//if(verbose)
+                                    Log4J.debug(this, String.format("%s receives: %s receivedMessages: %s total: %s", agentId,
+                                            message, receivedMessages, receivedMsgs.get()));
+                                if(receivedMessages == 10){
+                                    ids[id] = null;
+                                    StringBuffer faltan =  new StringBuffer("");
+                                    for( Integer id : ids ){
+                                        if(id != null){
+                                            faltan.append(id + ", ");
+                                        }
+                                    }
+                                    Log4J.debug(this, "Faltan: " + faltan);
+                                    Log4J.error(this, String.format("**** %s completed", agentId));
+                                }
+                            }
+                        } catch (Throwable e) {
+                            ExceptionHandler.handle(e);
                         }
-                        if(receivedMsgs.get() % 1 == 0)//if(verbose)
-                            Log4J.debug(this, String.format("%s receives: %s receivedMessages: %s total: %s", agentId,
-                                    message, receivedMessages, receivedMsgs.get()));
-                    }
-                } catch (Throwable e) {
-                    ExceptionHandler.handle(e);
-                }
-            });
+                    })
+                    .build();
         }
 
         public void run(){
@@ -177,13 +192,21 @@ public class PerformanceTests {
                     times.put( (i + 1), System.nanoTime() );
                     ccc.send(agentId, message);
                     int sent = sentMessages.incrementAndGet();
-                    Thread.sleep(delay);
+                    Utils.sleep(delaySendMsg);
                     //if (verbose)
                         Log4J.debug(this, String.format("%s sends: %s Total sent: %s", agentId, message, sent));
                 }
+                destroy();
             }catch (Exception e){
                 e.printStackTrace();
             }
+        }
+
+        public void destroy(){
+            if( Thread.currentThread().isAlive() ){
+                Thread.currentThread().interrupt();
+            }
+            ccc.close( null );
         }
     }
 }

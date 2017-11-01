@@ -1,5 +1,6 @@
 package edu.cmu.inmind.multiuser.controller.communication;
 
+import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
@@ -13,6 +14,7 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by oscarr on 3/28/17.
@@ -50,35 +52,12 @@ public class ServerCommController implements DestroyableCallback {
             if (msgTemplate != null) {
                 this.msgTemplate = msgTemplate.duplicate();
             }
-            ctx = DependencyManager.getInstance().getContext();
+            ctx = DependencyManager.getInstance().getContext( this );
             items = ctx.createPoller(1); //new ZMQ.Poller(1);
             reconnectToBroker();
             items.register(workerSocket, ZMQ.Poller.POLLIN);
         }catch (Throwable e){
             ExceptionHandler.handle(e);
-        }
-    }
-
-    /**
-     * Send message to broker If no msg is provided, creates one internally
-     *
-     * @param command
-     * @param option
-     * @param msg
-     */
-    void sendToBroker(MDP command, String option, ZMsg msg) throws Throwable{
-        try {
-            msg = msg != null ? msg.duplicate() : new ZMsg();
-            // Stack protocol envelope to start of message
-            if (option != null)
-                msg.addFirst(new ZFrame(option));
-
-            msg.addFirst(command.newFrame());
-            msg.addFirst(MDP.S_ORCHESTRATOR.newFrame());
-            msg.addFirst(new ZFrame(new byte[0]));
-            msg.send(workerSocket);
-        }catch (Exception e){
-            //e.printStackTrace();
         }
     }
 
@@ -89,7 +68,7 @@ public class ServerCommController implements DestroyableCallback {
         if (workerSocket != null) {
             ctx.destroySocket(workerSocket);
         }
-        workerSocket = ctx.createSocket(ZMQ.DEALER);
+        workerSocket = DependencyManager.createSocket(ctx, ZMQ.DEALER);
         workerSocket.connect(serverAddress);
 
         // Register service with broker
@@ -99,6 +78,10 @@ public class ServerCommController implements DestroyableCallback {
         liveness = HEARTBEAT_LIVENESS;
         heartbeatAt = System.currentTimeMillis() + heartbeat;
     }
+
+    /*******************************************************************************************/
+    /********************************** RECEIVE ************************************************/
+    /*******************************************************************************************/
 
     /**
      * Send reply, if any, to broker and wait for next request.
@@ -146,14 +129,9 @@ public class ServerCommController implements DestroyableCallback {
                         command.destroy();
                         msg.destroy();
                     } else if (--liveness == 0) {
-                        try {
-                            Thread.sleep(reconnect);
-                        } catch (InterruptedException e) {
-                            //Thread.currentThread().interrupt(); // Restore the
-                            // interrupted status
-                            //Thread.currentThread().join();
+                        boolean result = Utils.sleep(reconnect);
+                        if( !result )
                             break;
-                        }
                         reconnectToBroker();
                     }
                     // Send HEARTBEAT if it's time
@@ -162,7 +140,7 @@ public class ServerCommController implements DestroyableCallback {
                         heartbeatAt = System.currentTimeMillis() + heartbeat;
                     }
                 } catch (Throwable error) {
-                    ctx.destroySocket(workerSocket);
+                    DependencyManager.setIamDone(this);
                     destroyInCascade(this);
                     //ExceptionHandler.handle(error);
                     break;
@@ -171,7 +149,7 @@ public class ServerCommController implements DestroyableCallback {
             return null;
         }catch (Throwable e){
             try {
-                ctx.destroySocket(workerSocket);
+                DependencyManager.setIamDone(this);
                 destroyInCascade(this);
             }catch (Throwable e1){
             }finally {
@@ -180,6 +158,20 @@ public class ServerCommController implements DestroyableCallback {
         }
     }
 
+    /*******************************************************************************************/
+    /**********************************   SEND  ************************************************/
+    /*******************************************************************************************/
+
+    public void disconnect() throws Throwable{
+        SessionMessage sessionMessage = new SessionMessage();
+        sessionMessage.setRequestType(Constants.REQUEST_DISCONNECT);
+        sessionMessage.setSessionId(service);
+        ZMsg msg = new ZMsg();
+        msg.addFirst(new ZFrame( Utils.toJson(sessionMessage) ));
+        msg.wrap(msgTemplate.getReplyTo());
+        sendToBroker(MDP.S_DISCONNECT, null, msg);
+        msg.destroy();
+    }
 
     public void send(ZMsgWrapper reply, Object message) throws Throwable{
         try {
@@ -204,6 +196,7 @@ public class ServerCommController implements DestroyableCallback {
                         "reply: " + reply, "message: " + message));
             }
         }catch (Throwable e){
+            e.printStackTrace();
             destroyInCascade(this);
         }
     }
@@ -215,6 +208,33 @@ public class ServerCommController implements DestroyableCallback {
         send(msgTemplate.duplicate(), message);
     }
 
+    /**
+     * Send message to broker If no msg is provided, creates one internally
+     *
+     * @param command
+     * @param option
+     * @param msg
+     */
+    void sendToBroker(MDP command, String option, ZMsg msg) throws Throwable{
+        if( !Thread.currentThread().isInterrupted() && Thread.currentThread().isAlive() ) {
+            try {
+                msg = msg != null ? msg.duplicate() : new ZMsg();
+                // Stack protocol envelope to start of message
+                if (option != null)
+                    msg.addFirst(new ZFrame(option));
+                msg.addFirst(command.newFrame());
+                msg.addFirst(MDP.S_ORCHESTRATOR.newFrame());
+                msg.addFirst(new ZFrame(new byte[0]));
+                msg.send(workerSocket);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /*******************************************************************************************/
+    /********************************** RELEASE ************************************************/
+    /*******************************************************************************************/
 
     public void close(DestroyableCallback callback) throws Throwable{
         this.callback = callback;
@@ -223,13 +243,14 @@ public class ServerCommController implements DestroyableCallback {
     }
 
     @Override
-    public void destroyInCascade(Object destroyedObj) throws Throwable{
+    public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
         try {
             if( !isDestroyed.get() ) {
                 if (msgTemplate != null) msgTemplate.destroy();
                 if (replyTo != null) replyTo.destroy();
                 ctx = null;
                 isDestroyed.getAndSet(true);
+                DependencyManager.setIamDone( this );
                 Log4J.info(this, "Gracefully destroying...");
                 if(callback != null) callback.destroyInCascade(this);
             }

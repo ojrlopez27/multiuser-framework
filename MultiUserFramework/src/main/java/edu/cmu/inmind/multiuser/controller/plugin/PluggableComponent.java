@@ -16,6 +16,7 @@ import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
+import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import edu.cmu.inmind.multiuser.controller.session.Session;
 import edu.cmu.inmind.multiuser.controller.sync.SynchronizableEvent;
 
@@ -238,20 +239,26 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
     }
 
     public void close(String sessionId, DestroyableCallback callback) throws Throwable{
-        isClosed.getAndSet(true);
-        callbacks.add(callback);
+        close(callback);
         sessions.remove( sessionId );
         if( clientCommController != null ) {
             clientCommController.disconnect(sessionId);
         }
-        destroyInCascade(sessionId);
+        destroyInCascade(null);
     }
 
     @Override
-    public void destroyInCascade(Object destroyedObj) throws Throwable{
+    public void close(DestroyableCallback callback) throws Throwable{
+        isClosed.getAndSet(true);
+        callbacks.add(callback);
+    }
+
+    @Override
+    public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
         if( clientCommController != null ){
             clientCommController.close(null);
         }
+        DependencyManager.setIamDone( this );
         Log4J.info(this, "Gracefully destroying...");
         for(DestroyableCallback callback : callbacks){
             callback.destroyInCascade( this );

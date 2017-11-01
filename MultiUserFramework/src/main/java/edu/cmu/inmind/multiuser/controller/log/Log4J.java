@@ -109,11 +109,19 @@ public class Log4J{
 
     private static Logger getLogger(Object caller) {
         try {
-            Class clazz = caller instanceof Class? (Class) caller : Utils.getClass(caller);
-            org.apache.logging.log4j.Logger logger = ResourceLocator.getLogger(clazz);
+            String logName = "";
+            org.apache.logging.log4j.Logger logger = null;
+            Class clazz = null;
+            if( caller instanceof String ){
+                logName = (String)caller;
+            }else {
+                clazz = caller instanceof Class ? (Class) caller : Utils.getClass(caller);
+                logger = ResourceLocator.getLogger(clazz);
+                logName = clazz.getSimpleName();
+            }
             if (logger == null) {
-                logger = LogManager.getLogger(clazz.getSimpleName());
-                ResourceLocator.addLogger(clazz, logger);
+                logger = LogManager.getLogger(logName);
+                if(clazz != null) ResourceLocator.addLogger(clazz, logger);
             }
             return logger;
         }catch (Throwable e){

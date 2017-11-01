@@ -24,11 +24,11 @@ public class Constants {
 
     //communication
     public static final String SESSION_MANAGER_SERVICE = "session-manager";
-    public static final String CONNECTION_NEW = "CONNECTION_NEW";
-    public static final String CONNECTION_STARTED = "CONNECTION_STARTED";
-    public static final String CONNECTION_FINISHED = "CONNECTION_FINISHED";
-    public static final String CONNECTION_STOPPED = "CONNECTION_STOPPED";
-    public static final int    QUEUE_CAPACITY = 100;
+    public static final int CONNECTION_NEW = 0;
+    public static final int CONNECTION_STARTED = 1;
+    public static final int CONNECTION_FINISHED = 2;
+    public static final int CONNECTION_STOPPED = 3;
+    public static final int QUEUE_CAPACITY = 100;
 
 
     //session

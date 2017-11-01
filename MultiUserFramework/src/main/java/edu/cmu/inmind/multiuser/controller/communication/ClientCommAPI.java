@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.communication;
 
 import edu.cmu.inmind.multiuser.common.DestroyableCallback;
+import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import org.zeromq.ZContext;
@@ -18,17 +19,22 @@ public class ClientCommAPI implements DestroyableCallback {
     private String broker;
     private ZContext ctx;
     private ZMQ.Socket clientSocket;
-    private long timeout = 2500; //10000; // ten seconds
-    private int highWaterMark = 10 * 1000; //amount of enqueued messages
     private ZMQ.Poller items; // Poll socket for a reply, with timeout
     private AtomicBoolean isDestroyed = new AtomicBoolean(false);
     private DestroyableCallback callback;
     private AtomicBoolean canUseSocket = new AtomicBoolean( true );
+    private AtomicBoolean isPolling = new AtomicBoolean(false);
     private String whoPrevious;
+    // constants:
+    private final long  timeout = 10000; // 2,5 seconds
+    private final int   highWaterMark = 10 * 1000; //amount of enqueued messages
+    private final int   maxNumTries = 200;
+    private final long  delayCheckAndSleep = 5; //milliseconds
+
 
     public ClientCommAPI(String broker) throws Throwable{
         this.broker = broker;
-        ctx = DependencyManager.getInstance().getContext();
+        ctx = DependencyManager.getInstance().getContext(this);
         reconnectToBroker();
     }
 
@@ -40,7 +46,7 @@ public class ClientCommAPI implements DestroyableCallback {
         if (clientSocket != null) {
             ctx.destroySocket(clientSocket);
         }
-        clientSocket = ctx.createSocket(ZMQ.DEALER);
+        clientSocket = DependencyManager.createSocket(ctx, ZMQ.DEALER);
         clientSocket.setSendTimeOut(0); //  Send messages immediately or return EAGAIN  ojrl
         clientSocket.setHWM(highWaterMark); //  Set a high-water mark that allows for reasonable activity
         clientSocket.setRcvHWM(highWaterMark);
@@ -61,41 +67,48 @@ public class ClientCommAPI implements DestroyableCallback {
      * all unanswered requests and resending them all…
      */
     public ZMsg recv(){
-        ZMsg reply = null;
         try {
-            if (items.poll(timeout * 1000) == -1)
-                return null; // Interrupted
+            if (!isDestroyed.get()) {
+                ZMsg reply = null;
+                isPolling.getAndSet(true);
+                if (items.poll(timeout) == -1) {
+                    items.close();
+                    return null; // Interrupted or Context has been shut down
+                }
+                isPolling.getAndSet(false);
+                if (items.pollin(0)) {
+                    checkAndSleep("recv");
+                    ZMsg msg = ZMsg.recvMsg(clientSocket, ZMQ.DONTWAIT);
+                    canUseSocket.getAndSet(true);
 
-            if (items.pollin(0)) {
-                checkAndSleep("recv");
-                ZMsg msg = ZMsg.recvMsg(clientSocket, ZMQ.DONTWAIT);
-                canUseSocket.getAndSet(true);
+                    // Don't try to handle errors, just assert noisily
+                    assert (msg.size() >= 4);
 
-                // Don't try to handle errors, just assert noisily
-                assert (msg.size() >= 4);
+                    ZFrame empty = msg.pop();
+                    assert (empty.getData().length == 0);
+                    empty.destroy();
 
-                ZFrame empty = msg.pop();
-                assert (empty.getData().length == 0);
-                empty.destroy();
+                    ZFrame header = msg.pop();
+                    assert (MDP.C_CLIENT.toString().equals(header.toString())) : header.toString() + " vs. " + MDP.C_CLIENT;
+                    header.destroy();
 
-                ZFrame header = msg.pop();
-                assert (MDP.C_CLIENT.toString().equals(header.toString())) : header.toString() + " vs. " + MDP.C_CLIENT;
-                header.destroy();
+                    ZFrame replyService = msg.pop();
+                    replyService.destroy();
 
-                ZFrame replyService = msg.pop();
-                replyService.destroy();
-
-                reply = msg;
+                    reply = msg;
+                }
+                return reply;
             }
-            return reply;
-        }catch (Exception e){
+        } catch (Throwable e) {
+            Log4J.error(this, "****** AQUI");
             try {
                 destroyInCascade(this);
-            }catch (Throwable t){
-            }finally {
+            } catch (Throwable t) {
+            } finally {
                 return null;
             }
         }
+        return null;
     }
 
     /**
@@ -120,6 +133,7 @@ public class ClientCommAPI implements DestroyableCallback {
             }
             return true;
         }catch (Throwable e){
+            Log4J.error(this, "**** Throwing an exception");
             e.printStackTrace();
             destroyInCascade(this);
             return false;
@@ -132,12 +146,15 @@ public class ClientCommAPI implements DestroyableCallback {
     }
 
     @Override
-    public void destroyInCascade(Object destroyedObj) throws Throwable{
-        if( !isDestroyed.get() ) {
+    public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
+        if( !isDestroyed.getAndSet(true) ) {
+            while( isPolling.get() ){
+                Utils.sleep(5);
+                ctx.destroy();
+            }
             checkAndSleep("destroyInCascade");
-            ctx.destroySocket(clientSocket);
             ctx = null;
-            isDestroyed.getAndSet(true);
+            DependencyManager.setIamDone( this );
             Log4J.info(this, "Gracefully destroying...");
             if(callback != null) callback.destroyInCascade( this );
         }
@@ -147,16 +164,15 @@ public class ClientCommAPI implements DestroyableCallback {
     private void checkAndSleep(String who){
         try {
             int times = 0;
-            while (!canUseSocket.get() && times++ < 200) { // 200 * 5 = 1000 milliseconds
+            while (!canUseSocket.get() && times++ < maxNumTries) { // 200 * 5 = 1000 milliseconds
                 Log4J.error(this, "waiting for atomic boolean: " + who + "\tbefore: " + whoPrevious);
-                Thread.sleep(5);
+                Utils.sleep(delayCheckAndSleep);
                 if(times == 200){
                     System.currentTimeMillis();
                 }
             }
             canUseSocket.getAndSet(false);
             whoPrevious = who;
-            //Log4J.warn(this, "setting to false: " + who);
         }catch (Exception e){
             e.printStackTrace();
         }

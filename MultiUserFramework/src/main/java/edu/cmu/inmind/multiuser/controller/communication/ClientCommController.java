@@ -12,15 +12,15 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by oscarr on 3/29/17.
  */
 
 public class ClientCommController implements DestroyableCallback {
-    private static final String TOKEN = "TOKEN";
-    private static final String STOP_FLAG = "STOP_FLAG";
     //it only communicates with SessionManager for connecting, disconnecting, etc.
     private ClientCommAPI sessionMngrCommAPI;
     //it only communicates with Session for sending domain messages
@@ -31,15 +31,11 @@ public class ClientCommController implements DestroyableCallback {
     private String clientAddress;
     private String requestType;
     private String[] subscriptionMessages;
-    private ZMsgWrapper msgTemplate;
     private SenderThread sendThread;
-    private Thread receiveThread;
+    private ReceiverThread receiveThread;
     private ResponseTimer timer;
-    private long timeout = 10000; //we should receive a response from server within 10 seconds
+    private CopyOnWriteArrayList<Object> closeableObjects;
 
-    //we need to keep the state in case of failure and reconnection
-    private int sentMessages = 0;
-    private int receivedMessages = 0;
     private ZContext ctx;
     private AtomicBoolean isDestroyed = new AtomicBoolean(false);
     /**
@@ -49,12 +45,21 @@ public class ClientCommController implements DestroyableCallback {
     private ZMQ.Socket clientSocket;
     private String inprocName = "inproc://sender-thread";
 
-    //control
+    // constants:
+    private static final int    difference = 100; //if sentMessages > receivedMessages + difference => stop
+    private static final long   timeout = 10000; //we should receive a response from server within 10 seconds
+    private static final String TOKEN = "TOKEN";
+    private static final String STOP_FLAG = "STOP_FLAG";
+
+    // control
+    private AtomicInteger sentMessages = new AtomicInteger(0); // we need to keep the state in case of failure and reconnection
+    private AtomicInteger receivedMessages = new AtomicInteger(0);
     private AtomicBoolean stop = new AtomicBoolean(false);
-    private int     difference = 100; //if sentMessages > receivedMessages + difference => stop
-    private String release = Constants.CONNECTION_FINISHED;
-    private String  sendState = Constants.CONNECTION_NEW;
-    private String  receiveState = Constants.CONNECTION_NEW;
+    private AtomicInteger release = new AtomicInteger(Constants.CONNECTION_FINISHED);
+    private AtomicInteger sendState = new AtomicInteger(Constants.CONNECTION_NEW);
+    private AtomicInteger receiveState = new AtomicInteger(Constants.CONNECTION_NEW);
+    private AtomicBoolean isSendThreadAlive = new AtomicBoolean(false);
+    private AtomicBoolean isReceiveThreadAlive = new AtomicBoolean(false);
     private ResponseListener responseListener;
     private boolean shouldProcessReply;
     private boolean isTCPon;
@@ -67,23 +72,24 @@ public class ClientCommController implements DestroyableCallback {
         this.serviceName = builder.serviceName;
         this.serverAddress = builder.serverAddress;
         this.clientAddress = builder.clientAddress;
-        this.msgTemplate = builder.msgTemplate != null? builder.msgTemplate.duplicate() : null;
         this.requestType = builder.requestType;
         this.subscriptionMessages = builder.subscriptionMessages;
         this.shouldProcessReply = builder.shouldProcessReply;
         this.responseListener = builder.responseListener;
         this.sessionManagerService = builder.sessionManagerService;
         this.muf = builder.muf;
-        this.ctx = DependencyManager.getInstance().getContext();
+        this.ctx = DependencyManager.getContext( this );
         this.callbacks = new ArrayList<>();
         //  Bind to inproc: endpoint, then start upstream thread
         this.inprocName += "-" + this.serviceName;
-        this.clientSocket = ctx.createSocket(ZMQ.PAIR);
+        this.clientSocket = DependencyManager.createSocket(ctx, ZMQ.PAIR);
         this.clientSocket.bind(inprocName);
         this.timer = new ResponseTimer();
+        this.closeableObjects = new CopyOnWriteArrayList<>();
         if( this.muf != null ){
             muf.setClient( this );
         }
+        Utils.initThreadExecutor();
         execute();
     }
 
@@ -113,8 +119,7 @@ public class ClientCommController implements DestroyableCallback {
         private String sessionManagerService = Constants.SESSION_MANAGER_SERVICE;
 
         public ClientCommController build(){
-            ClientCommController client = new ClientCommController( this );
-            return client;
+            return new ClientCommController( this );
         }
 
         public Builder setTCPon(boolean TCPon) {
@@ -198,58 +203,69 @@ public class ClientCommController implements DestroyableCallback {
     /************************************************************************************/
 
     private void execute() {
-        Utils.execObsParallel(clientCommController -> {
-            if( release.equals(Constants.CONNECTION_FINISHED) ) {
-                try {
-                    reset();
-                    connect();
-                    sendThread();
-                    receiveThread();
-                }catch (Throwable e){
-                    ExceptionHandler.handle( e );
-                }
+        if( release.get() == Constants.CONNECTION_FINISHED){
+            try {
+                reset();
+                sendThread();
+                receiveThread();
+            }catch (Throwable e){
+                ExceptionHandler.handle( e );
             }
-        });
+        }
     }
 
     private void reset() throws Throwable{
         stop.getAndSet(false);
-        sentMessages = 0;
-        receivedMessages = 0;
-        sendState = checkFSM(sendState, Constants.CONNECTION_NEW);
-        receiveState = checkFSM(receiveState, Constants.CONNECTION_NEW);
-        release = checkFSM( release, Constants.CONNECTION_NEW);
+        sentMessages.getAndSet( 0 );
+        receivedMessages.getAndAdd(0);
+        sendState.getAndSet( checkFSM(sendState, Constants.CONNECTION_NEW) );
+        receiveState.getAndSet( checkFSM(receiveState, Constants.CONNECTION_NEW) );
+        release.getAndSet( checkFSM( release, Constants.CONNECTION_NEW) );
+        isSendThreadAlive.getAndSet(false);
+        isReceiveThreadAlive.getAndSet(false);
     }
 
     private void connect() throws Throwable{
         try {
             if( isTCPon ) {
                 this.sessionMngrCommAPI = new ClientCommAPI(serverAddress);
+                closeableObjects.add( sessionMngrCommAPI );
                 SessionMessage sessionMessage = new SessionMessage();
                 sessionMessage.setSessionId(serviceName);
                 sessionMessage.setRequestType(requestType);
                 sessionMessage.setUrl(clientAddress);
                 sessionMessage.setPayload(Arrays.toString(subscriptionMessages));
                 timer.schedule(new ResponseCheck(), timeout);
-                stop.getAndSet( !sendToBroker( sessionManagerService, Utils.toJson(sessionMessage)) );
+                Utils.setAtom( stop, !sendToBroker( sessionManagerService, Utils.toJson(sessionMessage)) );
                 if (!stop.get()) {
                     String replyString = receive(sessionMngrCommAPI);
-                    SessionMessage reply = Utils.fromJson(replyString, SessionMessage.class);
-                    timer.stopTimer();
-                    if (reply != null) {
-                        if (reply.getRequestType().equals(Constants.RESPONSE_ALREADY_CONNECTED)
-                                || reply.getRequestType().equals(Constants.RESPONSE_NOT_VALID_OPERATION)
-                                || reply.getRequestType().equals(Constants.RESPONSE_UNKNOWN_SESSION)) {
-                            throw new Exception(reply.getRequestType());
-                        }else{
-                            if( reply.getRequestType().equals(Constants.SESSION_INITIATED)){
-                                this.sessionCommAPI = new ClientCommAPI(reply.getPayload());
-                            }
-                            responseListener.process(replyString);
-                        }
-                    } else {
+                    if( replyString.equals(STOP_FLAG) ){
                         stop.getAndSet(true);
+                    }else{
+                        SessionMessage reply = Utils.fromJson(replyString, SessionMessage.class);
+                        if (reply != null) {
+                            timer.stopTimer();
+                            if (reply.getRequestType().equals(Constants.RESPONSE_ALREADY_CONNECTED)
+                                    || reply.getRequestType().equals(Constants.RESPONSE_NOT_VALID_OPERATION)
+                                    || reply.getRequestType().equals(Constants.RESPONSE_UNKNOWN_SESSION)) {
+                                throw new Exception(reply.getRequestType());
+                            } else {
+                                if (reply.getRequestType().equals(Constants.SESSION_INITIATED)) {
+                                    this.sessionCommAPI = new ClientCommAPI(reply.getPayload());
+                                    closeableObjects.add( sessionCommAPI );
+                                }
+                                if( responseListener == null ){
+                                    ExceptionHandler.handle(new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
+                                            "responseListener: " + responseListener ));
+                                }
+                                responseListener.process(replyString);
+                            }
+                        } else {
+                            stop.getAndSet(true);
+                        }
                     }
+                }else{
+                    System.currentTimeMillis();
                 }
             }
         }catch (Throwable e){
@@ -266,6 +282,8 @@ public class ClientCommController implements DestroyableCallback {
             timer.purge();
             sessionMngrCommAPI.close(this);
             sessionCommAPI.close(this);
+            sendThread.close(this);
+            receiveThread.close(this);
         }catch (Throwable e) {
             ExceptionHandler.handle(e);
         }
@@ -273,13 +291,16 @@ public class ClientCommController implements DestroyableCallback {
 
 
     @Override
-    public void destroyInCascade(Object destroyedObj) throws Throwable{
-        if( !isDestroyed.get() ) {
+    public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
+        stop.getAndSet(true);
+        closeableObjects.remove(destroyedObj);
+        Log4J.error(this, String.format("destroyed %s  closeableObjects: %s object: %s  thread: %s",
+                isDestroyed.get(), closeableObjects.size(), closeableObjects.size() > 0? closeableObjects.get(0) : null, Thread.currentThread().getName() ));
+        if( closeableObjects.isEmpty() && !isDestroyed.getAndSet(true) ) {
             sessionMngrCommAPI = null;
             sessionCommAPI = null;
-            ctx.destroySocket(clientSocket);
             ctx = null;
-            isDestroyed.getAndSet(true);
+            DependencyManager.setIamDone( this );
             Log4J.info(this, "Gracefully destroying...");
             for (DestroyableCallback callback : callbacks) {
                 if(callback != null) callback.destroyInCascade(this);
@@ -307,17 +328,17 @@ public class ClientCommController implements DestroyableCallback {
         try {
             clientSocket.send(message.fst + TOKEN + (message.snd instanceof String? (String) message.snd
                     : Utils.toJson(message.snd) ));
+            if(ctx.getContext().isTerminated() || Thread.currentThread().isInterrupted() || !Thread.currentThread().isAlive() || clientSocket.getLinger() == 0){
+                Log4J.error(this, "*********** AQUI");
+            }
             String response = clientSocket.recvStr();
             if (response.equals(Constants.CONNECTION_STARTED)) {
-                sendState = checkFSM(sendState, Constants.CONNECTION_STARTED);
+                sendState.getAndSet( checkFSM(sendState, Constants.CONNECTION_STARTED) );
                 response = clientSocket.recvStr();
             }
             if (response.equals(STOP_FLAG)) {
-                if (receiveThread.isAlive()) {
-                    stop.getAndSet(true);
-                    //receiveThread.join();
-                }
-                sendState = checkFSM(sendState, Constants.CONNECTION_FINISHED);
+                sendState.getAndSet( checkFSM(sendState, Constants.CONNECTION_FINISHED) );
+                if( stop.get() ) sendState.getAndSet( checkFSM(sendState, Constants.CONNECTION_STOPPED) );
                 checkReconnect();
             }
         }catch (Throwable e){
@@ -342,48 +363,81 @@ public class ClientCommController implements DestroyableCallback {
 
     private void sendThread() throws Throwable{
         //https://github.com/zeromq/jeromq/wiki/Sharing-ZContext-between-thread
-        sendThread = new SenderThread("ClientSendMsgsThread", ctx);
-        sendThread.start();
+        if( !stop.get() ) {
+            sendThread = new SenderThread();
+            closeableObjects.add(sendThread);
+            Utils.execute( sendThread );
+        }
     }
 
-    class SenderThread extends Thread{
-        private ZContext context;
+    class SenderThread extends Utils.MyRunnable implements DestroyableCallback{
         /**
          * senderSocket communicates with clientSocket. This communication
          * is interprocess, so clientSocket runs on the main thread and senderSocket
          * on the SenderThread.
          */
         private ZMQ.Socket senderSocket;
+        private ZContext context;
+        private DestroyableCallback callback;
 
-        public SenderThread(String threadName, ZContext context){
-            super(threadName);
-            this.context = context;
-            senderSocket = this.context.createSocket(ZMQ.PAIR);
-            senderSocket.connect(inprocName);
+        public SenderThread(){
+            this.context = DependencyManager.getContext( this );
+            this.setName("sender-thread-" + serviceName);
         }
 
+        @Override
         public void run() {
             try{
-                senderSocket.send(Constants.CONNECTION_STARTED, 0);
+                connect();
+                isSendThreadAlive.getAndSet(true);
+                senderSocket = DependencyManager.createSocket(context, ZMQ.PAIR);
+                senderSocket.connect(inprocName);
+                senderSocket.send(String.valueOf(Constants.CONNECTION_STARTED), 0);
                 while( !stop.get() ) {
                     try{
-                        String[] msg = senderSocket.recvStr().split(TOKEN);
-                        stop.getAndSet( !sendToBroker(msg[0], msg[1]) && (sentMessages > receivedMessages + difference) );
-                        if (stop.get()) {
-                            continue;
+                        String strMsg = senderSocket.recvStr(ZMQ.DONTWAIT);
+                        if( strMsg != null ) {
+                            String[] msg = strMsg.split(TOKEN);
+                            Utils.setAtom( stop, !sendToBroker(msg[0], msg[1])
+                                    && (sentMessages.get() > receivedMessages.get() + difference));
+                            if (stop.get()) {
+                                continue;
+                            }
+                            sentMessages.incrementAndGet();
+                            //  Signal downstream to client-thread
+                            senderSocket.send("ACK", 0);
+                        }else{
+                            Utils.sleep(1);
                         }
-                        sentMessages++;
-                        //  Signal downstream to client-thread
-                        senderSocket.send("ACK", 0);
                     } catch (Throwable e) {
-                        //ExceptionHandler.handle(e);
+                        ExceptionHandler.handle(e);
                     }
                 }
-                ctx.destroySocket(senderSocket);
+                destroyInCascade(this);
             }catch (Throwable e){
-                ctx.destroySocket(senderSocket);
-                //ExceptionHandler.handle(e);
+                try {
+                    destroyInCascade(this);
+                }catch (Throwable t){
+                    ExceptionHandler.handle(t);
+                }
             }
+            isSendThreadAlive.getAndSet(false);
+        }
+
+        @Override
+        public void close(DestroyableCallback callback) throws Throwable {
+            this.callback = callback;
+            Log4J.warn(this, "++++ closing senderThread");
+            stop.getAndSet(true);
+            senderSocket.setLinger(0);
+        }
+
+        @Override
+        public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable {
+            //nothing
+            Log4J.warn(this, "++++ destroying senderThread");
+            DependencyManager.setIamDone(this);
+            if(callback != null) callback.destroyInCascade(this);
         }
     }
 
@@ -400,6 +454,8 @@ public class ClientCommController implements DestroyableCallback {
                     String response = reply.peekLast().toString();
                     reply.destroy();
                     return response;
+                }else{
+                    System.currentTimeMillis();
                 }
             }else{
                 return STOP_FLAG;
@@ -415,90 +471,128 @@ public class ClientCommController implements DestroyableCallback {
         return STOP_FLAG;
     }
 
-    private void receiveThread() {
-        receiveThread = new Thread("ClientReceiveMsgsThread"){
-            public void run() {
-                try{
-                    receiveState = checkFSM(receiveState, Constants.CONNECTION_STARTED);
-                    while ( !stop.get() ){
-                        try {
-                            String response = receive(sessionCommAPI);
-                            receivedMessages++;
-                            if (response == null && (sentMessages > receivedMessages + difference)) {
-                                stop.getAndSet(true);
-                            } else if( response != null && response.equals(STOP_FLAG) ) {
-                                stop.getAndSet(true);
-                            } else if (responseListener != null) {
-                                if (shouldProcessReply) {
-                                    responseListener.process(response);
-                                } else {
-                                    shouldProcessReply = true;
-                                }
-                            }
-                        } catch (Throwable e) {
-                            destroyInCascade(this);
-                            //ExceptionHandler.handle(e);
-                        }
-                    }
-                    if (sendThread.isAlive()) {
-                        stop.getAndSet(true);
-                        //sendThread.join();
-                    }
-                    receiveState = checkFSM(receiveState, Constants.CONNECTION_FINISHED);
-                    checkReconnect();
-                }catch (Throwable e){
-                    try{
-                        destroyInCascade(this);
-                    }catch (Throwable e1){
-                        //ExceptionHandler.handle( e1 );
-                    }
-                    //ExceptionHandler.handle( e );
+    class ReceiverThread extends Utils.MyRunnable implements DestroyableCallback {
+        private DestroyableCallback callback;
+
+        public ReceiverThread() {
+            this.setName("receiver-thread-" + serviceName);
+        }
+
+        @Override
+        public void run() {
+            try{
+                // let's wait for senderThread to connect()
+                while( !isSendThreadAlive.get() ){
+                    Utils.sleep(1);
                 }
+                isReceiveThreadAlive.getAndSet(true);
+                receiveState.getAndSet( checkFSM(receiveState, Constants.CONNECTION_STARTED) );
+                while ( !stop.get() ){
+                    try {
+                        String response = receive(sessionCommAPI);
+                        receivedMessages.incrementAndGet();
+                        if (response == null && (sentMessages.get() > receivedMessages.get() + difference)) {
+                            stop.getAndSet(true);
+                        } else if( response != null && response.equals(STOP_FLAG) ) {
+                            stop.getAndSet(true);
+                        } else if (responseListener != null) {
+                            if (shouldProcessReply) {
+                                responseListener.process(response);
+                            } else {
+                                shouldProcessReply = true;
+                            }
+                        }
+                    } catch (Throwable e) {
+                        destroyInCascade(this);
+                        //ExceptionHandler.handle(e);
+                    }
+                }
+                destroyInCascade(this);
+            }catch (Throwable e){
+                try{
+                    destroyInCascade(this);
+                }catch (Throwable e1){
+                    //ExceptionHandler.handle( e1 );
+                }
+                //ExceptionHandler.handle( e );
             }
-        };
-        receiveThread.start();
+        }
+
+        @Override
+        public void close(DestroyableCallback callback) throws Throwable {
+            Log4J.warn(this, "++++ closing receiverThread");
+            stop.getAndSet(true);
+            this.callback = callback;
+        }
+
+        @Override
+        public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable {
+            Log4J.warn(this, "++++ destroying receiverThread");
+            if (isSendThreadAlive.get()) {
+                stop.getAndSet(true);
+            }
+            receiveState.getAndSet( checkFSM(receiveState, Constants.CONNECTION_FINISHED) );
+            if( stop.get() ) receiveState.getAndSet( checkFSM(receiveState, Constants.CONNECTION_STOPPED) );
+            isReceiveThreadAlive.getAndSet(false);
+            checkReconnect();
+            if(callback != null) callback.destroyInCascade(this);
+        }
+    }
+
+    private void receiveThread() {
+        if( !stop.get() ) {
+            receiveThread = new ReceiverThread();
+            closeableObjects.add(receiveThread);
+            Utils.execute( receiveThread );
+        }
     }
 
     /********************************* RECONNECT THREAD **************************************/
     /*****************************************************************************************/
 
     private void checkReconnect() throws Throwable{
-        if ( stop.get() && sendState.equals(Constants.CONNECTION_FINISHED)
-                && receiveState.equals(Constants.CONNECTION_FINISHED)) {
+        Log4J.warn(this, "++++ checking reconnect");
+        if ( stop.get() && sendState.get() == Constants.CONNECTION_FINISHED
+                && receiveState.get() == Constants.CONNECTION_FINISHED){
             reconnect();
         }
     }
 
     private void reconnect() throws Throwable{
-        release = checkFSM(release, Constants.CONNECTION_STARTED);
-        new Thread("ReconnectClientThread") {
+        Log4J.warn(this, "++++ checking reconnect 1");
+        release.getAndSet(checkFSM(release, Constants.CONNECTION_STARTED) );
+        Utils.execute(new Utils.MyRunnable("reconnect") {
+            @Override
             public void run() {
                 try {
-                    sendThread.join();
-                    receiveThread.join();
-                    release = checkFSM(release, Constants.CONNECTION_FINISHED);
+                    Log4J.warn(this, "++++ checking reconnect 2");
+                    release.getAndSet( checkFSM(release, Constants.CONNECTION_FINISHED) );
                     execute();
                 } catch (Throwable e) {
                     ExceptionHandler.handle(e);
                 }
             }
-        }.start();
+        });
     }
 
     /********************************* UTILS ********************************************/
     /************************************************************************************/
 
-    private String checkFSM(String currentState, String newState){
-        if (    (currentState.equals( newState) )
-                || (currentState.equals(Constants.CONNECTION_NEW) && newState.equals(Constants.CONNECTION_STARTED))
-                || (currentState.equals(Constants.CONNECTION_STARTED) && (newState.equals(Constants.CONNECTION_STOPPED)
-                || newState.equals(Constants.CONNECTION_FINISHED)))
-                || (currentState.equals(Constants.CONNECTION_STOPPED) && newState.equals(Constants.CONNECTION_FINISHED))
-                || (currentState.equals(Constants.CONNECTION_FINISHED) && newState.equals(Constants.CONNECTION_NEW))) {
+    private int checkFSM(AtomicInteger currentState, int newState){
+        if (    (newState == Constants.CONNECTION_STOPPED)
+                || (currentState.get() == newState)
+                || (currentState.get() == Constants.CONNECTION_NEW && newState == Constants.CONNECTION_STARTED)
+                || (currentState.get() == Constants.CONNECTION_STARTED && newState == Constants.CONNECTION_FINISHED)
+                || (currentState.get() == Constants.CONNECTION_STOPPED && newState == Constants.CONNECTION_FINISHED)
+                || (currentState.get() == Constants.CONNECTION_FINISHED && newState == Constants.CONNECTION_NEW)) {
+            if(newState == Constants.CONNECTION_STOPPED){
+                Log4J.warn(this, "++++ stopping");
+            }
             return newState;
         }
-        return currentState;
+        return currentState.get();
     }
+
 
     class ResponseCheck extends TimerTask{
         @Override
@@ -509,11 +603,21 @@ public class ClientCommController implements DestroyableCallback {
 
     class ResponseTimer extends Timer {
         private TimerTask responseCheck;
+        private boolean isCanceled = false;
+
 
         @Override
         public void schedule(TimerTask task, long delay) {
-            responseCheck = task;
-            super.schedule(task, delay);
+            if( !isCanceled ) {
+                responseCheck = task;
+                super.schedule(task, delay);
+            }
+        }
+
+        @Override
+        public void cancel() {
+            isCanceled = true;
+            super.cancel();
         }
 
         public void stopTimer(){

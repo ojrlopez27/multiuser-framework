@@ -4,7 +4,8 @@ package edu.cmu.inmind.multiuser.controller.communication;
  * Created by oscarr on 3/28/17.
  */
 
-import edu.cmu.inmind.multiuser.common.DestroyableCallback;
+import edu.cmu.inmind.multiuser.common.*;
+import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
@@ -18,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *  Majordomo Protocol broker
  *  A minimal implementation of http://rfc.zeromq.org/spec:7 and spec:8
  */
-public class Broker implements DestroyableCallback, ZThread.IAttachedRunnable {
+public class Broker extends Utils.MyRunnable implements DestroyableCallback{
 
     // We'd normally pull these from config data
     private static final String INTERNAL_SERVICE_PREFIX = "mmi.";
@@ -91,22 +92,22 @@ public class Broker implements DestroyableCallback, ZThread.IAttachedRunnable {
      * Initialize broker state.
      */
     public Broker(int port) {
-        //super("broker-thread-" + port);
         this.services = new ConcurrentHashMap<>();
         this.workers = new ConcurrentHashMap<>();
         this.waiting = new ArrayDeque<>();
         this.heartbeatAt = System.currentTimeMillis() + HEARTBEAT_INTERVAL;
-        this.ctx = DependencyManager.getInstance().getContext();
-        this.socket = ctx.createSocket(ZMQ.ROUTER); //new ZSocket(ZMQ.ROUTER);
+        this.ctx = DependencyManager.getContext(this);
+        this.socket = DependencyManager.createSocket(ctx, ZMQ.ROUTER);
         this.port = port;
-        this.items = ctx.createPoller(1); //new ZMQ.Poller(1);
+        this.items = ctx.createPoller(1);
         this.items.register(socket, ZMQ.Poller.POLLIN);
+        this.setName("broker-" + port);
         Log4J.info(this, "creating broker: " + port);
     }
 
     // ---------------------------------------------------------------------
     @Override
-    public void run(Object[] args, ZContext ctx, ZMQ.Socket pipe) {
+    public void run() {
         try {
             bind("tcp://*:" + port);
             mediate();
@@ -166,7 +167,7 @@ public class Broker implements DestroyableCallback, ZThread.IAttachedRunnable {
 
 
     @Override
-    public void destroyInCascade(Object destroyedObj) throws Throwable {
+    public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable {
         if ( !isDestroyed.get() ) {
             ArrayList<Worker> wrkrs = new ArrayList(workers.values());
             wrkrs.forEach(worker -> {
@@ -176,9 +177,9 @@ public class Broker implements DestroyableCallback, ZThread.IAttachedRunnable {
                     throwable.printStackTrace();
                 }
             });
-            ctx.destroySocket(socket);
             ctx = null;
             isDestroyed.getAndSet(true);
+            DependencyManager.setIamDone( this );
             Log4J.info(this, "Gracefully destroying...");
             callback.destroyInCascade(this);
         }
@@ -378,16 +379,16 @@ public class Broker implements DestroyableCallback, ZThread.IAttachedRunnable {
     public void sendToWorker(Worker worker, MDP command, String option,
                              ZMsg msgp) throws Throwable{
 
-        ZMsg msg = msgp == null ? new ZMsg() : msgp.duplicate();
-
-        // Stack protocol envelope to start of message
-        if (option != null)
-            msg.addFirst(new ZFrame(option));
-        msg.addFirst(command.newFrame());
-        msg.addFirst(MDP.S_ORCHESTRATOR.newFrame());
-
-        // Stack routing envelope to start of message
-        msg.wrap(worker.address.duplicate());
-        msg.send(socket);
+        if( !Thread.currentThread().isInterrupted() && Thread.currentThread().isAlive() ) {
+            ZMsg msg = msgp == null ? new ZMsg() : msgp.duplicate();
+            // Stack protocol envelope to start of message
+            if (option != null)
+                msg.addFirst(new ZFrame(option));
+            msg.addFirst(command.newFrame());
+            msg.addFirst(MDP.S_ORCHESTRATOR.newFrame());
+            // Stack routing envelope to start of message
+            msg.wrap(worker.address.duplicate());
+            msg.send(socket);
+        }
     }
 }

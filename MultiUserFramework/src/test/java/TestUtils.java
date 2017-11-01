@@ -22,6 +22,7 @@ public class TestUtils {
     public static PluginModule[] getModulesPerf(Class<? extends ProcessOrchestratorImpl> orchestrator){
         return new PluginModule[]{
                 new PluginModule.Builder( orchestrator, PerformanceTestPC.class, "test")
+                        .addPlugin(PerformanceTestPCStateless.class, "stateless")
                         .build()
         };
     }

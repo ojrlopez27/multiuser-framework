@@ -21,6 +21,7 @@ import edu.cmu.inmind.multiuser.controller.plugin.Interceptable;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.StateType;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
+import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import edu.cmu.inmind.multiuser.controller.session.ServiceComponent;
 import edu.cmu.inmind.multiuser.controller.session.Session;
@@ -209,25 +210,34 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
 
     @Override
     public void close(DestroyableCallback callback) throws Throwable{
+        Log4J.debug(this, "1");
         this.callback = callback;
+        Log4J.debug(this, "2");
         close();
     }
 
     @Override
     public void close() throws Throwable{
+        Log4J.debug(this, "3");
         if( !isClosed.getAndSet(true) && initialized.get() ) {
             Log4J.info(this, String.format("Closing Process Orchestrator for session: %s", sessionId));
+            Log4J.debug(this, "4");
             logger.store();
+            Log4J.debug(this, "5");
             status = Constants.ORCHESTRATOR_STOPPED;
+            Log4J.debug(this, "6");
             for(PluggableComponent component : components ){
+                Log4J.debug(this, "7");
                 component.close( sessionId, this );
             }
+            Log4J.debug(this, "8");
         }
+        Log4J.debug(this, "9");
     }
 
 
     @Override
-    public void destroyInCascade(Object destroyedObject) throws Throwable{
+    public void destroyInCascade(DestroyableCallback destroyedObject) throws Throwable{
         closeableObjects.remove( destroyedObject );
         if( closeableObjects.isEmpty() ) {
             if( statefullServManager != null ) {
@@ -243,6 +253,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
             components = null;
             componentsSet = null;
             session = null;
+            DependencyManager.setIamDone( this );
             Log4J.info(this, "Gracefully destroying...");
             Log4J.info(this, String.format("Process Orchestrator for session %s is destroyed!", sessionId));
             if (callback != null) callback.destroyInCascade(this);
@@ -308,15 +319,13 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         try{
             for (PluggableComponent component : components) {
                 component.setActiveSession( session );
-                new Thread("ExecuteComponentAsyncThread"){
-                    public void run(){
-                        try{
-                            execute(component);
-                        }catch (Throwable e){
-                            ExceptionHandler.handle( e );
-                        }
+                Utils.execute(() -> {
+                    try{
+                        execute(component);
+                    }catch (Throwable e){
+                        ExceptionHandler.handle( e );
                     }
-                }.start();
+                });
             }
         }catch (Throwable e){
             ExceptionHandler.handle( e );

@@ -18,7 +18,6 @@ import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 @BlackboardSubscription( messages = {} )
 @StateType( state = Constants.STATEFULL )
 public class ExternalComponent extends PluggableComponent implements ResponseListener{
-    private ServiceInfo serviceInfo;
 
     public ExternalComponent(ServiceInfo serviceInfo, String clientAddress, String sessionId, ZMsgWrapper zMsgWrapper,
                              String[] messages){
@@ -26,7 +25,6 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
             //if we override annotations, it will affect all instances of ExternalComponent, so every
             //ExternalComponent will have the same subscription messages
             //Utils.addOrChangeAnnotation(getClass().getAnnotation(BlackboardSubscription.class), "messages", messages);
-            this.serviceInfo = serviceInfo;
             ResourceLocator.addComponentSubscriptions( this.hashCode(), messages );
             setClientCommController( new ClientCommController.Builder()
                 .setServerAddress(serviceInfo.getSlaveMUFAddress())

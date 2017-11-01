@@ -1,9 +1,8 @@
-import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
-import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
+import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.session.Session;
 
 /**
@@ -19,6 +18,7 @@ public class PerformanceTestOrchestrator extends ProcessOrchestratorImpl {
         super.initialize( session );
         this.agentId = session.getId();
         ((PerformanceTestPC) getComponents().get(0)).setAgentId(agentId);
+        ((PerformanceTestPCStateless) getComponents().get(1)).setAgentId(agentId);
         if(verbose)
             Log4J.debug(this, "Initialize Orchestrator for agent: " + agentId);
     }

@@ -29,6 +29,6 @@ public class PerformanceTestPC extends PluggableComponent {
                     event.getElement()));
         }
         messageCount++;
-        blackboard().post(this, "MSG_SEND_RESPONSE", event.getElement());
+        blackboard().post(this, "MSG_SEND_TO_STATELESS", event.getElement());
     }
 }

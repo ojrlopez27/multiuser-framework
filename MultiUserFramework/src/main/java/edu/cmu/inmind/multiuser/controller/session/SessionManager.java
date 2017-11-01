@@ -13,10 +13,7 @@ import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
-import org.zeromq.ZContext;
-import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
-import org.zeromq.ZThread;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -27,16 +24,14 @@ import java.util.concurrent.atomic.AtomicLong;
  * Created by oscarr on 3/3/17.
  * This class will control the sessions lifecycle (connect, disconnect, pause, resume)
  */
-public class SessionManager implements Runnable, Session.SessionObserver, DestroyableCallback {
+public class SessionManager extends Utils.MyRunnable implements Runnable, Session.SessionObserver, DestroyableCallback {
     /** sessions handled by the session manager */
     private ConcurrentHashMap<String, Session> sessions;
-    private CopyOnWriteArrayList closeableObjects;
+    private CopyOnWriteArrayList<Object> closeableObjects;
     /** communication controller that process
      * lifecycle request messages (connect a client, disconnect, etc.)*/
     private ServerCommController serverCommController;
     private Config config;
-    /** the session manager runs on its own thread */
-    private Thread thread;
     /** message that is used to reply to clients */
     private ZMsg reply;
     /** this is the id of the session manager. we use it to filter messages that must be
@@ -56,7 +51,7 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
 
 
     public SessionManager(PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws Throwable{
-        closeableObjects = new CopyOnWriteArrayList();
+        closeableObjects = new CopyOnWriteArrayList<>();
         if( modules == null || modules.length <= 0 || config == null ){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "modules: " + modules,
                     "config: " + config));
@@ -101,19 +96,18 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
      */
     public void initializeBrokers(){
         numOfPorts = config.getNumOfSockets();
-        ZContext context = DependencyManager.getInstance().getContext();
-        //if numOfPorts is <= 1, use managerBroker
+        //if numOfPorts is <= 1, use always managerBroker
         if( numOfPorts > 1 ) {
             brokers = new Broker[numOfPorts];
             for (int i = 0; i < numOfPorts; i++) {
                 // Can be called multiple times with different endpoints
                 brokers[i] = new Broker(sessionMngPort + (i + 1));
-                ZMQ.Socket requestPipe = ZThread.fork(context, brokers[i]);
+                Utils.execute(brokers[i]);
                 closeableObjects.add(brokers[i]);
             }
         }
         managerBroker = new Broker(sessionMngPort);
-        ZThread.fork(context, managerBroker);
+        Utils.execute( managerBroker );
         closeableObjects.add(managerBroker);
     }
 
@@ -360,39 +354,13 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
         }
     }
 
-    /**
-     * It disconnects all sessions, closes all sockets and stop the multiuser framework.
-     */
-    public void stop() throws Throwable{
-        stopped.getAndSet(true);
-        Log4J.info(this, "Start closing all external services (slave MUF's)...");
-        SessionMessage sessionMessage = new SessionMessage();
-        sessionMessage.setRequestType( Constants.REQUEST_SHUTDOWN_SYSTEM );
-        sessionMessage.setMessageId( Constants.SESSION_MANAGER_SERVICE );
-        for( ServiceComponent serviceComponent : ResourceLocator.getServiceRegistry().values() ){
-            send( serviceComponent.getMsgTemplate(), sessionMessage );
-        }
-        Log4J.info(this, "Start closing all sessions...");
-        for( Session session : sessions.values() ){
-            session.close(this);
-        }
-        if( config.isTCPon() ) {
-            serverCommController.close(this);
-            if( numOfPorts > 0 && brokers != null ) {
-                for (Broker broker : brokers) {
-                    broker.close(this);
-                }
-            }
-            managerBroker.close(this);
-        }
-    }
 
     /**
      * MUF runs on its own separate thread
      */
     public void start() throws Throwable{
-        thread = new Thread( this, "SessionManagerThread" );
-        thread.start();
+        this.setName("session-manager");
+        Utils.execute(this);
     }
 
     @Override
@@ -404,14 +372,48 @@ public class SessionManager implements Runnable, Session.SessionObserver, Destro
         this.sessions.remove(session.getId());
     }
 
+    /**
+     * It disconnects all sessions, closes all sockets and stop the multiuser framework.
+     */
+    public void close(DestroyableCallback callback) throws Throwable{
+        Log4J.error(this, "Closing 6");
+        System.out.println("Closing 6");
+        stopped.getAndSet(true);
+        Log4J.info(this, "Start closing all external services (slave MUF's)...");
+        SessionMessage sessionMessage = new SessionMessage();
+        sessionMessage.setRequestType( Constants.REQUEST_SHUTDOWN_SYSTEM );
+        sessionMessage.setMessageId( Constants.SESSION_MANAGER_SERVICE );
+        for( ServiceComponent serviceComponent : ResourceLocator.getServiceRegistry().values() ){
+            send( serviceComponent.getMsgTemplate(), sessionMessage );
+        }
+        Log4J.error(this, "Closing 7");
+        System.out.println("Closing 7");
+        Log4J.info(this, "Start closing all sessions...");
+        for( Session session : sessions.values() ){
+            session.close(this);
+        }
+        Log4J.error(this, "Closing 11");
+        System.out.println("Closing 11");
+        if( config.isTCPon() ) {
+            serverCommController.close(this);
+            if( numOfPorts > 0 && brokers != null ) {
+                for (Broker broker : brokers) {
+                    broker.close(this);
+                }
+            }
+            managerBroker.close(this);
+        }
+    }
+
     @Override
-    public void destroyInCascade(Object destroyedObj) throws Throwable {
-        closeableObjects.remove( destroyedObj );
-        if( closeableObjects.isEmpty() ){
+    public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable {
+        closeableObjects.remove(destroyedObj);
+        if (closeableObjects.isEmpty()) {
             ResourceLocator.stopStatlessComp();
+            Utils.shutdownThreadExecutor();
             DependencyManager.getInstance().release();
-            //thread.join();
             isDestroyed.getAndSet(true);
+            DependencyManager.setIamDone(this);
             Log4J.info(this, "Gracefully destroying...");
             Log4J.info(this, "Session Manager stopped. Bye bye!");
         }

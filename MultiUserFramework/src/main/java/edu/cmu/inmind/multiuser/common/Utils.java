@@ -2,11 +2,6 @@ package edu.cmu.inmind.multiuser.common;
 
 import com.google.gson.Gson;
 import com.rits.cloning.Cloner;
-import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
-import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
-import io.reactivex.schedulers.Schedulers;
-
 import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -17,7 +12,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.Callable;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -25,6 +21,11 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  * Created by oscarr on 4/20/16.
  */
 public class Utils {
+
+    /**********************************************************************************************/
+    /************************************** DATES *************************************************/
+    /**********************************************************************************************/
+
     private static final int DEFAULT_TIME_SPAN = 1;  //1 year
     public static final String ISO_8601_24H_FULL_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
     public static Gson gson = new Gson();
@@ -165,16 +166,14 @@ public class Utils {
         return null;
     }
 
-
-    public static void sleep(long millis){
-        try{
-            Thread.yield();
-            Thread.sleep(millis);
-        }catch (Throwable e){
-            e.printStackTrace();
-        }
+    public static String getDateString() throws Throwable{
+        SimpleDateFormat format = new SimpleDateFormat("[yyyy-MM-dd-HH.mm.ss]");
+        return format.format( new Date() );
     }
 
+    /**********************************************************************************************/
+    /************************************** JSON **************************************************/
+    /**********************************************************************************************/
 
     public static void toJson(Object object, String name){
         PrintWriter out = null;
@@ -226,146 +225,6 @@ public class Utils {
         return trimmed? stringRepresentation.replace("\\", "") : stringRepresentation;
     }
 
-
-    public static String getDateString() throws Throwable{
-        SimpleDateFormat format = new SimpleDateFormat("[yyyy-MM-dd-HH.mm.ss]");
-        return format.format( new Date() );
-    }
-
-    public static void exchange(String[] conversationalStrategies, String behaviorName) throws Throwable{
-        if( !conversationalStrategies[0].equals(behaviorName) ) {
-            ArrayList<String> list = new ArrayList(Arrays.asList(conversationalStrategies));
-            list.remove(behaviorName);
-            list.add(0, behaviorName);
-            for (int i = 0; i < list.size(); i++) {
-                conversationalStrategies[i] = list.get(i);
-            }
-        }
-    }
-
-    public static <T> T createInstance(Class<T> clazz, Object... args) {
-        Class[] parameterTypes = null;
-        try {
-            parameterTypes = new Class[args.length];
-            for( int i = 0; i < args.length; i++ ){
-                if( args[i] instanceof Class ){
-                    parameterTypes[i] = (Class)args[i];
-                    args[i] = null;
-                }else {
-                    parameterTypes[i] = args[i].getClass();
-                }
-            }
-            Constructor constructor = clazz.getConstructor( parameterTypes );
-            return (T)constructor.newInstance( args );
-        }catch (Throwable e){
-            try{
-                for( int i = 0; i < args.length; i++ ){
-                    if( args[i] != null && !(args[i] instanceof Class) ){
-                        Class argClass = args[i].getClass().getSuperclass();
-                        if( argClass != Object.class && argClass != Class.class ) {
-                            parameterTypes[i] = argClass;
-                        }
-                    }
-                }
-                Constructor constructor = clazz.getConstructor( parameterTypes );
-                return (T)constructor.newInstance( args );
-            }catch(Throwable e1){
-                e1.printStackTrace();
-            }
-        }
-        return null;
-    }
-
-
-    private static Properties properties;
-    private static InputStream input = null;
-
-    public static String getProperty(String key){
-        String value = "";
-        try {
-            if( properties == null ) {
-                input = new FileInputStream("config.properties");
-                properties = new Properties();
-                properties.load(input);
-            }
-            value = properties.getProperty( key );
-        } catch (Throwable ex) {
-            ex.printStackTrace();
-        } finally {
-            if (input != null) {
-                try {
-                    input.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return value;
-    }
-
-    public static Properties loadProperties(String pathName){
-        Properties prop = null;
-        FileInputStream inputStream = null;
-        try {
-            prop = new Properties();
-            inputStream = new FileInputStream(pathName);
-            prop.load( new FileInputStream(pathName) );
-        }catch (Exception e){
-            e.printStackTrace();
-        }finally{
-            try {
-                inputStream.close();
-            }catch (Exception e){
-                e.printStackTrace();
-            }
-        }
-        return prop;
-    }
-
-    public static void checkAssert(boolean expression) {
-        if( !expression ){
-            ExceptionHandler.handle( new Exception("Assertion error.") );
-        }
-    }
-
-    /**********************************************************************************************/
-    /************************************** CLONE *************************************************/
-    /**********************************************************************************************/
-
-    private static Cloner cloner = new Cloner();
-
-    public static <T> T clone( T object ){
-        return cloner.deepClone(object);
-    }
-
-    public static <T extends List> T cloneList( T list ){
-        return cloner.deepClone(list);
-    }
-
-    public static ArrayList cloneArray( ArrayList list ) throws Throwable{
-        ArrayList result = new ArrayList(list.size());
-        for( Object element : list ){
-            result.add( cloner.deepClone(element) );
-        }
-        return result;
-    }
-
-    public static Class getClass(Object caller) {
-        Class clazz = null;
-        String className;
-        try {
-            clazz = caller.getClass();
-            className = clazz.getName();
-            if (className.contains("$$Enhancer")) {
-                clazz = Class.forName(className.substring(0, className.indexOf("$$Enhancer")));
-            }
-        }catch (Throwable e) {
-            ExceptionHandler.handle(e);
-        }
-        return clazz;
-    }
-
-
     public static void toJsonFile(Object obj, String directory, String fileName) {
         PrintWriter writer = null;
         if( obj != null ) {
@@ -410,18 +269,57 @@ public class Utils {
     }
 
 
+    /**********************************************************************************************/
+    /************************************** REFLECTION ********************************************/
+    /**********************************************************************************************/
 
-    public static void renameFile(String pathAndNameOriginalFile, String nameFinalFile) throws Throwable{
+    public static <T> T createInstance(Class<T> clazz, Object... args) {
+        Class[] parameterTypes = null;
         try {
-            Path yourFile = Paths.get(pathAndNameOriginalFile);
-            Files.move(yourFile, yourFile.resolveSibling(nameFinalFile), REPLACE_EXISTING);
-        }catch (Exception e){
-            e.printStackTrace();
+            parameterTypes = new Class[args.length];
+            for( int i = 0; i < args.length; i++ ){
+                if( args[i] instanceof Class ){
+                    parameterTypes[i] = (Class)args[i];
+                    args[i] = null;
+                }else {
+                    parameterTypes[i] = args[i].getClass();
+                }
+            }
+            Constructor constructor = clazz.getConstructor( parameterTypes );
+            return (T)constructor.newInstance( args );
+        }catch (Throwable e){
+            try{
+                for( int i = 0; i < args.length; i++ ){
+                    if( args[i] != null && !(args[i] instanceof Class) ){
+                        Class argClass = args[i].getClass().getSuperclass();
+                        if( argClass != Object.class && argClass != Class.class ) {
+                            parameterTypes[i] = argClass;
+                        }
+                    }
+                }
+                Constructor constructor = clazz.getConstructor( parameterTypes );
+                return (T)constructor.newInstance( args );
+            }catch(Throwable e1){
+                e1.printStackTrace();
+            }
         }
+        return null;
     }
 
-
-
+    public static Class getClass(Object caller) {
+        Class clazz = null;
+        String className;
+        try {
+            clazz = caller.getClass();
+            className = clazz.getName();
+            if (className.contains("$$Enhancer")) {
+                clazz = Class.forName(className.substring(0, className.indexOf("$$Enhancer")));
+            }
+        }catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return clazz;
+    }
 
     /**
      * Changes the annotation value for the given key of the given annotation to newValue and returns
@@ -471,6 +369,92 @@ public class Utils {
     }
 
 
+    /**********************************************************************************************/
+    /************************************** I/O ***************************************************/
+    /**********************************************************************************************/
+
+    private static Properties properties;
+    private static InputStream input = null;
+
+    public static String getProperty(String key){
+        String value = "";
+        try {
+            if( properties == null ) {
+                input = new FileInputStream("config.properties");
+                properties = new Properties();
+                properties.load(input);
+            }
+            value = properties.getProperty( key );
+        } catch (Throwable ex) {
+            ex.printStackTrace();
+        } finally {
+            if (input != null) {
+                try {
+                    input.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return value;
+    }
+
+    public static Properties loadProperties(String pathName){
+        Properties prop = null;
+        FileInputStream inputStream = null;
+        try {
+            prop = new Properties();
+            inputStream = new FileInputStream(pathName);
+            prop.load( new FileInputStream(pathName) );
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally{
+            try {
+                inputStream.close();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+        return prop;
+    }
+
+    public static void renameFile(String pathAndNameOriginalFile, String nameFinalFile) throws Throwable{
+        try {
+            Path yourFile = Paths.get(pathAndNameOriginalFile);
+            Files.move(yourFile, yourFile.resolveSibling(nameFinalFile), REPLACE_EXISTING);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+
+    /**********************************************************************************************/
+    /************************************** CLONE *************************************************/
+    /**********************************************************************************************/
+
+    private static Cloner cloner = new Cloner();
+
+    public static <T> T clone( T object ){
+        return cloner.deepClone(object);
+    }
+
+    public static <T extends List> T cloneList( T list ){
+        return cloner.deepClone(list);
+    }
+
+    public static ArrayList cloneArray( ArrayList list ) throws Throwable{
+        ArrayList result = new ArrayList(list.size());
+        for( Object element : list ){
+            result.add( cloner.deepClone(element) );
+        }
+        return result;
+    }
+
+
+    /**********************************************************************************************/
+    /************************************** VALIDATIONS *******************************************/
+    /**********************************************************************************************/
+
 
     public static boolean isURLvalid(String address){
         //TODO: we need to replace this with a proper reg exp
@@ -491,34 +475,160 @@ public class Utils {
     }
 
 
+    /**********************************************************************************************/
+    /************************************** THREADS ***********************************************/
+    /**********************************************************************************************/
+
+
+    static class MyThreadPool extends ThreadPoolExecutor{
+        public MyThreadPool(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
+            super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, new ThreadPoolExecutor.DiscardPolicy());
+        }
+
+        @Override
+        protected void beforeExecute(Thread t, Runnable r){
+            if(r instanceof MyRunnable) {
+                t.setName( ((MyRunnable) r).getName() );
+            }
+        }
+    }
+
+    public static abstract class MyRunnable implements Runnable{
+        protected String name;
+
+        public MyRunnable() {
+        }
+
+        public MyRunnable(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+    }
+
+
+    private static ThreadPoolExecutor executor;
+
+    public static Executor getExecutor() {
+        return executor;
+    }
+
+    /**
+     * Reference: {@Link https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ThreadPoolExecutor.html}
+     */
+    public static void initThreadExecutor(){
+        if( executor == null ) {
+            executor = new MyThreadPool(
+                        100,
+                                    Integer.MAX_VALUE,
+                                    2000,
+                                    TimeUnit.MILLISECONDS,
+                                    new LinkedBlockingQueue());//(ThreadPoolExecutor) Executors.newCachedThreadPool();
+//            executor.setCorePoolSize(100);
+//            executor.setMaximumPoolSize(Integer.MAX_VALUE);
+//            executor.setKeepAliveTime(2000, TimeUnit.MILLISECONDS);
+            executor.allowCoreThreadTimeOut(true);
+        }
+    }
+
+    /**
+     * Reference: {@Link http://www.baeldung.com/java-executor-service-tutorial}
+     */
+    public static void shutdownThreadExecutor(){
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(1000, TimeUnit.MILLISECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+        }
+    }
+
+    public static void execute(Runnable runnable){
+        executor.execute(runnable);
+    }
+
+    public static <T> Future<T> execute(Callable<T> callable){
+        return executor.submit(callable);
+    }
+
     /**
      * https://praveer09.github.io/technology/2016/02/29/rxjava-part-3-multithreading/
-     * This method executes a callable in a new thread
+     * This method executes a callable in a new thread.
      *
-     * @param callable
-     * @param mapper
-     * @param consumer
+//     * @param callable
+//     * @param mapper
+//     * @param consumer
      */
-    public static void execObsParallel(Callable callable, Function mapper, Consumer consumer){
-        io.reactivex.Observable.fromCallable(callable)
-                .map(mapper)
-                .observeOn(Schedulers.newThread())      // subscriber on different thread
-                .subscribe(consumer);
+//    public static void execObsParallel(Callable callable, Function mapper, Consumer consumer){
+//        io.reactivex.Observable.fromCallable(callable)
+//                .map(mapper)
+//                .observeOn(Schedulers.from(executor))
+////                .observeOn(Schedulers.newThread())  // subscriber on different thread
+//                .subscribe(consumer);
+//    }
+
+//    public static void execObsParallel(Consumer consumer){
+//        execObsParallel( () -> "", s -> "", consumer );
+//    }
+    public static void execObsParallel(Runnable runnable){
+        execute(runnable);
     }
 
-    public static void execObsParallel(Consumer consumer){
-        execObsParallel( () -> "", s -> "", consumer );
+
+    /**
+     * This method executes an observable sequentially (i.e., it doesn't start the next request (consumer) until
+     * the current one finishes)
+//     * @param consumer
+//     */
+//    public static void execObsSequential(Consumer consumer){
+//        io.reactivex.Observable.fromCallable(() -> consumer )
+//                .observeOn(Schedulers.single())
+//                .subscribe( consumer );
+//    }
+
+
+    private static Set<Thread> threadSet;
+    /**
+     * This method prints out the new threads created in comparison with a previous set of threads (threadSet)
+     * saved in memory.
+     */
+    public static void printNewAddedThreads(){
+        if( threadSet != null ){
+            Set<Thread> threadSetNow = Thread.getAllStackTraces().keySet();
+            threadSetNow.removeAll(threadSet);
+            for ( Thread t : threadSetNow){
+                System.out.println( String.format("Thread: %s state: %s hashcode: %s queue: %s",
+                        t, t.getState(), t.hashCode(), executor.getQueue().size() ));
+            }
+        }
+        threadSet = Thread.getAllStackTraces().keySet();
+    }
+
+    public static boolean sleep(long millis){
+        try{
+            Thread.yield();
+            Thread.sleep(millis);
+            return true;
+        }catch (Throwable e){
+            return false;
+        }
     }
 
     /**
-     * This method executes an observabe sequentially (i.e., it doesn't start the next request (consumer) until
-     * the current one finishes)
-     * @param consumer
+     * We need to guarantee that once a flag is set to true, it is not undone after that
+     * @param flag
+     * @param newValue
      */
-    public static void execObsSequential(Consumer consumer){
-        io.reactivex.Observable.fromCallable(() -> consumer )
-                .observeOn(Schedulers.single())
-                .subscribe( consumer );
+    public static void setAtom(AtomicBoolean flag, boolean newValue){
+        if( !flag.get() && newValue )
+            flag.getAndSet( true );
     }
-
 }

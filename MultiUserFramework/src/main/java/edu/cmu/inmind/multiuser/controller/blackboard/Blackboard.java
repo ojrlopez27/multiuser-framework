@@ -29,7 +29,7 @@ public class Blackboard {
     private List<BlackboardListener> subscribers;
     private MessageLog logger;
     private boolean loggerOn = true;
-    private boolean keepModel = true;
+    private boolean keepModel = false;
     private boolean notifySubscribers = true;
 
     private Blackboard(){
@@ -223,7 +223,7 @@ public class Blackboard {
                             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
                                     "subscriber: " + subscriber));
                         }
-                        Utils.execObsParallel(blackboardListener -> {
+                        Utils.execObsParallel( () -> {
                             if (subscriber instanceof PluggableComponent) {
                                 ((PluggableComponent) subscriber).setActiveSession(sessionId);
                             }

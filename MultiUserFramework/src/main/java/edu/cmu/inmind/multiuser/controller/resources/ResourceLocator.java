@@ -17,11 +17,8 @@ import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.StateType;
 import edu.cmu.inmind.multiuser.controller.session.ServiceComponent;
-import io.reactivex.Flowable;
-import io.reactivex.functions.Consumer;
 import org.apache.logging.log4j.Logger;
 
-import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -139,30 +136,28 @@ public class ResourceLocator {
 
     public static void addComponentsToRegistry(final ProcessOrchestratorImpl orchestrator, final Set<PluggableComponent> components,
                                                          final String sessionId) throws Throwable{
-        Utils.execObsSequential(resourceLocator -> {
-            try{
-                if( components == null || components.isEmpty() || sessionId == null || sessionId.isEmpty() ){
-                    ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "sessionId: "
-                            + sessionId, "components: " + components, "sessionId: " + sessionId) );
-                }
-                ConcurrentHashMap<PluggableComponent, List<String>> statefullCompRegistry = new ConcurrentHashMap<>();
-                List<String> statefullSessionIds = null, statelessSessionIds = null;
-                for( PluggableComponent component : components ) {
-                    if( component.getClass().isAnnotationPresent(StateType.class) &&
-                            component.getClass().getAnnotation(StateType.class).state().equals(Constants.STATEFULL) ) {
-                        statefullSessionIds = getSessionIds(statefullSessionIds, statefullCompRegistry, component, sessionId);
-                        statefullCompRegistry.put( component, statefullSessionIds );
-                    }else{
-                        statelessSessionIds = getSessionIds(statelessSessionIds, statelessCompRegistry, component, sessionId);
-                        statelessCompRegistry.put( component, statelessSessionIds );
-                    }
-                }
-                statelessServManager = initServices( statelessServManager, orchestrator, (Set) statelessCompRegistry.keySet() );
-                orchestrator.setStatefullServManager( initServices( null, orchestrator, (Set) statefullCompRegistry.keySet() ) );
-            }catch (Throwable e){
-                ExceptionHandler.handle(e);
+        try{
+            if( components == null || components.isEmpty() || sessionId == null || sessionId.isEmpty() ){
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "sessionId: "
+                        + sessionId, "components: " + components, "sessionId: " + sessionId) );
             }
-        });
+            ConcurrentHashMap<PluggableComponent, List<String>> statefullCompRegistry = new ConcurrentHashMap<>();
+            List<String> statefullSessionIds = null, statelessSessionIds = null;
+            for( PluggableComponent component : components ) {
+                if( component.getClass().isAnnotationPresent(StateType.class) &&
+                        component.getClass().getAnnotation(StateType.class).state().equals(Constants.STATEFULL) ) {
+                    statefullSessionIds = getSessionIds(statefullSessionIds, statefullCompRegistry, component, sessionId);
+                    statefullCompRegistry.put( component, statefullSessionIds );
+                }else{
+                    statelessSessionIds = getSessionIds(statelessSessionIds, statelessCompRegistry, component, sessionId);
+                    statelessCompRegistry.put( component, statelessSessionIds );
+                }
+            }
+            statelessServManager = initServices( statelessServManager, orchestrator, (Set) statelessCompRegistry.keySet() );
+            orchestrator.setStatefullServManager( initServices( null, orchestrator, (Set) statefullCompRegistry.keySet() ) );
+        }catch (Throwable e){
+            ExceptionHandler.handle(e);
+        }
     }
 
 
@@ -300,7 +295,7 @@ public class ResourceLocator {
                         }
                     }
                 },
-                MoreExecutors.directExecutor());
+                Utils.getExecutor() );
             serviceManager.startAsync();
             addServiceManager(serviceManager, Constants.SERVICE_MANAGER_STARTED);
         }
