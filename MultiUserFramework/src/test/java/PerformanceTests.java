@@ -38,25 +38,28 @@ public class PerformanceTests {
     static final long       delayMUF = 2000;
     static final int        portMUF = 5666;
     static final long       delayAgentCreation = 100;
+    static final boolean    usePrintWriter = false;
 
     @Test(timeout = timeout)
     public void testPerformanceOneAgent() throws Throwable{
-//        int[] numAgents = new int[]{1, 10, 50, 100, 500, 1000, 5000, 10000};
-//        int[] numMsgs = new int[]{1, 10, 100, 1000, 10000, 100000, 1000000};
-        int[] numAgents = new int[]{1, 10};
-        int[] numMsgs = new int[]{1, 10};
-        printWriter = new PrintWriter( new File("results.txt") );
-//        for( int agents : numAgents ){
-//            for( int messages : numMsgs ){
-//                for(int i = 0; i < 3; i++ ){
-//                    runAgents(agents, messages);
-//                    Thread.sleep(2000);
-//                }
-//            }
-//        }
+        if( usePrintWriter ) {
+            printWriter = new PrintWriter( new File("results.txt") );
+            int[] numAgents = new int[]{1, 10};
+            int[] numMsgs = new int[]{1, 10};
+            for (int agents : numAgents) {
+                for (int messages : numMsgs) {
+                    for (int i = 0; i < 3; i++) {
+                        //runAgents(agents, messages);
+                        Thread.sleep(2000);
+                    }
+                }
+            }
+        }
         runAgents();
-        printWriter.flush();
-        printWriter.close();
+        if( usePrintWriter ) {
+            printWriter.flush();
+            printWriter.close();
+        }
     }
 
 
@@ -103,7 +106,7 @@ public class PerformanceTests {
             total += agent.getTotalTime();
         }
         System.out.println("Total time by sections: " + total);
-        printWriter.write( String.format("%s\t%s\t%s\n", numAgents, numMessages, total ) );
+        if(usePrintWriter) printWriter.write( String.format("%s\t%s\t%s\n", numAgents, numMessages, total ) );
 
 //        for(Agent agent : agents){
 //            agent.destroy();
