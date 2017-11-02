@@ -4,6 +4,7 @@ import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
+import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 
 /**
@@ -16,7 +17,12 @@ public class TestOrchestrator extends ProcessOrchestratorImpl {
     public void process(String input){
         SessionMessage sessionMessage = Utils.fromJson( input, SessionMessage.class );
         logger.turnOn( false );
-        blackboard.post(this, "MSG_COMPONENT_1", sessionMessage.getPayload() );
+        try {
+            blackboard.post(this, "MSG_COMPONENT_1", sessionMessage.getPayload());
+        }
+        catch (Exception e) {
+            ExceptionHandler.handle(e);
+        }
     }
 
     @Override

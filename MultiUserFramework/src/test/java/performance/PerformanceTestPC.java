@@ -3,6 +3,7 @@ package performance;
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
+import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.StateType;
@@ -31,6 +32,11 @@ public class PerformanceTestPC extends PluggableComponent {
                     event.getElement()));
         }
         messageCount++;
-        blackboard().post(this, "MSG_SEND_TO_STATELESS", event.getElement());
+        try {
+            blackboard().post(this, "MSG_SEND_TO_STATELESS", event.getElement());
+        }
+        catch (Exception e) {
+            ExceptionHandler.handle(e);
+        }
     }
 }

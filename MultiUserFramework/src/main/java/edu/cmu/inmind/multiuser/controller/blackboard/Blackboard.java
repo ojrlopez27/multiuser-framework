@@ -7,7 +7,6 @@ import edu.cmu.inmind.multiuser.controller.communication.ConnectRemoteService;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
-import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
 import edu.cmu.inmind.multiuser.controller.plugin.ExternalComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
@@ -43,15 +42,15 @@ public class Blackboard {
         this.logger = logger;
     }
 
-    public Blackboard(Set<PluggableComponent> components, String sessionId, MessageLog logger) {
+    public Blackboard(Set<PluggableComponent> components, String sessionId, MessageLog logger) throws Exception {
         this(logger);
         setComponents(components, sessionId);
     }
 
-    public void setComponents(Set<PluggableComponent> components, String sessionId){
+    public void setComponents(Set<PluggableComponent> components, String sessionId) throws Exception {
         try {
             if( components == null || components.isEmpty() ){
-                ExceptionHandler.handle( new MultiuserException(ErrorMessages.COMPONENTS_NULL, "") );
+                throw new MultiuserException(ErrorMessages.COMPONENTS_NULL, "");
             }
             for (PluggableComponent component : components) {
                 subscribe(component);
@@ -59,6 +58,7 @@ public class Blackboard {
             }
         }catch (Throwable e){
             ExceptionHandler.handle( e );
+            if (e instanceof Exception) throw e;
         }
     }
 
@@ -90,20 +90,20 @@ public class Blackboard {
         this.model = model;
     }
 
-    public void post(BlackboardListener sender, String key, Object element){
+    public void post(BlackboardListener sender, String key, Object element) throws Exception {
         post( sender, key, element, true );
     }
 
-    private void post(BlackboardListener sender, String key, Object element, boolean shouldClone){
+    private void post(BlackboardListener sender, String key, Object element, boolean shouldClone) throws Exception {
         try {
             if( key == null ){
-                ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_KEY_NULL, "") );
+                throw new MultiuserException(ErrorMessages.BLACKBOARD_KEY_NULL, "");
             }
             if( sender == null ){
-                ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_SENDER_NULL, "") );
+                throw new MultiuserException(ErrorMessages.BLACKBOARD_SENDER_NULL, "");
             }
             if( !key.equals(Constants.REMOVE_ALL) && element == null ){
-                ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_ELEMENT_NULL, "") );
+                throw new MultiuserException(ErrorMessages.BLACKBOARD_ELEMENT_NULL, "");
             }
             Object clone = shouldClone ? Utils.clone(element) : element;
             if (keepModel && clone != null && key != null)
@@ -117,17 +117,18 @@ public class Blackboard {
             post( sender, key, element, false);
         }catch(Throwable e){
             ExceptionHandler.handle( e );
+            if (e instanceof Exception) throw e;
         }
     }
 
-    public void remove(BlackboardListener sender, String key){
+    public void remove(BlackboardListener sender, String key) throws Exception {
         remove(sender, key, true);
     }
 
-    private void remove(BlackboardListener sender, String key, boolean shouldClone){
+    private void remove(BlackboardListener sender, String key, boolean shouldClone) throws Exception {
         try {
             if( key == null ){
-                ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_KEY_NULL) );
+                throw new MultiuserException(ErrorMessages.BLACKBOARD_KEY_NULL);
             }
             Object clone = Utils.clone(model.get(key));
             if (key.contains(Constants.REMOVE_ALL)) {
@@ -141,17 +142,18 @@ public class Blackboard {
         }
         catch (Throwable e){
             ExceptionHandler.handle( e );
+            if (e instanceof Exception) throw e;
         }
     }
 
-    public Object get(String key) {
+    public Object get(String key) throws Exception {
         return get( key, true );
     }
 
-    private Object get(String key, boolean shouldClone) {
+    private Object get(String key, boolean shouldClone) throws Exception {
         Object value = null;
         if( key == null ){
-            ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_KEY_NULL) );
+            throw new MultiuserException(ErrorMessages.BLACKBOARD_KEY_NULL);
         }
         try {
             value = shouldClone ? Utils.clone(model.get(key)) : model.get(key);
@@ -159,6 +161,7 @@ public class Blackboard {
             value = get(key, false);
         }catch (Throwable e) {
             ExceptionHandler.handle( e );
+            if (e instanceof Exception) throw e;
         }
         return value;
     }
@@ -167,9 +170,15 @@ public class Blackboard {
         return model;
     }
 
-    public void subscribe(BlackboardListener subscriber){
-        if( subscriber == null ){
-            ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_SUBSCRIBER_NULL) );
+    public void subscribe(BlackboardListener subscriber) throws Exception {
+        try {
+            if (subscriber == null) {
+                throw new MultiuserException(ErrorMessages.BLACKBOARD_SUBSCRIBER_NULL);
+            }
+        }
+        catch (Throwable e) {
+            ExceptionHandler.handle(e);
+            if (e instanceof Exception) throw e;
         }
         subscribers.add( subscriber );
         Class subsClass = Utils.getClass( subscriber );
@@ -184,22 +193,28 @@ public class Blackboard {
         }
     }
 
-    private void subscribe(BlackboardListener subscriber, String[] messages) {
-        if( subscriber == null ){
-            ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_SUBSCRIBER_NULL));
-        }
-        if( messages == null || messages.length == 0){
-            ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_MESSAGES_NULL));
-        }
-        for (String message : messages) {
-            List<BlackboardListener> listeners = subscriptions.get( message );
-            if( listeners == null ){
-                listeners = new ArrayList<>();
-                subscriptions.put( message, listeners );
+    private void subscribe(BlackboardListener subscriber, String[] messages) throws Exception {
+        try {
+            if (subscriber == null) {
+                throw new MultiuserException(ErrorMessages.BLACKBOARD_SUBSCRIBER_NULL);
             }
-            if( !listeners.contains(subscriber) ){
-                listeners.add( subscriber );
+            if (messages == null || messages.length == 0) {
+                throw new MultiuserException(ErrorMessages.BLACKBOARD_MESSAGES_NULL);
             }
+            for (String message : messages) {
+                List<BlackboardListener> listeners = subscriptions.get(message);
+                if (listeners == null) {
+                    listeners = new ArrayList<>();
+                    subscriptions.put(message, listeners);
+                }
+                if (!listeners.contains(subscriber)) {
+                    listeners.add(subscriber);
+                }
+            }
+        }
+        catch (Throwable e) {
+            ExceptionHandler.handle(e);
+            if (e instanceof Exception) throw e;
         }
     }
 
@@ -207,12 +222,14 @@ public class Blackboard {
         return subscribers.remove( subscriber );
     }
 
-    private void notifySubscribers(BlackboardListener sender, String status, String key, Object element){
+    private void notifySubscribers(BlackboardListener sender, String status, String key, Object element)
+            throws Exception {
+
         if(notifySubscribers && key != null) {
             try {
                 List<BlackboardListener> listeners = subscriptions.get(key);
                 if( !key.equals(Constants.REMOVE_ALL) && (listeners == null || listeners.isEmpty() )){
-                    ExceptionHandler.handle( new MultiuserException(ErrorMessages.NOBODY_IS_SUBSCRIBED, key) );
+                    throw new MultiuserException(ErrorMessages.NOBODY_IS_SUBSCRIBED, key);
                 }
                 if (listeners != null) {
                     BlackboardEvent event = new BlackboardEvent(status, key, element);
@@ -220,8 +237,8 @@ public class Blackboard {
 
                     for(BlackboardListener subscriber : listeners ){
                         if( subscriber == null ){
-                            ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
-                                    "subscriber: " + subscriber));
+                            throw new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
+                                    "subscriber: " + subscriber);
                         }
                         Utils.execObsParallel( () -> {
                             if (subscriber instanceof PluggableComponent) {
@@ -246,6 +263,7 @@ public class Blackboard {
                 }
             } catch (Throwable e) {
                 ExceptionHandler.handle(e);
+                if (e instanceof Exception) throw (Exception) e;
             }
         }
     }
@@ -281,5 +299,19 @@ public class Blackboard {
         } finally {
             return (SynchronizableEvent) value;
         }
+    }
+
+    public boolean isModelKept() { return keepModel; }
+
+    public boolean areSubscribersNotified() { return notifySubscribers; }
+
+    public ConcurrentHashMap<String, List<BlackboardListener>> getSubscriptions() {
+        return subscriptions;
+    }
+
+    public List<BlackboardListener> getSubscription (String key) throws Exception {
+        if (subscriptions == null)
+            throw new MultiuserException(ErrorMessages.NOBODY_IS_SUBSCRIBED, key);
+        return subscriptions.get(key);
     }
 }

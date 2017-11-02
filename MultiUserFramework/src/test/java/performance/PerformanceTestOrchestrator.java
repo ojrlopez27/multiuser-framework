@@ -3,6 +3,7 @@ package performance;
 import common.ConstantsTests;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
+import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.session.Session;
@@ -27,8 +28,13 @@ public class PerformanceTestOrchestrator extends ProcessOrchestratorImpl {
 
     @Override
     public void process(String input){
-        //we use plain strings instead of SessionMessage to avoid json parsing
-        blackboard.post(this, ConstantsTests.MSG_PERFORMANCE_COMPONENT, input);
+        try {
+            //we use plain strings instead of SessionMessage to avoid json parsing
+            blackboard.post(this, ConstantsTests.MSG_PERFORMANCE_COMPONENT, input);
+        }
+        catch (Exception e) {
+            ExceptionHandler.handle(e);
+        }
     }
 
     @Override
