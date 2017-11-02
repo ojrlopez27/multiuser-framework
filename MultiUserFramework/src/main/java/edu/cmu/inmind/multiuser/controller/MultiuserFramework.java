@@ -80,8 +80,6 @@ public class MultiuserFramework implements DestroyableCallback {
         Runtime.getRuntime().addShutdownHook(new Thread("FrameworkShutdownThread-" + id) {
             public void run() {
                 try {
-                    Log4J.error(this, "Closing 1");
-                    System.out.println("Closing 1");
                     MultiuserFramework.this.stop();
                 }catch (Throwable e){
                     ExceptionHandler.handle(e);
@@ -121,29 +119,22 @@ public class MultiuserFramework implements DestroyableCallback {
     @Override
     public void close(DestroyableCallback callback) throws Throwable {
         try {
-            Log4J.error(this, "Closing 2");
-            System.out.println("Closing 2");
+            Log4J.warn(this, "=== 6");
             if (!stopping.getAndSet(true)) {
-                Log4J.error(this, "Closing 3");
-                System.out.println("Closing 3");
+                Log4J.warn(this, "=== 7");
                 if (hooks != null) {
                     for (ShutdownHook hook : hooks) {
                         hook.execute();
                     }
                 }
-                Log4J.error(this, "Closing 4");
-                System.out.println("Closing 4");
+                Log4J.warn(this, "=== 8");
 
                 if (config.isTCPon()) {
-                    Log4J.error(this, "Closing 5");
-                    System.out.println("Closing 5");
+                    Log4J.warn(this, "=== 9");
                     sessionManager.close(this);
                 } else {
                     session.close( this );
                 }
-            }else{
-                Log4J.error(this, "Closing 2.1");
-                System.out.println("Closing 2.1");
             }
         }catch (Throwable e) {
             ExceptionHandler.handle(e);

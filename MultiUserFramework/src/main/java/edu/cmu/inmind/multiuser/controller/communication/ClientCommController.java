@@ -276,14 +276,20 @@ public class ClientCommController implements DestroyableCallback {
     public void close(DestroyableCallback callback){
         callbacks.add(callback);
         try {
+            Log4J.warn(this, "=== 3.1");
             Log4J.info(ClientCommController.this, "Closing ClientCommController...");
             stop.getAndSet(true);
             timer.cancel();
             timer.purge();
+            Log4J.warn(this, "=== 3.2");
             sessionMngrCommAPI.close(this);
+            Log4J.warn(this, "=== 3.6");
             sessionCommAPI.close(this);
+            Log4J.warn(this, "=== 3.7");
             sendThread.close(this);
+            Log4J.warn(this, "=== 3.12");
             receiveThread.close(this);
+            Log4J.warn(this, "=== 3.22");
         }catch (Throwable e) {
             ExceptionHandler.handle(e);
         }
@@ -292,16 +298,19 @@ public class ClientCommController implements DestroyableCallback {
 
     @Override
     public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
+        Log4J.warn(this, "=== 3.19");
         stop.getAndSet(true);
         closeableObjects.remove(destroyedObj);
         Log4J.error(this, String.format("destroyed %s  closeableObjects: %s object: %s  thread: %s",
                 isDestroyed.get(), closeableObjects.size(), closeableObjects.size() > 0? closeableObjects.get(0) : null, Thread.currentThread().getName() ));
         if( closeableObjects.isEmpty() && !isDestroyed.getAndSet(true) ) {
+            Log4J.warn(this, "=== 3.20");
             sessionMngrCommAPI = null;
             sessionCommAPI = null;
             ctx = null;
             DependencyManager.setIamDone( this );
             Log4J.info(this, "Gracefully destroying...");
+            Log4J.warn(this, "=== 3.21");
             for (DestroyableCallback callback : callbacks) {
                 if(callback != null) callback.destroyInCascade(this);
             }
@@ -393,7 +402,7 @@ public class ClientCommController implements DestroyableCallback {
                 senderSocket = DependencyManager.createSocket(context, ZMQ.PAIR);
                 senderSocket.connect(inprocName);
                 senderSocket.send(String.valueOf(Constants.CONNECTION_STARTED), 0);
-                while( !stop.get() ) {
+                while( !stop.get() && !Thread.currentThread().isInterrupted() ) {
                     try{
                         String strMsg = senderSocket.recvStr(ZMQ.DONTWAIT);
                         if( strMsg != null ) {
@@ -428,15 +437,21 @@ public class ClientCommController implements DestroyableCallback {
         public void close(DestroyableCallback callback) throws Throwable {
             this.callback = callback;
             Log4J.warn(this, "++++ closing senderThread");
+            Log4J.warn(this, "=== 3.8");
             stop.getAndSet(true);
             senderSocket.setLinger(0);
+            Thread.currentThread().interrupt();
+            Log4J.warn(this, "=== 3.9");
+            destroyInCascade(this);
         }
 
         @Override
         public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable {
             //nothing
+            Log4J.warn(this, "=== 3.10");
             Log4J.warn(this, "++++ destroying senderThread");
             DependencyManager.setIamDone(this);
+            Log4J.warn(this, "=== 3.11");
             if(callback != null) callback.destroyInCascade(this);
         }
     }
@@ -455,7 +470,7 @@ public class ClientCommController implements DestroyableCallback {
                     reply.destroy();
                     return response;
                 }else{
-                    System.currentTimeMillis();
+                    return "";
                 }
             }else{
                 return STOP_FLAG;
@@ -487,9 +502,11 @@ public class ClientCommController implements DestroyableCallback {
                 }
                 isReceiveThreadAlive.getAndSet(true);
                 receiveState.getAndSet( checkFSM(receiveState, Constants.CONNECTION_STARTED) );
-                while ( !stop.get() ){
+                while ( !stop.get() && !Thread.currentThread().isInterrupted() ){
                     try {
                         String response = receive(sessionCommAPI);
+                        if( "".equals(response) )
+                            continue;
                         receivedMessages.incrementAndGet();
                         if (response == null && (sentMessages.get() > receivedMessages.get() + difference)) {
                             stop.getAndSet(true);
@@ -520,21 +537,29 @@ public class ClientCommController implements DestroyableCallback {
 
         @Override
         public void close(DestroyableCallback callback) throws Throwable {
-            Log4J.warn(this, "++++ closing receiverThread");
-            stop.getAndSet(true);
             this.callback = callback;
+            Log4J.warn(this, "++++ closing receiverThread");
+            Log4J.warn(this, "=== 3.13");
+            stop.getAndSet(true);
+            Thread.currentThread().interrupt();
+            Log4J.warn(this, "=== 3.14");
+            destroyInCascade(this);
         }
 
         @Override
         public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable {
             Log4J.warn(this, "++++ destroying receiverThread");
+            Log4J.warn(this, "=== 3.15");
             if (isSendThreadAlive.get()) {
                 stop.getAndSet(true);
             }
+            Log4J.warn(this, "=== 3.16");
             receiveState.getAndSet( checkFSM(receiveState, Constants.CONNECTION_FINISHED) );
             if( stop.get() ) receiveState.getAndSet( checkFSM(receiveState, Constants.CONNECTION_STOPPED) );
+            Log4J.warn(this, "=== 3.17");
             isReceiveThreadAlive.getAndSet(false);
             checkReconnect();
+            Log4J.warn(this, "=== 3.18");
             if(callback != null) callback.destroyInCascade(this);
         }
     }

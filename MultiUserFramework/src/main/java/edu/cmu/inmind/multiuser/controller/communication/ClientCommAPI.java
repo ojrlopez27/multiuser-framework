@@ -23,7 +23,6 @@ public class ClientCommAPI implements DestroyableCallback {
     private AtomicBoolean isDestroyed = new AtomicBoolean(false);
     private DestroyableCallback callback;
     private AtomicBoolean canUseSocket = new AtomicBoolean( true );
-    private AtomicBoolean isPolling = new AtomicBoolean(false);
     private String whoPrevious;
     // constants:
     private final long  timeout = 10000; // 2,5 seconds
@@ -70,12 +69,10 @@ public class ClientCommAPI implements DestroyableCallback {
         try {
             if (!isDestroyed.get()) {
                 ZMsg reply = null;
-                isPolling.getAndSet(true);
                 if (items.poll(timeout) == -1) {
-                    items.close();
+                    Log4J.warn(this, "Interrupted or Context has been shut down");
                     return null; // Interrupted or Context has been shut down
                 }
-                isPolling.getAndSet(false);
                 if (items.pollin(0)) {
                     checkAndSleep("recv");
                     ZMsg msg = ZMsg.recvMsg(clientSocket, ZMQ.DONTWAIT);
@@ -142,19 +139,19 @@ public class ClientCommAPI implements DestroyableCallback {
 
     public void close(DestroyableCallback callback) throws Throwable{
         this.callback = callback;
+        items.close();
+        Log4J.warn(this, "=== 3.3");
         destroyInCascade(this);
     }
 
     @Override
     public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
         if( !isDestroyed.getAndSet(true) ) {
-            while( isPolling.get() ){
-                Utils.sleep(5);
-                ctx.destroy();
-            }
+            Log4J.warn(this, "=== 3.4");
             checkAndSleep("destroyInCascade");
             ctx = null;
             DependencyManager.setIamDone( this );
+            Log4J.warn(this, "=== 3.5");
             Log4J.info(this, "Gracefully destroying...");
             if(callback != null) callback.destroyInCascade( this );
         }

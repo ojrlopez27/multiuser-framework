@@ -127,9 +127,9 @@ public class Session extends Utils.MyRunnable implements Runnable, OrchestratorL
      * @throws Throwable
      */
     public void close(DestroyableCallback callback) throws Throwable{
-        Log4J.error(this, "Closing 8");
-        System.out.println("Closing 8");
-        if(this.callback == null && this.callback != this) this.callback = callback;
+        Log4J.warn(this, "=== 12");
+        if(this.callback == null && this.callback != this)
+            this.callback = callback;
         if( !isClosed.getAndSet(true) ) {
             notifyObservers();
             Log4J.info(this, String.format("Closing session: %s", id));
@@ -137,21 +137,20 @@ public class Session extends Utils.MyRunnable implements Runnable, OrchestratorL
                 //notify the client
                 sessionCommController.disconnect();
             }
-            Log4J.error(this, "Closing 9");
-            System.out.println("Closing 9. orchestrator: " + orchestrator + " for id: " + id);
+            Log4J.warn(this, "=== 13");
             orchestrator.close( this );
-            System.out.println("Closing 10. orchestrator: " + orchestrator + " for id: " + id);
+            Log4J.warn(this, "=== 14");
             sessionCommController.close(this);
-            System.out.println("Closing 10.1. orchestrator: " + orchestrator + " for id: " + id);
+            Log4J.warn(this, "=== 22");
         }
     }
 
     @Override
     public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
         closeableObjects.remove( destroyedObj );
+        Log4J.warn(this, "=== 19");
         if( closeableObjects.isEmpty() ) {
-            Log4J.debug(this, "setting orchestrator to null for session " + id);
-            System.out.println("setting orchestrator to null for session " + id);
+            Log4J.warn(this, "=== 20");
             orchestrator = null;
             if (sessionCommController != null) { // it is null when TCP is off
                 sessionCommController = null;
@@ -163,6 +162,7 @@ public class Session extends Utils.MyRunnable implements Runnable, OrchestratorL
                 DependencyManager.setIamDone( this );
                 Log4J.info(this, "Gracefully destroying...");
                 Log4J.info(this, String.format("Session: %s has been disconnected!", id));
+                Log4J.warn(this, "=== 21");
                 callback.destroyInCascade(this);
             }
         }

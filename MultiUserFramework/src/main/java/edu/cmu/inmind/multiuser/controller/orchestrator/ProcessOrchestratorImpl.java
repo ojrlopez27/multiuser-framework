@@ -119,7 +119,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
             while (status != null && (status.equals(Constants.ORCHESTRATOR_STOPPED)
                     || status.equals(Constants.ORCHESTRATOR_PAUSED))) {
                 //we need to wait until the orchestrator is ready to process messages
-                Utils.sleep(500);
+                Utils.sleep(100);
             }
         }catch (Throwable e){
             ExceptionHandler.handle(e);

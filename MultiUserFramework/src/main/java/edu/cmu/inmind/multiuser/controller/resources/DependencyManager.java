@@ -9,6 +9,7 @@ import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
+import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorFactory;
 import org.zeromq.ZContext;
@@ -101,16 +102,20 @@ public class DependencyManager {
                 boolean allTerminated;
                 do{
                     allTerminated = true;
+                    Log4J.warn(this, "=== 28.1");
                     for(DestroyableCallback key : destroyables.keySet() ){
                         if( !destroyables.get(key) ){
+                            Log4J.warn(this, "=== 28.2 " + key);
                             key.destroyInCascade(null);
                             allTerminated = false;
                             Utils.sleep(50);
                             break;
                         }
                     }
+                    Log4J.warn(this, "=== 28.3");
                 }while( !allTerminated );
 
+                Log4J.warn(this, "=== 28.4");
                 try {
                     for (ZContext ctx : contexts) {
                         ctx.destroy();
@@ -118,7 +123,9 @@ public class DependencyManager {
                 }catch (Exception e){
                     e.printStackTrace();
                 }
-                context.destroy();
+                Log4J.warn(this, "=== 28.5");
+                //context.destroy();
+                Log4J.warn(this, "=== 28.6");
             }
             instance = null;
         }
