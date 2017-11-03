@@ -2,6 +2,7 @@ package edu.cmu.inmind.multiuser.controller.plugin;
 
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.communication.*;
@@ -18,7 +19,6 @@ import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 @BlackboardSubscription( messages = {} )
 @StateType( state = Constants.STATEFULL )
 public class ExternalComponent extends PluggableComponent implements ResponseListener{
-    private ServiceInfo serviceInfo;
 
     public ExternalComponent(ServiceInfo serviceInfo, String clientAddress, String sessionId, ZMsgWrapper zMsgWrapper,
                              String[] messages){
@@ -26,7 +26,6 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
             //if we override annotations, it will affect all instances of ExternalComponent, so every
             //ExternalComponent will have the same subscription messages
             //Utils.addOrChangeAnnotation(getClass().getAnnotation(BlackboardSubscription.class), "messages", messages);
-            this.serviceInfo = serviceInfo;
             ResourceLocator.addComponentSubscriptions( this.hashCode(), messages );
             setClientCommController( new ClientCommController.Builder()
                 .setServerAddress(serviceInfo.getSlaveMUFAddress())
@@ -47,7 +46,7 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
     }
 
     @Override
-    public void onEvent(BlackboardEvent event) {
+    public void onEvent(Blackboard bb, BlackboardEvent event) {
         try {
             String sessionId = getSessionId();
             SessionMessage sessionMessage = new SessionMessage();
@@ -69,11 +68,11 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
                 String msg = "This message from Python (or any other external server) has an empty or null id. Make " +
                         "sure you send a message with a proper id, otherwise it won't be delivered through the Blackboard. " +
                         "Message: " + sessionMessage.getPayload();
-                Log4J.error(this, msg);
             }
             if( !sessionMessage.getRequestType().equals(Constants.SESSION_CLOSED)
                     && !sessionMessage.getRequestType().equals(Constants.REQUEST_SHUTDOWN_SYSTEM) ) {
-                blackboard().post(this, sessionMessage.getMessageId(), sessionMessage.getPayload());
+                getBlackBoard( sessionMessage.getSessionId() ).post(this, sessionMessage.getMessageId(),
+                        sessionMessage.getPayload());
             }else{
                 destroyInCascade( this );
             }

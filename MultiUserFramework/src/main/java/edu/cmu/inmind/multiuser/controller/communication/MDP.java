@@ -20,7 +20,7 @@ public enum MDP {
     C_CLIENT("MDPC01"),
 
     /**
-     * This is the version of MDP/Orchestrator we implement
+     * This is the version of MDP/Service we implement
      */
     S_ORCHESTRATOR("MDPW01"),
 

@@ -46,7 +46,7 @@ public class ExceptionHandler {
     }
 
     public static void handle(Throwable e){
-        if( !(e instanceof org.zeromq.ZMQException && e instanceof ClosedByInterruptException )) {
+        if( !(e instanceof org.zeromq.ZMQException) && (e instanceof ClosedByInterruptException )) {
             if (loggerOn) {
                 logger.add(messageId, Throwables.getStackTraceAsString(e));
                 if (e instanceof OutOfMemoryError)
@@ -124,14 +124,21 @@ public class ExceptionHandler {
 
 
     public static void checkIpAddress(String address, int port){
+        checkIpAddress(address + ":" + port);
+    }
+
+    public static void checkIpAddress(String address){
         if( address == null || address.isEmpty() || !Utils.isURLvalid(address)){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.INCORRECT_IP_ADDRESS, address));
         }
     }
+
 
     public static void checkPath(String path) {
         if( path == null || path.isEmpty() || !(new File(path).exists())){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.FILE_NOT_EXISTS, path));
         }
     }
+
+    public static MessageLog getLogger() { return logger; }
 }

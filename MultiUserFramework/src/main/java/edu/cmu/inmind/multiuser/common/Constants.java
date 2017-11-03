@@ -17,20 +17,18 @@ public class Constants {
     //lifecycle
     public static final String REQUEST_PAUSE = "REQUEST_PAUSE";
     public static final String REQUEST_RESUME = "REQUEST_RESUME";
-    public static final String REQUEST_PUBLISH = "REQUEST_PUBLISH";
     public static final String REQUEST_CONNECT = "REQUEST_CONNECT";
     public static final String REQUEST_DISCONNECT = "REQUEST_DISCONNECT";
     public static final String REQUEST_SHUTDOWN_SYSTEM = "REQUEST_SHUTDOWN_SYSTEM";
-    public static final String RESPONSE_SUBSCRIBE = "RESPONSE_SUBSCRIBE";
     public static final boolean VERBOSE = true;
 
     //communication
     public static final String SESSION_MANAGER_SERVICE = "session-manager";
-    public static final String CONNECTION_NEW = "CONNECTION_NEW";
-    public static final String CONNECTION_STARTED = "CONNECTION_STARTED";
-    public static final String CONNECTION_FINISHED = "CONNECTION_FINISHED";
-    public static final String CONNECTION_STOPPED = "CONNECTION_STOPPED";
-    public static final int    QUEUE_CAPACITY = 100;
+    public static final int CONNECTION_NEW = 0;
+    public static final int CONNECTION_STARTED = 1;
+    public static final int CONNECTION_FINISHED = 2;
+    public static final int CONNECTION_STOPPED = 3;
+    public static final int QUEUE_CAPACITY = 100;
 
 
     //session

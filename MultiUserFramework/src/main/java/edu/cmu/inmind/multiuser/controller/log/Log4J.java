@@ -5,6 +5,7 @@ import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -13,6 +14,13 @@ import org.apache.logging.log4j.Logger;
  */
 public class Log4J{
     private static boolean turnedOn = true;
+    /**
+     * We use this custom level to log messages related to tracking/monitoring messages
+     * that are sent from ClientCommController to a Session and back to it. The intValue
+     * of 700 means that it is lower than TRACE level.
+     */
+    private final static Level TRACK = Level.forName("TRACK", 700);
+
 
     private static String getSessionId(Object caller){
         String sessionId = null;
@@ -87,6 +95,17 @@ public class Log4J{
         }
     }
 
+    public static void track(Object caller, String message){
+        String sessionId = getSessionId(caller);
+        if (turnedOn){
+            if( sessionId != null ){
+                track( caller, sessionId, message);
+            }else{
+                getLogger(caller).log(TRACK, message);
+            }
+        }
+    }
+
     public static void info(Object caller, String sessionId, String message){
         if( turnedOn ) getLogger(caller).info( getSessionAndMsg(sessionId, message ));
     }
@@ -107,13 +126,25 @@ public class Log4J{
         if( turnedOn ) getLogger(caller).warn( getSessionAndMsg(sessionId, message ));
     }
 
+    public static void track(Object caller, String sessionId, String message){
+        if( turnedOn ) getLogger(caller).log( TRACK, getSessionAndMsg(sessionId, message ));
+    }
+
     private static Logger getLogger(Object caller) {
         try {
-            Class clazz = caller instanceof Class? (Class) caller : Utils.getClass(caller);
-            org.apache.logging.log4j.Logger logger = ResourceLocator.getLogger(clazz);
+            String logName = "";
+            org.apache.logging.log4j.Logger logger = null;
+            Class clazz = null;
+            if( caller instanceof String ){
+                logName = (String)caller;
+            }else {
+                clazz = caller instanceof Class ? (Class) caller : Utils.getClass(caller);
+                logger = ResourceLocator.getLogger(clazz);
+                logName = clazz.getSimpleName();
+            }
             if (logger == null) {
-                logger = LogManager.getLogger(clazz.getSimpleName());
-                ResourceLocator.addLogger(clazz, logger);
+                logger = LogManager.getLogger(logName);
+                if(clazz != null) ResourceLocator.addLogger(clazz, logger);
             }
             return logger;
         }catch (Throwable e){

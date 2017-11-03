@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.*;
@@ -17,13 +18,13 @@ import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.StateType;
 import edu.cmu.inmind.multiuser.controller.session.ServiceComponent;
-import io.reactivex.Flowable;
-import io.reactivex.functions.Consumer;
 import org.apache.logging.log4j.Logger;
+import org.zeromq.ZContext;
+import org.zeromq.ZMQ;
 
-import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -139,30 +140,28 @@ public class ResourceLocator {
 
     public static void addComponentsToRegistry(final ProcessOrchestratorImpl orchestrator, final Set<PluggableComponent> components,
                                                          final String sessionId) throws Throwable{
-        Utils.execObsSequential(resourceLocator -> {
-            try{
-                if( components == null || components.isEmpty() || sessionId == null || sessionId.isEmpty() ){
-                    ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "sessionId: "
-                            + sessionId, "components: " + components, "sessionId: " + sessionId) );
-                }
-                ConcurrentHashMap<PluggableComponent, List<String>> statefullCompRegistry = new ConcurrentHashMap<>();
-                List<String> statefullSessionIds = null, statelessSessionIds = null;
-                for( PluggableComponent component : components ) {
-                    if( component.getClass().isAnnotationPresent(StateType.class) &&
-                            component.getClass().getAnnotation(StateType.class).state().equals(Constants.STATEFULL) ) {
-                        statefullSessionIds = getSessionIds(statefullSessionIds, statefullCompRegistry, component, sessionId);
-                        statefullCompRegistry.put( component, statefullSessionIds );
-                    }else{
-                        statelessSessionIds = getSessionIds(statelessSessionIds, statelessCompRegistry, component, sessionId);
-                        statelessCompRegistry.put( component, statelessSessionIds );
-                    }
-                }
-                statelessServManager = initServices( statelessServManager, orchestrator, (Set) statelessCompRegistry.keySet() );
-                orchestrator.setStatefullServManager( initServices( null, orchestrator, (Set) statefullCompRegistry.keySet() ) );
-            }catch (Throwable e){
-                ExceptionHandler.handle(e);
+        try{
+            if( components == null || components.isEmpty() || sessionId == null || sessionId.isEmpty() ){
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "sessionId: "
+                        + sessionId, "components: " + components, "sessionId: " + sessionId) );
             }
-        });
+            ConcurrentHashMap<PluggableComponent, List<String>> statefullCompRegistry = new ConcurrentHashMap<>();
+            List<String> statefullSessionIds = null, statelessSessionIds = null;
+            for( PluggableComponent component : components ) {
+                if( component.getClass().isAnnotationPresent(StateType.class) &&
+                        component.getClass().getAnnotation(StateType.class).state().equals(Constants.STATEFULL) ) {
+                    statefullSessionIds = getSessionIds(statefullSessionIds, statefullCompRegistry, component, sessionId);
+                    statefullCompRegistry.put( component, statefullSessionIds );
+                }else{
+                    statelessSessionIds = getSessionIds(statelessSessionIds, statelessCompRegistry, component, sessionId);
+                    statelessCompRegistry.put( component, statelessSessionIds );
+                }
+            }
+            statelessServManager = initServices( statelessServManager, orchestrator, (Set) statelessCompRegistry.keySet() );
+            orchestrator.setStatefullServManager( initServices( null, orchestrator, (Set) statefullCompRegistry.keySet() ) );
+        }catch (Throwable e){
+            ExceptionHandler.handle(e);
+        }
     }
 
 
@@ -300,7 +299,7 @@ public class ResourceLocator {
                         }
                     }
                 },
-                MoreExecutors.directExecutor());
+                Utils.getExecutor() );
             serviceManager.startAsync();
             addServiceManager(serviceManager, Constants.SERVICE_MANAGER_STARTED);
         }
@@ -310,6 +309,75 @@ public class ResourceLocator {
     public static void stopStatlessComp() throws Throwable{
         if( statelessServManager != null ){
             statelessServManager.stopAsync().awaitStopped(20, TimeUnit.SECONDS);
+        }
+    }
+
+
+
+    /** ======================== ZeroMQ Contexts =================================== **/
+
+    /**
+     * ZMQ docs: You should create and use exactly one context in your process. Technically, the context is the
+     * container for all sockets in a single process, and acts as the transport for inproc sockets, which are the
+     * fastest way to connect threads in one process. If at runtime a process has two contexts, these are like separate
+     * ZeroMQ instances
+     */
+    private static ZContext context;
+    private static ConcurrentHashMap<DestroyableCallback, Boolean> destroyables = new ConcurrentHashMap<>();
+    private static CopyOnWriteArrayList<ZMQ.Socket> sockets = new CopyOnWriteArrayList<>();
+    private static CopyOnWriteArrayList<ZContext> contexts = new CopyOnWriteArrayList<>();
+
+
+    public static ZContext getContext(DestroyableCallback contextOwner) {
+        if( context == null ){
+            context = new ZContext();
+        }
+        // contexts keeps a record about which owner has released its context.
+        // at initialization, nobody has released it.
+        destroyables.put(contextOwner, false);
+        ZContext ctx = ZContext.shadow(context);
+        contexts.add(ctx);
+        return ctx;
+    }
+
+    public static void setIamDone(DestroyableCallback contextOwner){
+        if( destroyables.get(contextOwner) != null )
+            destroyables.put(contextOwner, true);
+    }
+
+    public static ZMQ.Socket createSocket(ZContext ctx, int type){
+        ZMQ.Socket socket = ctx.createSocket(type);
+        sockets.add(socket);
+        return socket;
+    }
+
+    public static void closeContexts(){
+        try {
+            if (context != null && destroyables != null) {
+                boolean allTerminated;
+                do {
+                    allTerminated = true;
+                    for (DestroyableCallback key : destroyables.keySet()) {
+                        if (!destroyables.get(key)) {
+                            key.destroyInCascade(null);
+                            allTerminated = false;
+                            Utils.sleep(50);
+                            break;
+                        }
+                    }
+                } while (!allTerminated);
+
+                try {
+                    for (ZContext ctx : contexts) {
+                        ctx.destroy();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                //context.destroy();
+            }
+        }catch (Throwable e){
+            ExceptionHandler.handle(e);
         }
     }
 }

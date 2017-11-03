@@ -1,8 +1,12 @@
+package common;
+
 import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
+import performance.PerformanceTestPC;
+import performance.PerformanceTestPCStateless;
 
 import java.util.concurrent.TimeUnit;
 
@@ -17,6 +21,16 @@ public class TestUtils {
                         .build()
         };
     }
+
+
+    public static PluginModule[] getModulesPerf(Class<? extends ProcessOrchestratorImpl> orchestrator){
+        return new PluginModule[]{
+                new PluginModule.Builder( orchestrator, PerformanceTestPC.class, "test")
+                        .addPlugin(PerformanceTestPCStateless.class, "stateless")
+                        .build()
+        };
+    }
+
 
     public static PluginModule[] getModules(Class<? extends ProcessOrchestratorImpl> orchestrator, Class[] pluggins){
         PluginModule.Builder builder = new PluginModule.Builder( orchestrator );
@@ -37,6 +51,7 @@ public class TestUtils {
                 .setServerAddress(serverAddress)
 //                .setJsonServicesConfig("services.json")
                 .setExceptionTraceLevel(Constants.SHOW_ALL_EXCEPTIONS)
+                .setNumOfSockets(1)
                 .build();
     }
 }

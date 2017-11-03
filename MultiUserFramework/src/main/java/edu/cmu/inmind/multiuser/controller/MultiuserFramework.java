@@ -3,6 +3,7 @@ package edu.cmu.inmind.multiuser.controller;
 
 import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
+import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.communication.ServiceInfo;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
@@ -12,11 +13,13 @@ import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
+import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import edu.cmu.inmind.multiuser.controller.session.Session;
 import edu.cmu.inmind.multiuser.controller.session.SessionManager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by oscarr on 3/20/17.
@@ -25,7 +28,7 @@ import java.util.List;
 public class MultiuserFramework implements DestroyableCallback {
     private String id;
     private SessionManager sessionManager;
-    private boolean stopping;
+    private AtomicBoolean stopping = new AtomicBoolean(false);
     private Session session;
     private Config config;
     private DependencyManager dependencyManager;
@@ -34,6 +37,7 @@ public class MultiuserFramework implements DestroyableCallback {
 
     MultiuserFramework(String id, PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws Throwable{
         ClassLoader.getSystemClassLoader().setPackageAssertionStatus("zmq",false);
+        Utils.initThreadExecutor();
         this.id = id;
         this.config = config;
 
@@ -107,17 +111,24 @@ public class MultiuserFramework implements DestroyableCallback {
 
     void stop(){
         try {
-            if (!stopping) {
+            close(null);
+        }catch (Throwable e){
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void close(DestroyableCallback callback) throws Throwable {
+        try {
+            if (!stopping.getAndSet(true)) {
                 if (hooks != null) {
                     for (ShutdownHook hook : hooks) {
                         hook.execute();
                     }
                 }
-                stopping = true;
-                DependencyManager.reset();
 
                 if (config.isTCPon()) {
-                    sessionManager.stop();
+                    sessionManager.close(this);
                 } else {
                     session.close( this );
                 }
@@ -128,7 +139,7 @@ public class MultiuserFramework implements DestroyableCallback {
     }
 
     @Override
-    public void destroyInCascade(Object destroyedObj) throws Throwable {
+    public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable {
         //TODO some logic to release resources
         sessionManager = null;
         session = null;
@@ -136,6 +147,7 @@ public class MultiuserFramework implements DestroyableCallback {
         dependencyManager = null;
         client = null;
         hooks = null;
+        ResourceLocator.setIamDone( this );
         Log4J.info(this, "Gracefully destroying...");
     }
 }

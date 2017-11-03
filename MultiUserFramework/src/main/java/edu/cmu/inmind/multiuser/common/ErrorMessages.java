@@ -35,7 +35,9 @@ public class ErrorMessages {
     public static final String BLACKBOARD_MESSAGES_NULL = "The list of subscription messages is empty or null";
     public static final String BLACKBOARD_SENDER_NULL = "Blackboard sender is null";
     public static final String BLACKBOARD_EVENT = "Blackboard event contains a null or empty parameter. status: %, " +
-            "id: %s, element: %s";
+            "id: %s, element: %s, sessionId: %s";
+    public static final String NO_BLACKBOARD = "There is no blackboard associated to this session id: %s. Try using" +
+            "addBlackboard() method first";
     public static final String NO_SUBSCRIPTION_MESSSAGES = "The service '%s' has no subscription messages. Please " +
             "check your services.json file";
     public static final StringBuffer ANY_ELEMENT_IS_NULL = new StringBuffer("One or more of these elements is/are null (or empty):");
@@ -50,4 +52,5 @@ public class ErrorMessages {
     public static final String MASTER_ADDRESS_IS_NULL = "You have to specify the ip address for the master MUF " +
             "when creating the ServiceInfo object.";
     public static final String NOT_EXPECTED_DESTROYED_OBJ = "The destroyed object has an unexpected type. Received: %s, Expected: %s";
+    public static final String INCORRECT_NUM_SOCKETS = "A valid number of sockets should be a value between 1 - 200";
 }

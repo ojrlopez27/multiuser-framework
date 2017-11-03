@@ -21,6 +21,7 @@ import edu.cmu.inmind.multiuser.controller.plugin.Interceptable;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.StateType;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
+import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import edu.cmu.inmind.multiuser.controller.session.ServiceComponent;
 import edu.cmu.inmind.multiuser.controller.session.Session;
@@ -31,6 +32,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by oscarr on 3/10/17.
@@ -48,10 +50,10 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     protected ServiceManager statefullServManager;
     private CopyOnWriteArrayList closeableObjects;
     private String sessionId;
-    private boolean isClosed;
+    private AtomicBoolean isClosed = new AtomicBoolean(false);
+    private AtomicBoolean initialized = new AtomicBoolean(false);
     private Config config;
     private String fullAddress;
-    private boolean initialized = false;
     private DestroyableCallback callback;
 
     public ProcessOrchestratorImpl(){
@@ -112,21 +114,29 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     }
 
     @Override
-    public void process(String input){
+    public void process(String input) throws Throwable{
         try {
             while (status != null && (status.equals(Constants.ORCHESTRATOR_STOPPED)
                     || status.equals(Constants.ORCHESTRATOR_PAUSED))) {
-                Utils.sleep(500);
+                //we need to wait until the orchestrator is ready to process messages
+                Utils.sleep(100);
             }
         }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
     }
 
-    protected void sendResponse(SessionMessage output){
+    /**
+     * This method sends the response from MUF to the client
+     * @param output ideally this attribute should be an instance of SessionMessage class, however, you can define
+     *               whichever format you want to exchange messages with the client (e.g., you can just send a String)
+     *               but make sure that client correctly parses this message.
+     */
+    protected void sendResponse(Object output){
         try {
             orchestratorListeners.forEach(listener -> {
                 try {
+                    Log4J.track("ProcessOrchestratorImpl", "25:" + output);
                     listener.processOutput(output);
                 } catch (Throwable throwable) {
                     ExceptionHandler.handle(throwable);
@@ -166,7 +176,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         }
         blackboard.setLogger( logger );
         initServiceManager();
-        initialized = true;
+        initialized.getAndSet(true);
     }
 
     private void addOnlyStatefullToCloseable() throws Throwable{
@@ -207,9 +217,8 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
 
     @Override
     public void close() throws Throwable{
-        if( !isClosed && initialized ) {
+        if( !isClosed.getAndSet(true) && initialized.get() ) {
             Log4J.info(this, String.format("Closing Process Orchestrator for session: %s", sessionId));
-            isClosed = true;
             logger.store();
             status = Constants.ORCHESTRATOR_STOPPED;
             for(PluggableComponent component : components ){
@@ -220,7 +229,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
 
 
     @Override
-    public void destroyInCascade(Object destroyedObject) throws Throwable{
+    public void destroyInCascade(DestroyableCallback destroyedObject) throws Throwable{
         closeableObjects.remove( destroyedObject );
         if( closeableObjects.isEmpty() ) {
             if( statefullServManager != null ) {
@@ -236,6 +245,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
             components = null;
             componentsSet = null;
             session = null;
+            ResourceLocator.setIamDone( this );
             Log4J.info(this, "Gracefully destroying...");
             Log4J.info(this, String.format("Process Orchestrator for session %s is destroyed!", sessionId));
             if (callback != null) callback.destroyInCascade(this);
@@ -301,15 +311,13 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         try{
             for (PluggableComponent component : components) {
                 component.setActiveSession( session );
-                new Thread("ExecuteComponentAsyncThread"){
-                    public void run(){
-                        try{
-                            execute(component);
-                        }catch (Throwable e){
-                            ExceptionHandler.handle( e );
-                        }
+                Utils.execute(() -> {
+                    try{
+                        execute(component);
+                    }catch (Throwable e){
+                        ExceptionHandler.handle( e );
                     }
-                }.start();
+                });
             }
         }catch (Throwable e){
             ExceptionHandler.handle( e );
@@ -440,8 +448,15 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     }
 
     @Override
-    public void onEvent(BlackboardEvent event) throws Throwable{
+    public void onEvent(Blackboard blackboard, BlackboardEvent event) throws Throwable{
         //do nothing
+    }
+
+    /** ============================== BlackboardListener ============================ **/
+
+    @Override
+    public boolean isClosing(){
+        return isClosed.get();
     }
 
     @Override

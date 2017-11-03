@@ -1,18 +1,26 @@
 package edu.cmu.inmind.multiuser.controller.communication;
 
+import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
+import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
+import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Created by oscarr on 3/28/17.
+ *
+ * This is the implementation of a Worker according to the Majordomo Pattern
  */
 public class ServerCommController implements DestroyableCallback {
     private static final int HEARTBEAT_LIVENESS = 3; // 3-5 is reasonable
@@ -27,15 +35,14 @@ public class ServerCommController implements DestroyableCallback {
     private int heartbeat = 2500;// Heartbeat delay, msecs
     private int reconnect = 2500; // Reconnect delay, msecs
     private ZMsgWrapper msgTemplate;
-
-    // Internal state
-    private boolean expectReply = false; // false only at start
+    private ZMQ.Poller items;
 
     private long timeout = 2500;
 
     // Return address, if any
     private ZFrame replyTo;
-    private boolean isAlreadyDestroyed;
+    private AtomicBoolean isDestroyed = new AtomicBoolean(false);
+    private AtomicBoolean stop = new AtomicBoolean(false);
     private DestroyableCallback callback;
 
     public ServerCommController(String serverAddress, String serviceId, ZMsgWrapper msgTemplate) {
@@ -47,31 +54,13 @@ public class ServerCommController implements DestroyableCallback {
             if (msgTemplate != null) {
                 this.msgTemplate = msgTemplate.duplicate();
             }
-            ctx = new ZContext();
+            ctx = ResourceLocator.getContext( this );
+            items = ctx.createPoller(1); //new ZMQ.Poller(1);
             reconnectToBroker();
+            items.register(workerSocket, ZMQ.Poller.POLLIN);
         }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
-    }
-
-    /**
-     * Send message to broker If no msg is provided, creates one internally
-     *
-     * @param command
-     * @param option
-     * @param msg
-     */
-    void sendToBroker(MDP command, String option, ZMsg msg) throws Throwable{
-        msg = msg != null ? msg.duplicate() : new ZMsg();
-
-        // Stack protocol envelope to start of message
-        if (option != null)
-            msg.addFirst(new ZFrame(option));
-
-        msg.addFirst(command.newFrame());
-        msg.addFirst(MDP.S_ORCHESTRATOR.newFrame());
-        msg.addFirst(new ZFrame(new byte[0]));
-        msg.send(workerSocket);
     }
 
     /**
@@ -81,7 +70,7 @@ public class ServerCommController implements DestroyableCallback {
         if (workerSocket != null) {
             ctx.destroySocket(workerSocket);
         }
-        workerSocket = ctx.createSocket(ZMQ.DEALER);
+        workerSocket = ResourceLocator.createSocket(ctx, ZMQ.DEALER);
         workerSocket.connect(serverAddress);
 
         // Register service with broker
@@ -92,21 +81,23 @@ public class ServerCommController implements DestroyableCallback {
         heartbeatAt = System.currentTimeMillis() + heartbeat;
     }
 
+    /*******************************************************************************************/
+    /********************************** RECEIVE ************************************************/
+    /*******************************************************************************************/
+
     /**
      * Send reply, if any, to broker and wait for next request.
      */
-    public ZMsgWrapper receive(ZMsg reply) throws Throwable{
+    public ZMsgWrapper receive(ZMsg reply){
         try {
             // Format and send the reply if we were provided one
             //assert ( reply != null || !expectReply);
-            expectReply = true;
-            while (!Thread.currentThread().isInterrupted()) {
+            while ( !isDestroyed.get() ) {
                 try {
                     // Poll socket for a reply, with timeout
-                    ZMQ.Poller items = new ZMQ.Poller(1);
-                    items.register(workerSocket, ZMQ.Poller.POLLIN);
-                    if (items.poll(timeout) == -1)
+                    if (items.poll(timeout) == -1) {
                         break; // Interrupted
+                    }
 
                     if (items.pollin(0)) {
                         ZMsg msg = ZMsg.recvMsg(workerSocket);
@@ -125,29 +116,29 @@ public class ServerCommController implements DestroyableCallback {
                         header.destroy();
 
                         ZFrame command = msg.pop();
+                        Log4J.track(this, "19.1:" + msg + " commmand: " + command);
                         if (MDP.S_REQUEST.frameEquals(command)) {
+                            Log4J.track(this, "19.2:" + msg );
                             // We should pop and save as many addresses as there are
                             // up to a null part, but for now, just save one
                             replyTo = msg.unwrap();
                             command.destroy();
+                            if( msg.peek().toString().startsWith("@@@"))
+                                Log4J.track(this, "20:" + msg.peek().toString() );
                             return new ZMsgWrapper(msg, replyTo); // We have a request to process
                         } else if (MDP.S_HEARTBEAT.frameEquals(command)) {
                             // Do nothing for heartbeats
                         } else if (MDP.S_DISCONNECT.frameEquals(command)) {
                             reconnectToBroker();
                         } else {
-                            Log4J.error(this, "invalid input message: " + command.toString());
+                            Log4J.error(this, "Invalid input message: " + command.toString());
                         }
                         command.destroy();
                         msg.destroy();
                     } else if (--liveness == 0) {
-                        try {
-                            Thread.sleep(reconnect);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt(); // Restore the
-                            // interrupted status
+                        boolean result = Utils.sleep(reconnect);
+                        if( !result )
                             break;
-                        }
                         reconnectToBroker();
                     }
                     // Send HEARTBEAT if it's time
@@ -156,24 +147,52 @@ public class ServerCommController implements DestroyableCallback {
                         heartbeatAt = System.currentTimeMillis() + heartbeat;
                     }
                 } catch (Throwable error) {
-                    destroyInCascade(this);
-                    ExceptionHandler.handle(error);
-                    break;
+                    if( stop.get() || Utils.isZMQException(error) ) {
+                        ResourceLocator.setIamDone(this);
+                        destroyInCascade(this);
+                        break;
+                    }else{
+                        ExceptionHandler.handle(error);
+                    }
                 }
             }
             return null;
         }catch (Throwable e){
-            destroyInCascade(this);
-            return null;
+            try {
+                if( Utils.isZMQException(e) ) {
+                    ResourceLocator.setIamDone(this);
+                    destroyInCascade(this); // interrupted
+                }else{
+                    ExceptionHandler.handle(e);
+                }
+            }catch (Throwable t){
+            }finally {
+                return null;
+            }
         }
     }
 
+    /*******************************************************************************************/
+    /**********************************   SEND  ************************************************/
+    /*******************************************************************************************/
+
+    public void disconnect() throws Throwable{
+        SessionMessage sessionMessage = new SessionMessage();
+        sessionMessage.setRequestType(Constants.REQUEST_DISCONNECT);
+        sessionMessage.setSessionId(service);
+        ZMsg msg = new ZMsg();
+        msg.addFirst(new ZFrame( Utils.toJson(sessionMessage) ));
+        msg.wrap(msgTemplate.getReplyTo());
+        sendToBroker(MDP.S_DISCONNECT, null, msg);
+        msg.destroy();
+    }
 
     public void send(ZMsgWrapper reply, Object message) throws Throwable{
         try {
-            if (reply != null) {
-                if (replyTo == null || replyTo.toString().isEmpty()) {
-                    if (reply.getReplyTo() != null && !reply.getReplyTo().toString().isEmpty()) {
+            if(message.toString().startsWith("@@@")) Log4J.track(this, "27:" + message);
+            if (reply != null && message != null) {
+                if (replyTo == null || replyTo.toString().isEmpty() ) {
+                    if (reply.getReplyTo() != null && !reply.getReplyTo().toString().isEmpty() ) {
                         replyTo = reply.getReplyTo();
                     } else {
                         ExceptionHandler.checkAssert(replyTo != null);
@@ -181,15 +200,23 @@ public class ServerCommController implements DestroyableCallback {
                 }
                 reply.getMsg().wrap(replyTo);
                 if (reply.getMsg().peekLast() != null) {
-                    reply.getMsg().peekLast().reset(Utils.toJson(message));
+                    reply.getMsg().peekLast().reset( message instanceof String? (String) message : Utils.toJson(message));
                 } else {
                     reply.getMsg().addLast(Utils.toJson(message));
                 }
+                if(message.toString().startsWith("@@@")) Log4J.track(this, "28:" + reply.getMsg().peekLast());
                 sendToBroker(MDP.S_REPLY, null, reply.getMsg());
                 reply.destroy();
+            }else{
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
+                        "reply: " + reply, "message: " + message));
             }
         }catch (Throwable e){
-            destroyInCascade(this);
+            if( Utils.isZMQException(e) ) {
+                destroyInCascade(this); // interrupted
+            }else{
+                ExceptionHandler.handle(e);
+            }
         }
     }
 
@@ -200,26 +227,54 @@ public class ServerCommController implements DestroyableCallback {
         send(msgTemplate.duplicate(), message);
     }
 
+    /**
+     * Send message to broker If no msg is provided, creates one internally
+     *
+     * @param command
+     * @param option
+     * @param msg
+     */
+    void sendToBroker(MDP command, String option, ZMsg msg) throws Throwable{
+        if( !Thread.currentThread().isInterrupted() && Thread.currentThread().isAlive() ) {
+            try {
+                msg = msg != null ? msg.duplicate() : new ZMsg();
+                // Stack protocol envelope to start of message
+                if (option != null)
+                    msg.addFirst(new ZFrame(option));
+                msg.addFirst(command.newFrame());
+                msg.addFirst(MDP.S_ORCHESTRATOR.newFrame());
+                msg.addFirst(new ZFrame(new byte[0]));
+                if(msg.peekLast().toString().startsWith("@@@")) Log4J.track(this, "29:" + msg.peekLast());
+                msg.send(workerSocket);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /*******************************************************************************************/
+    /********************************** RELEASE ************************************************/
+    /*******************************************************************************************/
 
     public void close(DestroyableCallback callback) throws Throwable{
         this.callback = callback;
-        Log4J.info(this, "Closing ServerCommController...");
+        stop.getAndSet(true);
+        items.close();
+        Log4J.info(this, "Closing ServerCommController... Callback: " + callback);
         destroyInCascade(this);
     }
 
     @Override
-    public void destroyInCascade(Object destroyedObj) throws Throwable{
+    public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
         try {
-            if (msgTemplate != null) msgTemplate.destroy();
-            if (replyTo != null) replyTo.destroy();
-            if (workerSocket != null) {
-                ctx.destroySocket(workerSocket);
-            }
-            if( !isAlreadyDestroyed ) {
-                isAlreadyDestroyed = true;
-                if (ctx != null){
-                    ctx.destroy();
-                }
+            if( !isDestroyed.get() ) {
+                if( items.isLocked() )
+                    items.close();
+                if (msgTemplate != null) msgTemplate.destroy();
+                if (replyTo != null) replyTo.destroy();
+                ctx = null;
+                isDestroyed.getAndSet(true);
+                ResourceLocator.setIamDone( this );
                 Log4J.info(this, "Gracefully destroying...");
                 if(callback != null) callback.destroyInCascade(this);
             }

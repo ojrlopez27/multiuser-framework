@@ -6,7 +6,6 @@ import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.communication.ServerCommController;
-import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
@@ -16,37 +15,46 @@ import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
+import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by oscarr on 3/3/17.
  * This class controls all the interaction between a client and a set of specific components.
  */
-public class Session implements Runnable, OrchestratorListener, DestroyableCallback {
+public class Session implements Utils.NamedRunnable, OrchestratorListener, DestroyableCallback {
     private String id;
     private String status;
     private ProcessOrchestrator orchestrator;
-    private Thread thread;
-    private boolean isClosed;
+    private AtomicBoolean isClosed = new AtomicBoolean(false);
     private InactivityTimer timer;
-    private ServerCommController sessionCommController;
     private ZMsgWrapper replyMsg = new ZMsgWrapper();
     private Config config;
     private String fullAddress;
-    private ClientCommController client;
     private List<SessionObserver> observers;
     private DestroyableCallback callback;
     private CopyOnWriteArrayList closeableObjects;
+    private boolean useSessionTimeout = false;
+    /** we use this controller to communicate back with the client who made a request **/
+    private ServerCommController sessionCommController;
+    /** we use this controller to communicate back with the client when TCP is off **/
+    private ClientCommController client;
 
     public Session() {
-        this.timer = new InactivityTimer();
+        if(useSessionTimeout) this.timer = new InactivityTimer();
         this.observers = new ArrayList<>();
         this.closeableObjects = new CopyOnWriteArrayList();
+    }
+
+    @Override
+    public String getName() {
+        return "session-" + id;
     }
 
     public String getId() {
@@ -84,14 +92,13 @@ public class Session implements Runnable, OrchestratorListener, DestroyableCallb
                     "msg: " + msg, "fullAddress: " + fullAddress) );
         }
         if( this.id == null ){
-            this.thread = new Thread( this, String.format("Session-%s-Thread", id ));
             Log4J.info(this, "A new session has been created with id: " + id);
             this.fullAddress = fullAddress;
             if(msg != null) {
                 this.sessionCommController = new ServerCommController(fullAddress, id, msg);
                 closeableObjects.add( sessionCommController );
             }
-            this.thread.start();
+            Utils.execute(this);
         }
         this.id = id;
     }
@@ -120,32 +127,33 @@ public class Session implements Runnable, OrchestratorListener, DestroyableCallb
      * @throws Throwable
      */
     public void close(DestroyableCallback callback) throws Throwable{
-        this.callback = callback;
-        if( !isClosed ) {
+        if(this.callback == null && this.callback != this)
+            this.callback = callback;
+        if( !isClosed.getAndSet(true) ) {
             notifyObservers();
             Log4J.info(this, String.format("Closing session: %s", id));
-            isClosed = true;
-            status = Constants.SESSION_CLOSED;
             if( sessionCommController != null ) { // it is null when TCP is off
                 //notify the client
-                sessionCommController.send(new SessionMessage(Constants.SESSION_CLOSED));
+                sessionCommController.disconnect();
             }
-            orchestrator.close( this );
+            if(orchestrator != null) orchestrator.close( this );
             sessionCommController.close(this);
         }
     }
 
     @Override
-    public void destroyInCascade(Object destroyedObj) throws Throwable{
+    public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
         closeableObjects.remove( destroyedObj );
         if( closeableObjects.isEmpty() ) {
             orchestrator = null;
             if (sessionCommController != null) { // it is null when TCP is off
                 sessionCommController = null;
-                timer.cancel();
-                timer.purge();
-                thread.interrupt();
-                thread = null;
+                if( useSessionTimeout ) {
+                    timer.cancel();
+                    timer.purge();
+                }
+                status = Constants.SESSION_CLOSED;
+                ResourceLocator.setIamDone( this );
                 Log4J.info(this, "Gracefully destroying...");
                 Log4J.info(this, String.format("Session: %s has been disconnected!", id));
                 callback.destroyInCascade(this);
@@ -174,22 +182,26 @@ public class Session implements Runnable, OrchestratorListener, DestroyableCallb
     public void run(){
         try {
             initialize();
-            while (!status.equals(Constants.SESSION_CLOSED) && !thread.isInterrupted()) {
+            while (!status.equals(Constants.SESSION_CLOSED) && !Thread.currentThread().isInterrupted()) {
                 if( sessionCommController != null ) { //sessionCommController is null when not using TCP
                     ZMsgWrapper request = sessionCommController.receive(replyMsg.getMsg());
-                    if (request == null)
+                    if (request == null) {
                         break; //Interrupted
+                    }
                     replyMsg = request; //  Echo is complex :-)
                     String message = replyMsg.getMsg().peekLast().toString();
                     stopTimer();
                     if (message.contains(Constants.REQUEST_DISCONNECT)) {
                         status = Constants.SESSION_CLOSED;
                     } else {
-                        orchestrator.process(message);
+                        if( orchestrator != null ) {
+                            orchestrator.process(message);
+                        }else{
+                            Log4J.error(this, "Orchestrator is null");
+                        }
                     }
                 }
             }
-            close(this);
         }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
@@ -200,20 +212,21 @@ public class Session implements Runnable, OrchestratorListener, DestroyableCallb
      * @param output
      */
     @Override
-    public void processOutput(SessionMessage output) throws Throwable{
+    public void processOutput(Object output) throws Throwable{
         if( output == null ){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "output: " + output));
         }
         if( config.isTCPon() ) {
+            Log4J.track("ProcessOrchestratorImpl", "26:" + output);
             sessionCommController.send(output);
         }else{
             client.getResponseListener().process( Utils.toJson(output) );
         }
-        timer.schedule(new InactivityCheck(), config.getSessionTimeout());
+        if(useSessionTimeout) timer.schedule(new InactivityCheck(), config.getSessionTimeout());
     }
 
     private void stopTimer(){
-        timer.stopTimer();
+        if(useSessionTimeout) timer.stopTimer();
     }
 
     public void onClose(SessionObserver observer) {
