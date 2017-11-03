@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import zmq.Ctx;
 import zmq.ZError;
 
@@ -273,13 +274,17 @@ public final class Poller extends PollerBase implements Runnable
                         pollset.handler.inEvent();
                     }
                 }
-                catch (CancelledKeyException e) {
-                    // key may have been cancelled (?)
-                    e.printStackTrace();
-                }
-                catch (RuntimeException e) {
-                    // avoid the thread death by continuing to iterate
-                    e.printStackTrace();
+                // ojrlopez
+//                catch (CancelledKeyException e) {
+//                    // key may have been cancelled (?)
+//                    e.printStackTrace();
+//                }
+//                catch (RuntimeException e) {
+//                    // avoid the thread death by continuing to iterate
+//                    e.printStackTrace();
+//                }
+                catch(Exception e){
+                    ExceptionHandler.handle(e);
                 }
             }
         }

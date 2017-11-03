@@ -1091,18 +1091,13 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     }
 
     @Override
-    public final void inEvent()
+    public final void inEvent() throws Exception //ojrlopez
     {
         //  This function is invoked only once the socket is running in the context
         //  of the reaper thread. Process any commands from other threads/sockets
         //  that may be available at the moment. Ultimately, the socket will
         //  be destroyed.
-        // ojrlopez
-        try {
-            processCommands(0, false);
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+        processCommands(0, false);
         checkDestroy();
     }
 

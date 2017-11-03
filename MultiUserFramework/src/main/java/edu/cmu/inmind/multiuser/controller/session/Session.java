@@ -128,7 +128,6 @@ public class Session extends Utils.MyRunnable implements Runnable, OrchestratorL
      * @throws Throwable
      */
     public void close(DestroyableCallback callback) throws Throwable{
-        //Log4J.warn(this, "=== 12");
         if(this.callback == null && this.callback != this)
             this.callback = callback;
         if( !isClosed.getAndSet(true) ) {
@@ -138,20 +137,15 @@ public class Session extends Utils.MyRunnable implements Runnable, OrchestratorL
                 //notify the client
                 sessionCommController.disconnect();
             }
-            //Log4J.warn(this, "=== 13");
             if(orchestrator != null) orchestrator.close( this );
-            //Log4J.warn(this, "=== 14");
             sessionCommController.close(this);
-            //Log4J.warn(this, "=== 22");
         }
     }
 
     @Override
     public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
         closeableObjects.remove( destroyedObj );
-        //Log4J.warn(this, "=== 19");
         if( closeableObjects.isEmpty() ) {
-            //Log4J.warn(this, "=== 20");
             orchestrator = null;
             if (sessionCommController != null) { // it is null when TCP is off
                 sessionCommController = null;
@@ -163,7 +157,6 @@ public class Session extends Utils.MyRunnable implements Runnable, OrchestratorL
                 ResourceLocator.setIamDone( this );
                 Log4J.info(this, "Gracefully destroying...");
                 Log4J.info(this, String.format("Session: %s has been disconnected!", id));
-                //Log4J.warn(this, "=== 21");
                 callback.destroyInCascade(this);
             }
         }
@@ -205,7 +198,7 @@ public class Session extends Utils.MyRunnable implements Runnable, OrchestratorL
                         if( orchestrator != null ) {
                             orchestrator.process(message);
                         }else{
-                            Log4J.warn(this, "+++ Orchestrator is null");
+                            Log4J.error(this, "Orchestrator is null");
                         }
                     }
                 }

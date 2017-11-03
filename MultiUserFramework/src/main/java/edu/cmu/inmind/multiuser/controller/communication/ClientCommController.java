@@ -48,7 +48,7 @@ public class ClientCommController implements DestroyableCallback {
 
     // constants:
     private static final int    difference = 100; //if sentMessages > receivedMessages + difference => stop
-    private static final long   timeout = 10000; //we should receive a response from server within 10 seconds
+    private static final long   timeout = 20000; //we should receive a response from server within 10 seconds
     private static final String TOKEN = "TOKEN";
     private static final String STOP_FLAG = "STOP_FLAG";
 
@@ -275,20 +275,14 @@ public class ClientCommController implements DestroyableCallback {
     public void close(DestroyableCallback callback){
         callbacks.add(callback);
         try {
-            //Log4J.warn(this, "=== 3.1");
             Log4J.info(ClientCommController.this, "Closing ClientCommController...");
             stop.getAndSet(true);
             timer.cancel();
             timer.purge();
-            //Log4J.warn(this, "=== 3.2");
             sessionMngrCommAPI.close(this);
-            //Log4J.warn(this, "=== 3.6");
             sessionCommAPI.close(this);
-            //Log4J.warn(this, "=== 3.7");
             sendThread.close(this);
-            //Log4J.warn(this, "=== 3.12");
             receiveThread.close(this);
-            //Log4J.warn(this, "=== 3.22");
         }catch (Throwable e) {
             ExceptionHandler.handle(e);
         }
@@ -297,17 +291,14 @@ public class ClientCommController implements DestroyableCallback {
 
     @Override
     public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
-        //Log4J.warn(this, "=== 3.19");
         stop.getAndSet(true);
         closeableObjects.remove(destroyedObj);
         if( closeableObjects.isEmpty() && !isDestroyed.getAndSet(true) ) {
-            //Log4J.warn(this, "=== 3.20");
             sessionMngrCommAPI = null;
             sessionCommAPI = null;
             ctx = null;
             ResourceLocator.setIamDone( this );
             Log4J.info(this, "Gracefully destroying...");
-            //Log4J.warn(this, "=== 3.21");
             for (DestroyableCallback callback : callbacks) {
                 if(callback != null) callback.destroyInCascade(this);
             }
@@ -421,7 +412,7 @@ public class ClientCommController implements DestroyableCallback {
                             Log4J.error(this, "14:" + msg[1]);
                             senderSocket.send("ACK", 0);
                         }else{
-                            Utils.sleep(1);
+                            Utils.sleep(10);
                         }
                     } catch (Throwable e) {
                         if( !Utils.isZMQException(e) ) {
@@ -446,22 +437,15 @@ public class ClientCommController implements DestroyableCallback {
         @Override
         public void close(DestroyableCallback callback) throws Throwable {
             this.callback = callback;
-            //Log4J.warn(this, "++++ closing senderThread");
-            //Log4J.warn(this, "=== 3.8");
             stop.getAndSet(true);
             senderSocket.setLinger(0);
             Thread.currentThread().interrupt();
-            //Log4J.warn(this, "=== 3.9");
             destroyInCascade(this);
         }
 
         @Override
         public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable {
-            //nothing
-            //Log4J.warn(this, "=== 3.10");
-            //Log4J.warn(this, "++++ destroying senderThread");
             ResourceLocator.setIamDone(this);
-            //Log4J.warn(this, "=== 3.11");
             if(callback != null) callback.destroyInCascade(this);
         }
     }
@@ -486,7 +470,6 @@ public class ClientCommController implements DestroyableCallback {
                 return STOP_FLAG;
             }
         }catch (java.lang.AssertionError e) {
-            //Log4J.error("ClientCommController.receive", "Exception 2. Exception: " + e.getMessage());
             reconnect();
         }catch (Throwable e){
             try {
@@ -560,28 +543,20 @@ public class ClientCommController implements DestroyableCallback {
         @Override
         public void close(DestroyableCallback callback) throws Throwable {
             this.callback = callback;
-            //Log4J.warn(this, "++++ closing receiverThread");
-            //Log4J.warn(this, "=== 3.13");
             stop.getAndSet(true);
             Thread.currentThread().interrupt();
-            //Log4J.warn(this, "=== 3.14");
             destroyInCascade(this);
         }
 
         @Override
         public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable {
-            //Log4J.warn(this, "++++ destroying receiverThread");
-            //Log4J.warn(this, "=== 3.15");
             if (isSendThreadAlive.get()) {
                 stop.getAndSet(true);
             }
-            //Log4J.warn(this, "=== 3.16");
             receiveState.getAndSet( checkFSM(receiveState, Constants.CONNECTION_FINISHED) );
             if( stop.get() ) receiveState.getAndSet( checkFSM(receiveState, Constants.CONNECTION_STOPPED) );
-            //Log4J.warn(this, "=== 3.17");
             isReceiveThreadAlive.getAndSet(false);
             checkReconnect();
-            //Log4J.warn(this, "=== 3.18");
             if(callback != null) callback.destroyInCascade(this);
         }
     }
@@ -598,7 +573,6 @@ public class ClientCommController implements DestroyableCallback {
     /*****************************************************************************************/
 
     private void checkReconnect() throws Throwable{
-        //Log4J.warn(this, "++++ checking reconnect");
         if ( stop.get() && sendState.get() == Constants.CONNECTION_FINISHED
                 && receiveState.get() == Constants.CONNECTION_FINISHED){
             reconnect();
@@ -606,13 +580,11 @@ public class ClientCommController implements DestroyableCallback {
     }
 
     private void reconnect() throws Throwable{
-        //Log4J.warn(this, "++++ checking reconnect 1");
         release.getAndSet(checkFSM(release, Constants.CONNECTION_STARTED) );
         Utils.execute(new Utils.MyRunnable("reconnect") {
             @Override
             public void run() {
                 try {
-                    //Log4J.warn(this, "++++ checking reconnect 2");
                     release.getAndSet( checkFSM(release, Constants.CONNECTION_FINISHED) );
                     execute();
                 } catch (Throwable e) {

@@ -24,8 +24,8 @@ public class PerformanceTestPC extends PluggableComponent {
 
     @Override
     public void onEvent(final Blackboard blackboard, final BlackboardEvent event) throws Throwable{
-//        Log4J.error(this, String.format("messageCount for %s is %s and element is %s", agentId, messageCount,
-//                event.getElement()));
+        Log4J.error(this, String.format("messageCount for %s is %s and element is %s", agentId, messageCount,
+                event.getElement()));
         Log4J.error("PerformanceTestPC", "22:" + event.getElement());
         if( !agentId.equals(event.getSessionId()) || !agentId.equals(event.getElement().toString().split(":")[1]) ){
             Log4J.error("PerformanceTestPC", "22.1: They are not equal");

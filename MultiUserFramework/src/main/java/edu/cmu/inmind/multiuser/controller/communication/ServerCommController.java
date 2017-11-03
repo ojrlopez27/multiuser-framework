@@ -96,7 +96,6 @@ public class ServerCommController implements DestroyableCallback {
                 try {
                     // Poll socket for a reply, with timeout
                     if (items.poll(timeout) == -1) {
-                        //Log4J.warn(this, "Interrupted or Context has been shut down");
                         break; // Interrupted
                     }
 
@@ -130,7 +129,7 @@ public class ServerCommController implements DestroyableCallback {
                         } else if (MDP.S_DISCONNECT.frameEquals(command)) {
                             reconnectToBroker();
                         } else {
-                            Log4J.error(this, "+++ invalid input message: " + command.toString() + ". hashcode: " + hashCode());
+                            Log4J.error(this, "Invalid input message: " + command.toString());
                         }
                         command.destroy();
                         msg.destroy();
@@ -260,7 +259,6 @@ public class ServerCommController implements DestroyableCallback {
         stop.getAndSet(true);
         items.close();
         Log4J.info(this, "Closing ServerCommController... Callback: " + callback);
-        //Log4J.warn(this, "=== 15");
         destroyInCascade(this);
     }
 
@@ -268,17 +266,14 @@ public class ServerCommController implements DestroyableCallback {
     public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
         try {
             if( !isDestroyed.get() ) {
-                //Log4J.warn(this, "=== 16");
                 if( items.isLocked() )
                     items.close();
                 if (msgTemplate != null) msgTemplate.destroy();
                 if (replyTo != null) replyTo.destroy();
                 ctx = null;
-                //Log4J.warn(this, "=== 17");
                 isDestroyed.getAndSet(true);
                 ResourceLocator.setIamDone( this );
                 Log4J.info(this, "Gracefully destroying...");
-                //Log4J.warn(this, "=== 18");
                 if(callback != null) callback.destroyInCascade(this);
             }
         }catch (Throwable e){

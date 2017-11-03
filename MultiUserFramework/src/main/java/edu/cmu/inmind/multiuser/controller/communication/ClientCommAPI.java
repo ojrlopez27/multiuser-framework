@@ -152,18 +152,15 @@ public class ClientCommAPI implements DestroyableCallback {
     public void close(DestroyableCallback callback) throws Throwable{
         this.callback = callback;
         items.close();
-        //Log4J.warn(this, "=== 3.3");
         destroyInCascade(this);
     }
 
     @Override
     public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
         if( !isDestroyed.getAndSet(true) ) {
-            //Log4J.warn(this, "=== 3.4");
             checkAndSleep("destroyInCascade");
             ctx = null;
             ResourceLocator.setIamDone( this );
-            //Log4J.warn(this, "=== 3.5");
             Log4J.info(this, "Gracefully destroying...");
             if(callback != null) callback.destroyInCascade( this );
         }
@@ -174,7 +171,6 @@ public class ClientCommAPI implements DestroyableCallback {
         try {
             int times = 0;
             while (!canUseSocket.get() && times++ < maxNumTries) { // 200 * 5 = 1000 milliseconds
-                //Log4J.error(this, "waiting for atomic boolean: " + who + "\tbefore: " + whoPrevious);
                 Utils.sleep(delayCheckAndSleep);
             }
             canUseSocket.getAndSet(false);

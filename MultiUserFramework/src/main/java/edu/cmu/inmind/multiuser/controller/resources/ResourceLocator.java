@@ -357,20 +357,16 @@ public class ResourceLocator {
                 boolean allTerminated;
                 do {
                     allTerminated = true;
-                    //Log4J.warn(this, "=== 28.1");
                     for (DestroyableCallback key : destroyables.keySet()) {
                         if (!destroyables.get(key)) {
-                            //Log4J.warn(this, "=== 28.2 " + key);
                             key.destroyInCascade(null);
                             allTerminated = false;
                             Utils.sleep(50);
                             break;
                         }
                     }
-                    //Log4J.warn(this, "=== 28.3");
                 } while (!allTerminated);
 
-                //Log4J.warn(this, "=== 28.4");
                 try {
                     for (ZContext ctx : contexts) {
                         ctx.destroy();
@@ -378,9 +374,7 @@ public class ResourceLocator {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                //Log4J.warn(this, "=== 28.5");
                 //context.destroy();
-                //Log4J.warn(this, "=== 28.6");
             }
         }catch (Throwable e){
             ExceptionHandler.handle(e);

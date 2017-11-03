@@ -2,6 +2,7 @@ package zmq.io;
 
 import java.nio.channels.SelectableChannel;
 
+import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import zmq.poll.IPollEvents;
 import zmq.poll.Poller;
 import zmq.poll.Poller.Handle;
@@ -82,7 +83,12 @@ public class IOObject implements IPollEvents
     public final void inEvent()
     {
         assert (alive);
-        handler.inEvent();
+        try {
+            handler.inEvent();
+        }catch (Exception e){
+            // ojrlopez
+            ExceptionHandler.handle(e);
+        }
     }
 
     @Override

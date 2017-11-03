@@ -16,7 +16,6 @@ public class TestPluggableComponent  extends PluggableComponent {
 
     @Override
     public void onEvent(Blackboard blackboard, BlackboardEvent event) {
-        //Log4J.info( this, "Received event: " + event.getElement() );
         String uniqueMsgID = event.getElement().toString().split(" : ")[1];
         blackboard.post(this, "MSG_SEND_RESPONSE", "Response from MUF : " + uniqueMsgID );
     }

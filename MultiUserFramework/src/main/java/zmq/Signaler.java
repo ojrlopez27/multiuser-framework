@@ -110,7 +110,7 @@ final class Signaler implements Closeable
         }
     }
 
-    boolean waitEvent(long timeout)
+    boolean waitEvent(long timeout) throws Exception //ojrlopez
     {
         int rc;
         boolean brc = (rcursor < wcursor.get());
@@ -134,7 +134,7 @@ final class Signaler implements Closeable
             }
         }
         catch (ClosedSelectorException | IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace(); // ojrlopez
             errno.set(ZError.EINTR);
             return false;
         }

@@ -120,18 +120,14 @@ public class MultiuserFramework implements DestroyableCallback {
     @Override
     public void close(DestroyableCallback callback) throws Throwable {
         try {
-            //Log4J.warn(this, "=== 6");
             if (!stopping.getAndSet(true)) {
-                //Log4J.warn(this, "=== 7");
                 if (hooks != null) {
                     for (ShutdownHook hook : hooks) {
                         hook.execute();
                     }
                 }
-                //Log4J.warn(this, "=== 8");
 
                 if (config.isTCPon()) {
-                    //Log4J.warn(this, "=== 9");
                     sessionManager.close(this);
                 } else {
                     session.close( this );

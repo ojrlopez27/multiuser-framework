@@ -39,7 +39,6 @@ public class PerformanceTestOrchestrator extends ProcessOrchestratorImpl {
     @Override
     public void onEvent(Blackboard blackboard, BlackboardEvent event){
         //we use plain strings instead of SessionMessage to avoid json parsing
-        //Log4J.warn(this, "sending response " + event.getElement() + " from: " + agentId);
         Log4J.error("PerformanceTestOrchestrator", "24:" + event.getElement());
         sendResponse( event.getElement());
         if(verbose)
