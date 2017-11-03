@@ -13,7 +13,7 @@ import java.util.List;
  * in parallel, etc.) given an input message, and return a single output as result.
  */
 public interface ProcessOrchestrator {
-    void process(String message);
+    void process(String message) throws Throwable;
     void start();
     void pause();
     void resume();

@@ -27,7 +27,7 @@ public class PerformanceTestOrchestrator extends ProcessOrchestratorImpl {
     }
 
     @Override
-    public void process(String input){
+    public void process(String input) throws Throwable{
         //we use plain strings instead of SessionMessage to avoid json parsing
         Log4J.track("PerformanceTestOrchestrator", "21:" + input);
         if( !input.startsWith("@@@") ){

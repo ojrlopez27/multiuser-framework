@@ -15,7 +15,7 @@ import edu.cmu.inmind.multiuser.controller.plugin.StateType;
 public class TestPluggableComponent  extends PluggableComponent {
 
     @Override
-    public void onEvent(Blackboard blackboard, BlackboardEvent event) {
+    public void onEvent(Blackboard blackboard, BlackboardEvent event) throws Throwable{
         String uniqueMsgID = event.getElement().toString().split(" : ")[1];
         blackboard.post(this, "MSG_SEND_RESPONSE", "Response from MUF : " + uniqueMsgID );
     }

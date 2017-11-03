@@ -114,7 +114,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     }
 
     @Override
-    public void process(String input){
+    public void process(String input) throws Throwable{
         try {
             while (status != null && (status.equals(Constants.ORCHESTRATOR_STOPPED)
                     || status.equals(Constants.ORCHESTRATOR_PAUSED))) {

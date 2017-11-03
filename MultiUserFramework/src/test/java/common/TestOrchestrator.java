@@ -14,7 +14,7 @@ import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 public class TestOrchestrator extends ProcessOrchestratorImpl {
 
     @Override
-    public void process(String input){
+    public void process(String input) throws Throwable{
         SessionMessage sessionMessage = Utils.fromJson( input, SessionMessage.class );
         logger.turnOn( false );
         blackboard.post(this, "MSG_COMPONENT_1", sessionMessage.getPayload() );

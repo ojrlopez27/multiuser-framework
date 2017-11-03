@@ -20,7 +20,7 @@ public class PerformanceTestPCStateless extends PluggableComponent {
     private boolean verbose = false;
 
     @Override
-    public void onEvent(Blackboard blackboard, BlackboardEvent event){
+    public void onEvent(Blackboard blackboard, BlackboardEvent event) throws Throwable{
         String[] msgs = event.getElement().toString().split(":");
         String msg = msgs[0];
         String agentId = msgs[1];

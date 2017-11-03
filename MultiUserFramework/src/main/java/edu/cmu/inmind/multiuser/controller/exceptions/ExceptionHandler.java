@@ -139,4 +139,6 @@ public class ExceptionHandler {
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.FILE_NOT_EXISTS, path));
         }
     }
+
+    public static MessageLog getLogger() { return logger; }
 }
