@@ -494,36 +494,23 @@ public class Utils {
     /**********************************************************************************************/
 
 
-    static class MyThreadPool extends ThreadPoolExecutor{
-        public MyThreadPool(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
-            super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, new ThreadPoolExecutor.DiscardPolicy());
+    static class ManagableThreadPool extends ThreadPoolExecutor{
+        public ManagableThreadPool(int corePoolSize, int maximumPoolSize, long keepAliveTime,
+                                   TimeUnit unit, BlockingQueue<Runnable> workQueue) {
+            super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue,
+                    new ThreadPoolExecutor.DiscardPolicy());
         }
 
         @Override
         protected void beforeExecute(Thread t, Runnable r){
-            if(r instanceof MyRunnable) {
-                t.setName( ((MyRunnable) r).getName() );
+            if(r instanceof NamedRunnable) {
+                t.setName( ((NamedRunnable) r).getName() );
             }
         }
     }
 
-    public static abstract class MyRunnable implements Runnable{
-        protected String name;
-
-        public MyRunnable() {
-        }
-
-        public MyRunnable(String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
+    public interface NamedRunnable extends Runnable{
+        String getName();
     }
 
 
@@ -538,15 +525,12 @@ public class Utils {
      */
     public static void initThreadExecutor(){
         if( executor == null ) {
-            executor = new MyThreadPool(
-                        100,
+            executor = new ManagableThreadPool(
+                        1000,
                                     Integer.MAX_VALUE,
-                                    2000,
+                                    10000,
                                     TimeUnit.MILLISECONDS,
                                     new LinkedBlockingQueue());//(ThreadPoolExecutor) Executors.newCachedThreadPool();
-//            executor.setCorePoolSize(100);
-//            executor.setMaximumPoolSize(Integer.MAX_VALUE);
-//            executor.setKeepAliveTime(2000, TimeUnit.MILLISECONDS);
             executor.allowCoreThreadTimeOut(true);
         }
     }

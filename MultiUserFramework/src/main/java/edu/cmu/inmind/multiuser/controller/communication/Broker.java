@@ -8,7 +8,6 @@ import edu.cmu.inmind.multiuser.common.*;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
-import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.zeromq.*;
 
@@ -20,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *  Majordomo Protocol broker
  *  A minimal implementation of http://rfc.zeromq.org/spec:7 and spec:8
  */
-public class Broker extends Utils.MyRunnable implements DestroyableCallback{
+public class Broker implements Utils.NamedRunnable, DestroyableCallback{
 
     // We'd normally pull these from config data
     private static final String INTERNAL_SERVICE_PREFIX = "mmi.";
@@ -31,7 +30,6 @@ public class Broker extends Utils.MyRunnable implements DestroyableCallback{
     private int port;
     private DestroyableCallback callback;
     private ZMQ.Poller items;
-
 
 
     // ---------------------------------------------------------------------
@@ -102,8 +100,12 @@ public class Broker extends Utils.MyRunnable implements DestroyableCallback{
         this.port = port;
         this.items = ctx.createPoller(1);
         this.items.register(socket, ZMQ.Poller.POLLIN);
-        this.setName("broker-" + port);
         Log4J.info(this, "creating broker: " + port);
+    }
+
+    @Override
+    public String getName(){
+        return "broker-" + port;
     }
 
     // ---------------------------------------------------------------------
@@ -135,11 +137,11 @@ public class Broker extends Utils.MyRunnable implements DestroyableCallback{
                     ZFrame header = msg.pop();
                     if (sender != null && empty != null && header != null) {
                         if (MDP.C_CLIENT.frameEquals(header)) {
-                            if(msg.peekLast().toString().startsWith("@@@")) Log4J.error(this, "15:" + msg.peekLast());
+                            if(msg.peekLast().toString().startsWith("@@@")) Log4J.track(this, "15:" + msg.peekLast());
                             processClient(sender, msg);
                         } else if (MDP.S_ORCHESTRATOR.frameEquals(header)) {
                             if(msg.peekLast().toString().startsWith("@@@"))
-                                Log4J.error(this, "30:" + msg.peekLast());
+                                Log4J.track(this, "30:" + msg.peekLast());
                             processWorker(sender, msg);
                         } else {
                             msg.destroy();
@@ -203,7 +205,7 @@ public class Broker extends Utils.MyRunnable implements DestroyableCallback{
         if (serviceFrame.toString().startsWith(INTERNAL_SERVICE_PREFIX))
             serviceInternal(serviceFrame, msg);
         else {
-            if(msg.peekLast().toString().startsWith("@@@")) Log4J.error(this, "16:" + msg.peekLast());
+            if(msg.peekLast().toString().startsWith("@@@")) Log4J.track(this, "16:" + msg.peekLast());
             dispatch(requireService(serviceFrame), msg);
         }
         serviceFrame.destroy();
@@ -217,7 +219,7 @@ public class Broker extends Utils.MyRunnable implements DestroyableCallback{
         ZFrame command = msg.pop();
         boolean workerReady = workers.containsKey(sender.strhex());
         Worker worker = requireWorker(sender);
-        if(msg.peekLast().toString().startsWith("@@@")) Log4J.error(this, "31:" + msg.peekLast());
+        if(msg.peekLast().toString().startsWith("@@@")) Log4J.track(this, "31:" + msg.peekLast());
         if (MDP.S_READY.frameEquals(command)) {
             // Not first command in session || Reserved service name
             if (workerReady
@@ -232,7 +234,7 @@ public class Broker extends Utils.MyRunnable implements DestroyableCallback{
             }
         } else if (MDP.S_REPLY.frameEquals(command)) {
             if (workerReady) {
-                if(msg.peekLast().toString().startsWith("@@@")) Log4J.error(this, "32:" + msg.peekLast());
+                if(msg.peekLast().toString().startsWith("@@@")) Log4J.track(this, "32:" + msg.peekLast());
                 // Remove & save client return envelope and insert the
                 // protocol header and service name, then rewrap envelope.
                 ZFrame client = msg.unwrap();
@@ -357,7 +359,7 @@ public class Broker extends Utils.MyRunnable implements DestroyableCallback{
             }
         }
         if( hayWorkers ){
-            //Log4J.error(this, "17:" + waiting.size());
+            //Log4J.track(this, "17:" + waiting.size());
         }
     }
 
@@ -384,7 +386,7 @@ public class Broker extends Utils.MyRunnable implements DestroyableCallback{
             //Log4J.error(this, "Could not add message " + msg + " to queue: " + service.requests.size() );
         }
         purgeWorkers();
-        if(msg != null && msg.peekLast().toString().startsWith("@@@")) Log4J.error(this, "17:" + msg.peekLast());
+        if(msg != null && msg.peekLast().toString().startsWith("@@@")) Log4J.track(this, "17:" + msg.peekLast());
         while (!service.waiting.isEmpty() && !service.requests.isEmpty()) {
             msg = service.requests.pop();
             Worker worker = service.waiting.pop();
@@ -400,7 +402,7 @@ public class Broker extends Utils.MyRunnable implements DestroyableCallback{
      */
     public void sendToWorker(Worker worker, MDP command, String option,
                              ZMsg msgp) throws Throwable{
-        if(msgp != null && msgp.peekLast().toString().startsWith("@@@")) Log4J.error(this, "18:" + msgp.peekLast());
+        if(msgp != null && msgp.peekLast().toString().startsWith("@@@")) Log4J.track(this, "18:" + msgp.peekLast());
         if( !Thread.currentThread().isInterrupted() && Thread.currentThread().isAlive() ) {
             ZMsg msg = msgp == null ? new ZMsg() : msgp.duplicate();
             // Stack protocol envelope to start of message
@@ -411,7 +413,7 @@ public class Broker extends Utils.MyRunnable implements DestroyableCallback{
             // Stack routing envelope to start of message
             msg.wrap(worker.address.duplicate());
             if(msg.peekLast().toString().startsWith("@@@"))
-                Log4J.error(this, "19:" + msg.peekLast());
+                Log4J.track(this, "19:" + msg.peekLast());
             msg.send(socket);
         }
     }

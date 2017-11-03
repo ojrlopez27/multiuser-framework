@@ -128,13 +128,13 @@ public class ClientCommAPI implements DestroyableCallback {
             request.addFirst("");
             checkAndSleep("send");
             String temp = request.peekLast().toString();
-            if(temp.startsWith("@@@")) Log4J.error(this, "11:" + temp);
+            if(temp.startsWith("@@@")) Log4J.track(this, "11:" + temp);
             boolean wentWell = request.send(clientSocket);
             canUseSocket.getAndSet(true);
             if (!wentWell) {
                 return false;
             }
-            if(temp.startsWith("@@@")) Log4J.error(this, "12:" + temp);
+            if(temp.startsWith("@@@")) Log4J.track(this, "12:" + temp);
             return true;
         }catch (Throwable e){
             try {

@@ -6,7 +6,6 @@ import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.communication.ServerCommController;
-import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
@@ -29,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Created by oscarr on 3/3/17.
  * This class controls all the interaction between a client and a set of specific components.
  */
-public class Session extends Utils.MyRunnable implements Runnable, OrchestratorListener, DestroyableCallback {
+public class Session implements Utils.NamedRunnable, OrchestratorListener, DestroyableCallback {
     private String id;
     private String status;
     private ProcessOrchestrator orchestrator;
@@ -47,14 +46,15 @@ public class Session extends Utils.MyRunnable implements Runnable, OrchestratorL
     /** we use this controller to communicate back with the client when TCP is off **/
     private ClientCommController client;
 
-    public Session(String name){
-        this.name = name;
-    }
-
     public Session() {
         if(useSessionTimeout) this.timer = new InactivityTimer();
         this.observers = new ArrayList<>();
         this.closeableObjects = new CopyOnWriteArrayList();
+    }
+
+    @Override
+    public String getName() {
+        return "session-" + id;
     }
 
     public String getId() {
@@ -98,7 +98,6 @@ public class Session extends Utils.MyRunnable implements Runnable, OrchestratorL
                 this.sessionCommController = new ServerCommController(fullAddress, id, msg);
                 closeableObjects.add( sessionCommController );
             }
-            this.setName("session-" + id);
             Utils.execute(this);
         }
         this.id = id;
@@ -218,7 +217,7 @@ public class Session extends Utils.MyRunnable implements Runnable, OrchestratorL
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "output: " + output));
         }
         if( config.isTCPon() ) {
-            Log4J.error("ProcessOrchestratorImpl", "26:" + output);
+            Log4J.track("ProcessOrchestratorImpl", "26:" + output);
             sessionCommController.send(output);
         }else{
             client.getResponseListener().process( Utils.toJson(output) );

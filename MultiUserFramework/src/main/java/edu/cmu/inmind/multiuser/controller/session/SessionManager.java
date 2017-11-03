@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Created by oscarr on 3/3/17.
  * This class will control the sessions lifecycle (connect, disconnect, pause, resume)
  */
-public class SessionManager extends Utils.MyRunnable implements Runnable, Session.SessionObserver, DestroyableCallback {
+public class SessionManager implements Utils.NamedRunnable, Session.SessionObserver, DestroyableCallback {
     /** sessions handled by the session manager */
     private ConcurrentHashMap<String, Session> sessions;
     private CopyOnWriteArrayList<Object> closeableObjects;
@@ -76,6 +76,12 @@ public class SessionManager extends Utils.MyRunnable implements Runnable, Sessio
             serverCommController = new ServerCommController(fullAddress, serviceId, null);
             closeableObjects.add(serverCommController);
         }
+    }
+
+
+    @Override
+    public String getName(){
+        return Constants.SESSION_MANAGER_SERVICE;
     }
 
     /**
@@ -356,7 +362,6 @@ public class SessionManager extends Utils.MyRunnable implements Runnable, Sessio
      * MUF runs on its own separate thread
      */
     public void start() throws Throwable{
-        this.setName("session-manager");
         Utils.execute(this);
     }
 

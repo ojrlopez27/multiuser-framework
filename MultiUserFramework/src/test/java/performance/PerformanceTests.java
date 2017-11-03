@@ -36,7 +36,7 @@ public class PerformanceTests {
     static final long       timeout = 1000 * 60 * 5 * 10; // 50 minutes
     static final long       delaySendMsg = 100;
     static final boolean    verbose = false;
-    static final int        numAgents = 30;
+    static final int        numAgents = 100;
     static final int        numMessages = 10;
     static final String     url = useExternalMUF? "tcp://34.203.160.208" : "tcp://127.0.0.1";
     static final long       delayMUF = 1000;
@@ -92,8 +92,6 @@ public class PerformanceTests {
         long time = System.currentTimeMillis();
         for(int i = 0; i < numAgents; i++ ) {
             final int idx = i;
-            //Utils.execute(() -> agents[idx].run());
-            agents[idx].setName("agent-"+idx);
             Utils.execute(agents[idx]);
         }
 
@@ -122,7 +120,7 @@ public class PerformanceTests {
     /**
      * This class wraps the agent/client that sends requests to and receives responses from MUF
      */
-    class Agent extends Utils.MyRunnable{
+    class Agent implements Utils.NamedRunnable {
         private String agentId;
         private int id;
         private ClientCommController ccc;
@@ -144,7 +142,7 @@ public class PerformanceTests {
             this.id = Integer.valueOf(agentId.split("-")[1]);
             this.numMessages = numMessages;
             this.times = new ConcurrentHashMap<>();
-            Log4J.error(this, "1:@@@:" + agentId + ".");
+            Log4J.track(this, "1:@@@:" + agentId + ".");
             ccc = new ClientCommController.Builder()
                     .setServerAddress(url + ":" + portMUF)
                     .setServiceName( agentId )
@@ -152,17 +150,19 @@ public class PerformanceTests {
                     .setRequestType(Constants.REQUEST_CONNECT)
                     .setResponseListener(message -> {
                         try {
-                            Utils.printNewAddedThreads();
-                            Log4J.error(this, "Active: "+Thread.activeCount());
+                            if( verbose ) {
+                                Utils.printNewAddedThreads();
+                                Log4J.track(this, "Active: " + Thread.activeCount());
+                            }
                             if( message.contains(Constants.SESSION_INITIATED) ){
                                 initializedAgents.incrementAndGet();
                                 //if(verbose)
                                     Log4J.debug(this, String.format("initialized agent %s  total: %s", agentId,
                                             initializedAgents.get() ) );
                                 stop.getAndSet( false );
-                                Log4J.error(this, "2:@@@:" + agentId + ".");
+                                Log4J.track(this, "2:@@@:" + agentId + ".");
                             }else if( !message.contains(Constants.SESSION_CLOSED) && !message.contains(Constants.SESSION_RECONNECTED)){
-                                Log4J.error(this, "35:" + message);
+                                Log4J.track(this, "35:" + message);
                                 int key = Integer.valueOf(message.split(":")[2]);
                                 long value = times.get(key);
                                 times.put( key,  System.nanoTime() - value );
@@ -172,15 +172,16 @@ public class PerformanceTests {
                                     Log4J.debug(this, String.format("%s receives: %s receivedMessages: %s total: %s", agentId,
                                             message, receivedMessages, receivedMsgs.get()));
                                 if(receivedMessages == numMessages ){
-                                    Log4J.error(this, "36:" + message);
+                                    Log4J.track(this, "36:" + message);
                                     ids[id] = null;
-                                    StringBuffer faltan =  new StringBuffer("");
+                                    StringBuffer left =  new StringBuffer("");
                                     for( Integer id : ids ){
                                         if(id != null){
-                                            faltan.append(id + ", ");
+                                            left.append(id + ", ");
                                         }
                                     }
-                                    Log4J.debug(this, "Faltan: " + faltan);
+                                    if( verbose )
+                                        Log4J.debug(this, "Left threads: " + left);
                                 }
                             }
                         } catch (Throwable e) {
@@ -200,7 +201,7 @@ public class PerformanceTests {
                 for (int i = 0; i < numMessages; i++) {
                     //we send plain strings instead of SessionMessage to avoid json parsing
                     message = "@@@:" + agentId + ":"  +(i + 1);
-                    Log4J.error(this, "3:" + message);
+                    Log4J.track(this, "3:" + message);
                     times.put( (i + 1), System.nanoTime() );
                     ccc.send(agentId, message);
                     int sent = sentMessages.incrementAndGet();
@@ -211,7 +212,7 @@ public class PerformanceTests {
                 while( !stop.get() ){
                     Utils.sleep(100);
                 }
-                Log4J.error(this, "37:" + message);
+                Log4J.track(this, "37:" + message);
             }catch (Exception e){
                 e.printStackTrace();
             }
@@ -223,6 +224,11 @@ public class PerformanceTests {
             if( Thread.currentThread().isAlive() ){
                 Thread.currentThread().interrupt();
             }
+        }
+
+        @Override
+        public String getName() {
+            return agentId;
         }
     }
 }

@@ -7,7 +7,8 @@
         <!--</File>-->
         <!--https://stackoverflow.com/questions/21979699/log4j-2-adding-multiple-colors-to-console-appender-->
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%highlight{%d %-7level %-30logger{36} - %msg%n}{FATAL=red blink, ERROR=red blink, WARN=yellow bold, INFO=green bold, DEBUG=cyan, TRACE=black}"/>
+            <PatternLayout pattern="%highlight{%d %-7level %-30logger{36} - %msg%n}{FATAL=red blink, ERROR=red blink,
+                TRACK=red blink, WARN=yellow bold, INFO=green bold, DEBUG=cyan, TRACE=black}"/>
         </Console>
 
         <File name="Logs" fileName="/Users/oscarr/Development/logs/app.log">

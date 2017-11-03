@@ -6,7 +6,6 @@ import edu.cmu.inmind.multiuser.controller.MultiuserFramework;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
-import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
@@ -322,23 +321,23 @@ public class ClientCommController implements DestroyableCallback {
 
     public void sendToInternalSocket(Pair<String, Object> message) throws Throwable{
         try {
-            Log4J.error(this, "4:" + message.snd);
+            Log4J.track(this, "4:" + message.snd);
             clientSocket.send(message.fst + TOKEN + (message.snd instanceof String? (String) message.snd
                     : Utils.toJson(message.snd) ));
             String response = clientSocket.recvStr();
-            Log4J.error(this, "5:" + message.snd);
+            Log4J.track(this, "5:" + message.snd);
             if (response.equals(Constants.CONNECTION_STARTED)) {
-                Log4J.error(this, "5.1:" + message.snd);
+                Log4J.track(this, "5.1:" + message.snd);
                 sendState.getAndSet( checkFSM(sendState, Constants.CONNECTION_STARTED) );
                 response = clientSocket.recvStr();
             }
             if (response.equals(STOP_FLAG)) {
-                Log4J.error(this, "5.2:" + message.snd);
+                Log4J.track(this, "5.2:" + message.snd);
                 sendState.getAndSet( checkFSM(sendState, Constants.CONNECTION_FINISHED) );
                 if( stop.get() ) sendState.getAndSet( checkFSM(sendState, Constants.CONNECTION_STOPPED) );
                 checkReconnect();
             }
-            Log4J.error(this, "6:" + message.snd);
+            Log4J.track(this, "6:" + message.snd);
         }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
@@ -347,13 +346,13 @@ public class ClientCommController implements DestroyableCallback {
     private boolean sendToBroker(String id, String message) throws Throwable{
         ZMsg request = new ZMsg();
         request.addString( message );
-        if(message.startsWith("@@@")) Log4J.error(this, "9:" + message);
+        if(message.startsWith("@@@")) Log4J.track(this, "9:" + message);
         if( isTCPon ) {
             if( id.equals(sessionManagerService) ) {
-                if(message.startsWith("@@@"))  Log4J.error(this, "9.1:@@@:" + serviceName + ":" + message);
+                if(message.startsWith("@@@"))  Log4J.track(this, "9.1:@@@:" + serviceName + ":" + message);
                 return sessionMngrCommAPI.send(id, request);
             }else{
-                if(message.startsWith("@@@")) Log4J.error(this, "10:" + message);
+                if(message.startsWith("@@@")) Log4J.track(this, "10:" + message);
                 return sessionCommAPI.send(id, request);
             }
         }else{
@@ -371,7 +370,7 @@ public class ClientCommController implements DestroyableCallback {
         }
     }
 
-    class SenderThread extends Utils.MyRunnable implements DestroyableCallback{
+    class SenderThread implements Utils.NamedRunnable, DestroyableCallback{
         /**
          * senderSocket communicates with clientSocket. This communication
          * is interprocess, so clientSocket runs on the main thread and senderSocket
@@ -383,7 +382,10 @@ public class ClientCommController implements DestroyableCallback {
 
         public SenderThread(){
             this.context = ResourceLocator.getContext( this );
-            this.setName("sender-thread-" + serviceName);
+        }
+
+        public String getName(){
+            return "sender-thread-" + serviceName;
         }
 
         @Override
@@ -397,19 +399,19 @@ public class ClientCommController implements DestroyableCallback {
                 while( !stop.get() && !Thread.currentThread().isInterrupted() ) {
                     try{
                         String strMsg = senderSocket.recvStr(); //ZMQ.DONTWAIT);
-                        Log4J.error(this, "7:" + strMsg.split(TOKEN)[1]);
+                        Log4J.track(this, "7:" + strMsg.split(TOKEN)[1]);
                         if( strMsg != null ) {
                             String[] msg = strMsg.split(TOKEN);
-                            Log4J.error(this, "8:" + msg[1]);
+                            Log4J.track(this, "8:" + msg[1]);
                             Utils.setAtom( stop, !sendToBroker(msg[0], msg[1])
                                     && (sentMessages.get() > receivedMessages.get() + difference));
-                            Log4J.error(this, "13:" + msg[1]);
+                            Log4J.track(this, "13:" + msg[1]);
                             if (stop.get()) {
                                 continue;
                             }
                             sentMessages.incrementAndGet();
                             //  Signal downstream to client-thread
-                            Log4J.error(this, "14:" + msg[1]);
+                            Log4J.track(this, "14:" + msg[1]);
                             senderSocket.send("ACK", 0);
                         }else{
                             Utils.sleep(10);
@@ -484,11 +486,12 @@ public class ClientCommController implements DestroyableCallback {
         return STOP_FLAG;
     }
 
-    class ReceiverThread extends Utils.MyRunnable implements DestroyableCallback {
+    class ReceiverThread implements Utils.NamedRunnable, DestroyableCallback {
         private DestroyableCallback callback;
 
-        public ReceiverThread() {
-            this.setName("receiver-thread-" + serviceName);
+        @Override
+        public String getName() {
+            return "receiver-thread-" + serviceName;
         }
 
         @Override
@@ -505,7 +508,7 @@ public class ClientCommController implements DestroyableCallback {
                         String response = receive(sessionCommAPI);
                         if( "".equals(response) )
                             continue;
-                        Log4J.error(this, "33:" + response);
+                        Log4J.track(this, "33:" + response);
                         receivedMessages.incrementAndGet();
                         if (response == null && (sentMessages.get() > receivedMessages.get() + difference)) {
                             stop.getAndSet(true);
@@ -513,7 +516,7 @@ public class ClientCommController implements DestroyableCallback {
                             stop.getAndSet(true);
                         } else if (responseListener != null) {
                             if (shouldProcessReply) {
-                                Log4J.error(this, "34:" + response);
+                                Log4J.track(this, "34:" + response);
                                 responseListener.process(response);
                             } else {
                                 shouldProcessReply = true;
@@ -581,7 +584,7 @@ public class ClientCommController implements DestroyableCallback {
 
     private void reconnect() throws Throwable{
         release.getAndSet(checkFSM(release, Constants.CONNECTION_STARTED) );
-        Utils.execute(new Utils.MyRunnable("reconnect") {
+        Utils.execute(new Utils.NamedRunnable() {
             @Override
             public void run() {
                 try {
@@ -590,6 +593,10 @@ public class ClientCommController implements DestroyableCallback {
                 } catch (Throwable e) {
                     ExceptionHandler.handle(e);
                 }
+            }
+            @Override
+            public String getName(){
+                return "reconnect-" + serviceName;
             }
         });
     }

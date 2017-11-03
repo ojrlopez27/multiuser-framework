@@ -136,7 +136,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         try {
             orchestratorListeners.forEach(listener -> {
                 try {
-                    Log4J.error("ProcessOrchestratorImpl", "25:" + output);
+                    Log4J.track("ProcessOrchestratorImpl", "25:" + output);
                     listener.processOutput(output);
                 } catch (Throwable throwable) {
                     ExceptionHandler.handle(throwable);
@@ -211,29 +211,20 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
 
     @Override
     public void close(DestroyableCallback callback) throws Throwable{
-        Log4J.debug(this, "1");
         this.callback = callback;
-        Log4J.debug(this, "2");
         close();
     }
 
     @Override
     public void close() throws Throwable{
-        Log4J.debug(this, "3");
         if( !isClosed.getAndSet(true) && initialized.get() ) {
             Log4J.info(this, String.format("Closing Process Orchestrator for session: %s", sessionId));
-            Log4J.debug(this, "4");
             logger.store();
-            Log4J.debug(this, "5");
             status = Constants.ORCHESTRATOR_STOPPED;
-            Log4J.debug(this, "6");
             for(PluggableComponent component : components ){
-                Log4J.debug(this, "7");
                 component.close( sessionId, this );
             }
-            Log4J.debug(this, "8");
         }
-        Log4J.debug(this, "9");
     }
 
 

@@ -96,7 +96,7 @@ public class Blackboard {
 
     private void post(BlackboardListener sender, String key, Object element, boolean shouldClone){
         try {
-            Log4J.error(this, "21.1:" + element);
+            Log4J.track(this, "21.1:" + element);
             if( key == null ){
                 ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_KEY_NULL, "") );
             }
@@ -112,7 +112,7 @@ public class Blackboard {
             if (loggerOn){
                 logger.add(key, clone == null? "element is null" : clone.toString());
             }
-            Log4J.error(this, "21.2:" + element);
+            Log4J.track(this, "21.2:" + element);
             notifySubscribers(sender, Constants.ELEMENT_ADDED, key, clone);
         }
         catch (NoClassDefFoundError e){
@@ -218,47 +218,43 @@ public class Blackboard {
                     ExceptionHandler.handle( new MultiuserException(ErrorMessages.NOBODY_IS_SUBSCRIBED, key) );
                 }
                 if (listeners != null) {
-                    Log4J.error(this, "21.3:" + element);
+                    Log4J.track(this, "21.3:" + element);
                     for(final BlackboardListener subscriber : listeners ){
                         if( subscriber == null ){
                             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
                                     "subscriber: " + subscriber));
                             continue;
                         }
-                        Log4J.error(this, "21.4:" + element);
+                        Log4J.track(this, "21.4:" + element);
                         if( !subscriber.isClosing() ) {
-                            Log4J.error(this, "21.5:" + element);
+                            Log4J.track(this, "21.5:" + element);
                             final String sessionId = sender.getSessionId();
-                            final BlackboardEvent event = new BlackboardEvent(status, key, element, sessionId);
-                            Blackboard bb = null;
                             if (subscriber instanceof PluggableComponent) {
                                 ((PluggableComponent) subscriber).setActiveSession(sessionId);
-                                bb = ((PluggableComponent) subscriber).getBlackBoard(sessionId);
-                                if (bb == null) return;
                             }
-                            final Blackboard bb1 = bb;
-                            Log4J.error(this, "21.6:" + element);
-                            //Utils.execute(new Utils.MyRunnable("blackboard-onEvent-" + sender.getSessionId()) {
-                            new Thread("blackboard-event-" + event.getSessionId()) {
+                            Log4J.track(this, "21.6:" + element);
+                            final Blackboard bb = this;
+                            new Thread("blackboard-onEvent-" + sessionId) {
                                 public void run() {
-                                    try{
-                                        Log4J.error(this, "21.8:" + element);
-                                        subscriber.onEvent(bb1, event);
-                                    } catch(Throwable e){
+                                    try {
+                                        BlackboardEvent event = new BlackboardEvent(status, key, element, sessionId);
+                                        Log4J.track(this, "21.8:" + element);
+                                        subscriber.onEvent(bb, event);
+                                        Log4J.track(this, "21.8:" + element);
+                                        if (subscriber instanceof PluggableComponent && subscriber.getClass()
+                                                .isAnnotationPresent(ConnectRemoteService.class)) {
+                                            SessionMessage sessionMessage = new SessionMessage();
+                                            sessionMessage.setSessionId(sender.getSessionId());
+                                            sessionMessage.setRequestType(status);
+                                            sessionMessage.setMessageId(key);
+                                            sessionMessage.setPayload(Utils.toJson(event.getElement()));
+                                            ((PluggableComponent) subscriber).send(sessionMessage);
+                                        }
+                                    } catch (Throwable e) {
                                         ExceptionHandler.handle(e);
                                     }
                                 }
                             }.start();
-                            Log4J.error(this, "21.8:" + element);
-                            if (subscriber instanceof PluggableComponent && subscriber.getClass()
-                                    .isAnnotationPresent(ConnectRemoteService.class)) {
-                                SessionMessage sessionMessage = new SessionMessage();
-                                sessionMessage.setSessionId(sender.getSessionId());
-                                sessionMessage.setRequestType(status);
-                                sessionMessage.setMessageId(key);
-                                sessionMessage.setPayload(Utils.toJson(event.getElement()));
-                                ((PluggableComponent) subscriber).send(sessionMessage);
-                            }
                         }
                     }
                 }

@@ -17,17 +17,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 @StateType( state = Constants.STATELESS )
 public class PerformanceTestPCStateless extends PluggableComponent {
     private AtomicInteger messageCount = new AtomicInteger(0);
+    private boolean verbose = false;
 
     @Override
     public void onEvent(Blackboard blackboard, BlackboardEvent event){
         String[] msgs = event.getElement().toString().split(":");
         String msg = msgs[0];
         String agentId = msgs[1];
-        Log4J.error(this, String.format("messageCount for %s is %s and element is %s", agentId,
-                messageCount.incrementAndGet(), event.getElement()));
-        Log4J.error("PerformanceTestPCStateless", "23:" + event.getElement());
+        if( verbose ) {
+            Log4J.error(this, String.format("messageCount for %s is %s and element is %s", agentId,
+                    messageCount.incrementAndGet(), event.getElement()));
+        }
+        Log4J.track("PerformanceTestPCStateless", "23:" + event.getElement());
         if( !agentId.equals(event.getSessionId()) || !agentId.equals(event.getElement().toString().split(":")[1]) ){
-            Log4J.error("PerformanceTestPCStateless", "23.1: They are not equal");
+            Log4J.track("PerformanceTestPCStateless", "23.1: They are not equal");
         }
         blackboard.post(this, "MSG_SEND_RESPONSE", event.getElement());
     }

@@ -29,7 +29,7 @@ public class PerformanceTestOrchestrator extends ProcessOrchestratorImpl {
     @Override
     public void process(String input){
         //we use plain strings instead of SessionMessage to avoid json parsing
-        Log4J.error("PerformanceTestOrchestrator", "21:" + input);
+        Log4J.track("PerformanceTestOrchestrator", "21:" + input);
         if( !input.startsWith("@@@") ){
             Log4J.error(this, "Wrong message?");
         }
@@ -39,7 +39,7 @@ public class PerformanceTestOrchestrator extends ProcessOrchestratorImpl {
     @Override
     public void onEvent(Blackboard blackboard, BlackboardEvent event){
         //we use plain strings instead of SessionMessage to avoid json parsing
-        Log4J.error("PerformanceTestOrchestrator", "24:" + event.getElement());
+        Log4J.track("PerformanceTestOrchestrator", "24:" + event.getElement());
         sendResponse( event.getElement());
         if(verbose)
             Log4J.debug(this, "onEvent sendResponse: " + event.getElement());
