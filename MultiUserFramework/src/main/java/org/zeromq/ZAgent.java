@@ -28,7 +28,7 @@ public interface ZAgent
      *
      * @return the received message or null if the context was shut down.
      */
-    ZMsg recv();
+    ZMsg recv() throws Exception; //ojrlopez
 
     /**
      * Receives a control message sent from the Plateau in the Corbeille.
@@ -37,7 +37,7 @@ public interface ZAgent
      * @param timeout the timeout in milliseconds before returning null.
      * @return the received message or null if the context was shut down or if no message after the timeout.
      */
-    ZMsg recv(int timeout);
+    ZMsg recv(int timeout) throws Exception; //ojrlopez
 
     /**
      * Receives a control message sent from the Plateau in the Corbeille.
@@ -46,7 +46,7 @@ public interface ZAgent
      * @param wait   true to make a blocking call, false to not wait, and possibly return null
      * @return the received message or null if the context was shut down or if there is no message when not blocking.
      */
-    ZMsg recv(boolean wait);
+    ZMsg recv(boolean wait) throws Exception; //ojrlopez
 
     /**
      * Sends a control message from the Corbeille to the Plateau.
@@ -155,13 +155,13 @@ public interface ZAgent
         }
 
         @Override
-        public ZMsg recv()
+        public ZMsg recv() throws Exception //ojrlopez
         {
             return recv(true);
         }
 
         @Override
-        public ZMsg recv(int timeout)
+        public ZMsg recv(int timeout) throws Exception //ojrlopez
         {
             final int old = pipe.getReceiveTimeOut();
             pipe.setReceiveTimeOut(timeout);
@@ -173,7 +173,7 @@ public interface ZAgent
         }
 
         @Override
-        public ZMsg recv(boolean wait)
+        public ZMsg recv(boolean wait) throws Exception //ojrlopez
         {
             if (locked) {
                 return null;

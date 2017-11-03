@@ -564,19 +564,19 @@ public class ZStar implements ZAgent
     }
 
     @Override
-    public ZMsg recv()
+    public ZMsg recv() throws Exception //ojrlopez
     {
         return agent.recv();
     }
 
     @Override
-    public ZMsg recv(int timeout)
+    public ZMsg recv(int timeout) throws Exception //ojrlopez
     {
         return agent.recv(timeout);
     }
 
     @Override
-    public ZMsg recv(boolean wait)
+    public ZMsg recv(boolean wait) throws Exception //ojrlopez
     {
         return agent.recv(wait);
     }

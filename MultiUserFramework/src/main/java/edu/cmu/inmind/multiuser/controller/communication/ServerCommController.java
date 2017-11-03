@@ -8,6 +8,7 @@ import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
+import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
@@ -41,6 +42,7 @@ public class ServerCommController implements DestroyableCallback {
     // Return address, if any
     private ZFrame replyTo;
     private AtomicBoolean isDestroyed = new AtomicBoolean(false);
+    private AtomicBoolean stop = new AtomicBoolean(false);
     private DestroyableCallback callback;
 
     public ServerCommController(String serverAddress, String serviceId, ZMsgWrapper msgTemplate) {
@@ -52,7 +54,7 @@ public class ServerCommController implements DestroyableCallback {
             if (msgTemplate != null) {
                 this.msgTemplate = msgTemplate.duplicate();
             }
-            ctx = DependencyManager.getInstance().getContext( this );
+            ctx = ResourceLocator.getContext( this );
             items = ctx.createPoller(1); //new ZMQ.Poller(1);
             reconnectToBroker();
             items.register(workerSocket, ZMQ.Poller.POLLIN);
@@ -68,7 +70,7 @@ public class ServerCommController implements DestroyableCallback {
         if (workerSocket != null) {
             ctx.destroySocket(workerSocket);
         }
-        workerSocket = DependencyManager.createSocket(ctx, ZMQ.DEALER);
+        workerSocket = ResourceLocator.createSocket(ctx, ZMQ.DEALER);
         workerSocket.connect(serverAddress);
 
         // Register service with broker
@@ -94,7 +96,7 @@ public class ServerCommController implements DestroyableCallback {
                 try {
                     // Poll socket for a reply, with timeout
                     if (items.poll(timeout) == -1) {
-                        Log4J.warn(this, "Interrupted or Context has been shut down");
+                        //Log4J.warn(this, "Interrupted or Context has been shut down");
                         break; // Interrupted
                     }
 
@@ -120,13 +122,15 @@ public class ServerCommController implements DestroyableCallback {
                             // up to a null part, but for now, just save one
                             replyTo = msg.unwrap();
                             command.destroy();
+                            if( msg.peek().toString().startsWith("@@@"))
+                                Log4J.error(this, "20:" + msg.peek().toString() );
                             return new ZMsgWrapper(msg, replyTo); // We have a request to process
                         } else if (MDP.S_HEARTBEAT.frameEquals(command)) {
                             // Do nothing for heartbeats
                         } else if (MDP.S_DISCONNECT.frameEquals(command)) {
                             reconnectToBroker();
                         } else {
-                            Log4J.error(this, "invalid input message: " + command.toString() + ". hashcode: " + hashCode());
+                            Log4J.error(this, "+++ invalid input message: " + command.toString() + ". hashcode: " + hashCode());
                         }
                         command.destroy();
                         msg.destroy();
@@ -142,19 +146,25 @@ public class ServerCommController implements DestroyableCallback {
                         heartbeatAt = System.currentTimeMillis() + heartbeat;
                     }
                 } catch (Throwable error) {
-                    //error.printStackTrace();
-                    DependencyManager.setIamDone(this);
-                    destroyInCascade(this);
-                    //ExceptionHandler.handle(error);
-                    break;
+                    if( stop.get() || Utils.isZMQException(error) ) {
+                        ResourceLocator.setIamDone(this);
+                        destroyInCascade(this);
+                        break;
+                    }else{
+                        ExceptionHandler.handle(error);
+                    }
                 }
             }
             return null;
         }catch (Throwable e){
             try {
-                DependencyManager.setIamDone(this);
-                destroyInCascade(this);
-            }catch (Throwable e1){
+                if( Utils.isZMQException(e) ) {
+                    ResourceLocator.setIamDone(this);
+                    destroyInCascade(this); // interrupted
+                }else{
+                    ExceptionHandler.handle(e);
+                }
+            }catch (Throwable t){
             }finally {
                 return null;
             }
@@ -178,6 +188,7 @@ public class ServerCommController implements DestroyableCallback {
 
     public void send(ZMsgWrapper reply, Object message) throws Throwable{
         try {
+            if(message.toString().startsWith("@@@")) Log4J.error(this, "27:" + message);
             if (reply != null && message != null) {
                 if (replyTo == null || replyTo.toString().isEmpty() ) {
                     if (reply.getReplyTo() != null && !reply.getReplyTo().toString().isEmpty() ) {
@@ -192,6 +203,7 @@ public class ServerCommController implements DestroyableCallback {
                 } else {
                     reply.getMsg().addLast(Utils.toJson(message));
                 }
+                if(message.toString().startsWith("@@@")) Log4J.error(this, "28:" + reply.getMsg().peekLast());
                 sendToBroker(MDP.S_REPLY, null, reply.getMsg());
                 reply.destroy();
             }else{
@@ -199,8 +211,11 @@ public class ServerCommController implements DestroyableCallback {
                         "reply: " + reply, "message: " + message));
             }
         }catch (Throwable e){
-            e.printStackTrace();
-            destroyInCascade(this);
+            if( Utils.isZMQException(e) ) {
+                destroyInCascade(this); // interrupted
+            }else{
+                ExceptionHandler.handle(e);
+            }
         }
     }
 
@@ -228,6 +243,7 @@ public class ServerCommController implements DestroyableCallback {
                 msg.addFirst(command.newFrame());
                 msg.addFirst(MDP.S_ORCHESTRATOR.newFrame());
                 msg.addFirst(new ZFrame(new byte[0]));
+                if(msg.peekLast().toString().startsWith("@@@")) Log4J.error(this, "29:" + msg.peekLast());
                 msg.send(workerSocket);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -241,9 +257,10 @@ public class ServerCommController implements DestroyableCallback {
 
     public void close(DestroyableCallback callback) throws Throwable{
         this.callback = callback;
+        stop.getAndSet(true);
         items.close();
         Log4J.info(this, "Closing ServerCommController... Callback: " + callback);
-        Log4J.warn(this, "=== 15");
+        //Log4J.warn(this, "=== 15");
         destroyInCascade(this);
     }
 
@@ -251,17 +268,17 @@ public class ServerCommController implements DestroyableCallback {
     public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
         try {
             if( !isDestroyed.get() ) {
-                Log4J.warn(this, "=== 16");
+                //Log4J.warn(this, "=== 16");
                 if( items.isLocked() )
                     items.close();
                 if (msgTemplate != null) msgTemplate.destroy();
                 if (replyTo != null) replyTo.destroy();
                 ctx = null;
-                Log4J.warn(this, "=== 17");
+                //Log4J.warn(this, "=== 17");
                 isDestroyed.getAndSet(true);
-                DependencyManager.setIamDone( this );
+                ResourceLocator.setIamDone( this );
                 Log4J.info(this, "Gracefully destroying...");
-                Log4J.warn(this, "=== 18");
+                //Log4J.warn(this, "=== 18");
                 if(callback != null) callback.destroyInCascade(this);
             }
         }catch (Throwable e){

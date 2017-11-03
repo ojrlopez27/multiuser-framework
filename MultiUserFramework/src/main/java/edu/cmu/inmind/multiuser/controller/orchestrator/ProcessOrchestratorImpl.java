@@ -136,6 +136,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         try {
             orchestratorListeners.forEach(listener -> {
                 try {
+                    Log4J.error("ProcessOrchestratorImpl", "25:" + output);
                     listener.processOutput(output);
                 } catch (Throwable throwable) {
                     ExceptionHandler.handle(throwable);
@@ -253,7 +254,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
             components = null;
             componentsSet = null;
             session = null;
-            DependencyManager.setIamDone( this );
+            ResourceLocator.setIamDone( this );
             Log4J.info(this, "Gracefully destroying...");
             Log4J.info(this, String.format("Process Orchestrator for session %s is destroyed!", sessionId));
             if (callback != null) callback.destroyInCascade(this);
@@ -456,8 +457,15 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     }
 
     @Override
-    public void onEvent(BlackboardEvent event) throws Throwable{
+    public void onEvent(Blackboard blackboard, BlackboardEvent event) throws Throwable{
         //do nothing
+    }
+
+    /** ============================== BlackboardListener ============================ **/
+
+    @Override
+    public boolean isClosing(){
+        return isClosed.get();
     }
 
     @Override

@@ -23,7 +23,7 @@
         <Root level="trace">
             <!-- Only events at DIAG level or more specific are sent to the console. -->
             <AppenderRef ref="Console" level="trace" />
-            <!--<AppenderRef ref="Logs" level="trace" />-->
+            <AppenderRef ref="Logs" level="trace" />
         </Root>
     </Loggers>
 </Configuration>

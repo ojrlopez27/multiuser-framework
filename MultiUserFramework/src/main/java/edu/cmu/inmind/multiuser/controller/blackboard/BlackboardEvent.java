@@ -11,14 +11,16 @@ public class BlackboardEvent {
     private String status;
     private String id;
     private Object element;
+    private String sessionId;
 
-    public BlackboardEvent(String status, String id, Object element) {
-        if( status == null || status.isEmpty() || id == null ||  id.isEmpty() || element == null ){
-            ExceptionHandler.handle( new MultiuserException(ErrorMessages.BLACKBOARD_EVENT, status, id, element) );
+    public BlackboardEvent(String status, String id, Object element, String sessionId) {
+        if( status == null || status.isEmpty() || id == null ||  id.isEmpty() || element == null || sessionId == null){
+            ExceptionHandler.handle(new MultiuserException(ErrorMessages.BLACKBOARD_EVENT, status, id, element, sessionId));
         }
         this.status = status;
         this.element = element;
         this.id = id;
+        this.sessionId = sessionId;
     }
 
     public String getStatus() {
@@ -43,6 +45,10 @@ public class BlackboardEvent {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getSessionId() {
+        return sessionId;
     }
 
     @Override

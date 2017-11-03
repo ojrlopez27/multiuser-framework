@@ -78,13 +78,13 @@ class Proxy
 
                 //  Process a control command if any
                 if (control != null && items[2].isReadable()) {
-                    msg = control.recv(0);
-                    if (msg == null) {
-                        return false;
-                    }
-
                     // ojrlopez
                     try {
+                        msg = control.recv(0);
+                        if (msg == null) {
+                            return false;
+                        }
+
                         more = control.getSocketOpt(ZMQ.ZMQ_RCVMORE);
 
                         if (more < 0) {
@@ -96,25 +96,25 @@ class Proxy
                         if (!success) {
                             return false;
                         }
+
+                        byte[] command = msg.data();
+                        if (Arrays.equals(command, ZMQ.PROXY_PAUSE)) {
+                            state = State.PAUSED;
+                        }
+                        else if (Arrays.equals(command, ZMQ.PROXY_RESUME)) {
+                            state = State.ACTIVE;
+                        }
+                        else if (Arrays.equals(command, ZMQ.PROXY_TERMINATE)) {
+                            state = State.TERMINATED;
+                        }
+                        else {
+                            //  This is an API error, we should assert
+                            System.out
+                                    .printf("E: invalid command sent to proxy '%s'%n", new String(command, ZMQ.CHARSET));
+                            assert false;
+                        }
                     }catch (Exception e){
                         e.printStackTrace();
-                    }
-
-                    byte[] command = msg.data();
-                    if (Arrays.equals(command, ZMQ.PROXY_PAUSE)) {
-                        state = State.PAUSED;
-                    }
-                    else if (Arrays.equals(command, ZMQ.PROXY_RESUME)) {
-                        state = State.ACTIVE;
-                    }
-                    else if (Arrays.equals(command, ZMQ.PROXY_TERMINATE)) {
-                        state = State.TERMINATED;
-                    }
-                    else {
-                        //  This is an API error, we should assert
-                        System.out
-                                .printf("E: invalid command sent to proxy '%s'%n", new String(command, ZMQ.CHARSET));
-                        assert false;
                     }
                 }
                 //  Process a request.
@@ -147,35 +147,41 @@ class Proxy
     {
         int more;
         boolean success;
-        while (true) {
-            Msg msg = from.recv(0);
-            if (msg == null) {
-                return false;
-            }
-            // ojrlopez
-            try {
-                more = from.getSocketOpt(ZMQ.ZMQ_RCVMORE);
-                if (more < 0) {
+        // ojrlopez
+        try{
+            while (true) {
+                Msg msg = from.recv(0);
+                if (msg == null) {
                     return false;
                 }
+                // ojrlopez
+                try {
+                    more = from.getSocketOpt(ZMQ.ZMQ_RCVMORE);
+                    if (more < 0) {
+                        return false;
+                    }
 
-                //  Copy message to capture socket if any
-                success = capture(capture, msg, more);
-                if (!success) {
-                    return false;
+                    //  Copy message to capture socket if any
+                    success = capture(capture, msg, more);
+                    if (!success) {
+                        return false;
+                    }
+                    success = to.send(msg, more > 0 ? ZMQ.ZMQ_SNDMORE : 0);
+                    if (!success) {
+                        return false;
+                    }
+                    if (more == 0) {
+                        break;
+                    }
+                }catch (Exception e){
+                    e.printStackTrace();
                 }
-                success = to.send(msg, more > 0 ? ZMQ.ZMQ_SNDMORE : 0);
-                if (!success) {
-                    return false;
-                }
-                if (more == 0) {
-                    break;
-                }
-            }catch (Exception e){
-                e.printStackTrace();
             }
+            return true;
+        }catch (Exception e){
+            e.printStackTrace();
+            return false;
         }
-        return true;
     }
 
     private boolean capture(SocketBase capture, Msg msg, int more)

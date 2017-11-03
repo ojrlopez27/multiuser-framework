@@ -6,7 +6,6 @@ import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
-import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardListener;
 import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
@@ -15,8 +14,8 @@ import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
-import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
+import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import edu.cmu.inmind.multiuser.controller.session.Session;
 import edu.cmu.inmind.multiuser.controller.sync.SynchronizableEvent;
 
@@ -29,8 +28,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Created by oscarr on 3/16/17.
  */
 @StateType( state = Constants.STATEFULL )
-public abstract class PluggableComponent extends AbstractIdleService implements BlackboardListener, Pluggable,
-        DestroyableCallback {
+public abstract class PluggableComponent extends AbstractIdleService
+                                         implements BlackboardListener, Pluggable, DestroyableCallback {
     private ConcurrentHashMap<String, Blackboard> blackboards;
     protected ConcurrentHashMap<String, MessageLog> messageLoggers;
     protected ConcurrentHashMap<String, Session> sessions;
@@ -67,6 +66,22 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         blackboards.put(sessionId, blackboard);
     }
 
+    public Blackboard getBlackBoard(String sessionId){
+        Blackboard bb = null;
+        if( !isClosing() ) {
+            if (blackboards == null || sessionId == null) {
+                ExceptionHandler.handle(new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "blackboards: " + blackboards,
+                        "sessionId: " + sessionId));
+            } else {
+                bb = blackboards.get(sessionId);
+                if (bb == null) {
+                    ExceptionHandler.handle(new MultiuserException(ErrorMessages.NO_BLACKBOARD, sessionId));
+                }
+            }
+        }
+        return bb;
+    }
+
     public Session getSession() throws Throwable{
         checkActiveSession();
         return activeSession;
@@ -88,13 +103,6 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
     }
 
     /**
-     * Super: BlackboardListener interface
-     */
-    @Override
-    public abstract void onEvent(BlackboardEvent event) throws Throwable;
-
-
-    /**
      * Super: AbstractExecutionThreadService class (GUAVA)
      */
     @Override
@@ -108,9 +116,9 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
      */
     @Override
     public void shutDown() {
+        isShutDown.getAndSet(true);
         Log4J.info(this, "Shutting down component: " + this.getClass().getSimpleName() +
                 " instantiation " + this.hashCode());
-        isShutDown.getAndSet(true);
         if(blackboards != null) blackboards.clear();
         blackboards = null;
         if(messageLoggers != null) messageLoggers.clear();
@@ -130,10 +138,19 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         }
     }
 
+    /**
+     * Super: BlackboardListener interface
+     */
+    @Override
+    public boolean isClosing(){
+        return !isRunning();
+    }
+
     /** ================================================ END OVERRIDE ============================================ **/
 
 
-    public Blackboard blackboard(){
+    @Deprecated
+    private Blackboard blackboard(){
         Blackboard bb = null;
         if( !isClosed.get() ) {
             if (activeSession != null && activeSession.getId() != null && blackboards != null) {
@@ -213,7 +230,8 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         if (activeSession == null){
             if( sessions != null && sessions.size() > 0 ){
                 activeSession = new ArrayList<>( sessions.values() ).get( sessions.size() - 1 );
-                if( activeSession != null && activeSession.getId() != null ) defaultSessionId = activeSession.getId();
+                if( activeSession != null && activeSession.getId() != null )
+                    defaultSessionId = activeSession.getId();
             }else {
                 ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "activeSession: "
                         + activeSession, "sessions: " + sessions) );
@@ -258,7 +276,7 @@ public abstract class PluggableComponent extends AbstractIdleService implements 
         if( clientCommController != null ){
             clientCommController.close(null);
         }
-        DependencyManager.setIamDone( this );
+        ResourceLocator.setIamDone( this );
         Log4J.info(this, "Gracefully destroying...");
         for(DestroyableCallback callback : callbacks){
             callback.destroyInCascade( this );

@@ -278,12 +278,12 @@ public class ZAuth implements Closeable
                     + (metadata != null ? "metadata=" + metadata : "") + "]";
         }
 
-        private static ZapReply recv(ZAgent agent, boolean wait)
+        private static ZapReply recv(ZAgent agent, boolean wait) throws Exception //ojrlopez
         {
             return received(agent.recv(wait));
         }
 
-        private static ZapReply recv(ZAgent agent, int timeout)
+        private static ZapReply recv(ZAgent agent, int timeout) throws Exception //ojrlopez
         {
             return received(agent.recv(timeout));
         }
@@ -372,7 +372,7 @@ public class ZAuth implements Closeable
             }
         }
 
-        private static ZapRequest recvRequest(Socket handler, boolean wait)
+        private static ZapRequest recvRequest(Socket handler, boolean wait) throws Exception //ojrlopez
         {
             ZMsg request = ZMsg.recvMsg(handler, wait);
             if (request == null) {
@@ -416,7 +416,7 @@ public class ZAuth implements Closeable
 
     private final ZAgent     agent;
     private final ZStar.Exit exit;
-    private final ZAgent     replies;
+    private ZAgent     replies = null; //ojrlopez
     private boolean          repliesEnabled; // are replies enabled?
 
     /**
@@ -467,9 +467,13 @@ public class ZAuth implements Closeable
         agent = zactor.agent();
         exit = zactor.exit();
 
-        // wait for the start of the actor
-        agent.recv().destroy();
-        replies = actor.createAgent(ctx);
+        try {
+            // wait for the start of the actor
+            agent.recv().destroy();
+            replies = actor.createAgent(ctx);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -482,7 +486,13 @@ public class ZAuth implements Closeable
 
     public ZAuth verbose(boolean verbose)
     {
-        return send(VERBOSE, String.format("%b", verbose));
+        //ojrlopez
+        try {
+            return send(VERBOSE, String.format("%b", verbose));
+        }catch (Exception e){
+            e.printStackTrace();
+            return null;
+        }
     }
 
     /**
@@ -492,7 +502,7 @@ public class ZAuth implements Closeable
      * whitelist multiple IP addresses. If you whitelist a single address, any
      * non-whitelisted addresses are treated as blacklisted.
      */
-    public ZAuth allow(String address)
+    public ZAuth allow(String address) throws Exception //ojrlopez
     {
         assert (address != null);
         return send(ALLOW, address);
@@ -504,7 +514,7 @@ public class ZAuth implements Closeable
      * whitelist, or a blacklist, not not both. If you define both a whitelist
      * and a blacklist, only the whitelist takes effect.
      */
-    public ZAuth deny(String address)
+    public ZAuth deny(String address) throws Exception //ojrlopez
     {
         assert (address != null);
         return send(DENY, address);
@@ -515,7 +525,7 @@ public class ZAuth implements Closeable
      * uses a plain-text password file. To cover all domains, use "*". You can
      * modify the password file at any time; it is reloaded automatically.
      */
-    public ZAuth configurePlain(String domain, String filename)
+    public ZAuth configurePlain(String domain, String filename) throws Exception //ojrlopez
     {
         assert (domain != null);
         assert (filename != null);
@@ -527,13 +537,13 @@ public class ZAuth implements Closeable
      *
      * @param location Can be ZAuth.CURVE_ALLOW_ANY or a directory with public-keys that will be accepted
      */
-    public ZAuth configureCurve(String location)
+    public ZAuth configureCurve(String location) throws Exception //ojrlopez
     {
         assert (location != null);
         return send(Mechanism.CURVE.name(), location);
     }
 
-    public ZAuth replies(boolean enable)
+    public ZAuth replies(boolean enable) throws Exception //ojrlopez
     {
         repliesEnabled = enable;
         return send(REPLIES, String.format("%b", enable));
@@ -543,7 +553,7 @@ public class ZAuth implements Closeable
      * Retrieves the next ZAP reply.
      * @return the next reply or null if the actor is closed.
      */
-    public ZapReply nextReply()
+    public ZapReply nextReply() throws Exception //ojrlopez
     {
         return nextReply(true);
     }
@@ -553,7 +563,7 @@ public class ZAuth implements Closeable
      * @param wait true to wait for the next reply, false to immediately return if there is no next reply.
      * @return the next reply or null if the actor is closed or if there is no next reply yet.
      */
-    public ZapReply nextReply(boolean wait)
+    public ZapReply nextReply(boolean wait) throws Exception //ojrlopez
     {
         if (!repliesEnabled) {
             System.out.println("ZAuth: replies are disabled. Please use replies(true);");
@@ -567,7 +577,7 @@ public class ZAuth implements Closeable
      * @param timeout the timeout in milliseconds to wait for a reply before giving up and returning null.
      * @return the next reply or null if the actor is closed or if there is no next reply after the elapsed timeout.
      */
-    public ZapReply nextReply(int timeout)
+    public ZapReply nextReply(int timeout) throws Exception //ojrlopez
     {
         if (!repliesEnabled) {
             System.out.println("ZAuth: replies are disabled. Please use replies(true);");
@@ -590,13 +600,18 @@ public class ZAuth implements Closeable
      */
     public void destroy()
     {
-        send(TERMINATE);
-        exit.awaitSilent();
-        agent.close();
-        replies.close();
+        // ojrlopez
+        try {
+            send(TERMINATE);
+            exit.awaitSilent();
+            agent.close();
+            replies.close();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
-    protected ZAuth send(String command, String... datas)
+    protected ZAuth send(String command, String... datas) throws Exception //ojrlopez
     {
         ZMsg msg = new ZMsg();
         msg.add(command);
@@ -692,142 +707,141 @@ public class ZAuth implements Closeable
         @Override
         public boolean backstage(Socket pipe, ZPoller poller, int events)
         {
-            ZMsg msg = ZMsg.recvMsg(pipe);
+            // ojrlopez
+            try {
+                ZMsg msg = ZMsg.recvMsg(pipe);
 
-            String command = msg.popString();
-            if (command == null) {
-                System.out.printf("ZAuth: Closing auth: No command%n");
-                return false; //interrupted
-            }
-            boolean rc;
-            if (ALLOW.equals(command)) {
-                String address = msg.popString();
-                if (verbose) {
-                    System.out.printf("ZAuth: Whitelisting IP address=%s\n", address);
+                String command = msg.popString();
+                if (command == null) {
+                    System.out.printf("ZAuth: Closing auth: No command%n");
+                    return false; //interrupted
                 }
-                whitelist.put(address, OK);
-                rc = pipe.send(OK);
-            }
-            else if (DENY.equals(command)) {
-                String address = msg.popString();
-                if (verbose) {
-                    System.out.printf("ZAuth: Blacklisting IP address=%s\n", address);
-                }
-                blacklist.put(address, OK);
-                rc = pipe.send(OK);
-            }
-            else if (VERBOSE.equals(command)) {
-                String verboseStr = msg.popString();
-                this.verbose = Boolean.parseBoolean(verboseStr);
-                rc = pipe.send(OK);
-            }
-            else if (REPLIES.equals(command)) {
-                repliesEnabled = Boolean.parseBoolean(msg.popString());
-                if (verbose) {
+                boolean rc;
+                if (ALLOW.equals(command)) {
+                    String address = msg.popString();
+                    if (verbose) {
+                        System.out.printf("ZAuth: Whitelisting IP address=%s\n", address);
+                    }
+                    whitelist.put(address, OK);
+                    rc = pipe.send(OK);
+                } else if (DENY.equals(command)) {
+                    String address = msg.popString();
+                    if (verbose) {
+                        System.out.printf("ZAuth: Blacklisting IP address=%s\n", address);
+                    }
+                    blacklist.put(address, OK);
+                    rc = pipe.send(OK);
+                } else if (VERBOSE.equals(command)) {
+                    String verboseStr = msg.popString();
+                    this.verbose = Boolean.parseBoolean(verboseStr);
+                    rc = pipe.send(OK);
+                } else if (REPLIES.equals(command)) {
+                    repliesEnabled = Boolean.parseBoolean(msg.popString());
+                    if (verbose) {
+                        if (repliesEnabled) {
+                            System.out.println("ZAuth: Enabled replies");
+                        } else {
+                            System.out.println("ZAuth: Disabled replies");
+                        }
+                    }
+                    rc = pipe.send(OK);
+                } else if (TERMINATE.equals(command)) {
                     if (repliesEnabled) {
-                        System.out.println("ZAuth: Enabled replies");
+                        replies.send(repliesAddress); // lock replies agent
                     }
-                    else {
-                        System.out.println("ZAuth: Disabled replies");
+                    if (verbose) {
+                        System.out.println("ZAuth: Terminated");
+                    }
+                    pipe.send(OK);
+                    return false;
+                } else {
+                    final Auth authenticator = auths.get(command);
+                    if (authenticator != null) {
+                        if (authenticator.configure(msg, verbose)) {
+                            rc = pipe.send(OK);
+                        } else {
+                            rc = pipe.send("ERROR");
+                        }
+                    } else {
+                        System.out.printf("ZAuth: Invalid command %s%n", command);
+                        rc = true;
                     }
                 }
-                rc = pipe.send(OK);
-            }
-            else if (TERMINATE.equals(command)) {
-                if (repliesEnabled) {
-                    replies.send(repliesAddress); // lock replies agent
+
+                msg.destroy();
+                if (!rc) {
+                    System.out.printf("ZAuth: Command in error %s%n", command);
                 }
-                if (verbose) {
-                    System.out.println("ZAuth: Terminated");
-                }
-                pipe.send(OK);
+                return rc;
+            }catch (Exception e){
+                e.printStackTrace();
                 return false;
             }
-            else {
-                final Auth authenticator = auths.get(command);
-                if (authenticator != null) {
-                    if (authenticator.configure(msg, verbose)) {
-                        rc = pipe.send(OK);
-                    }
-                    else {
-                        rc = pipe.send("ERROR");
-                    }
-                }
-                else {
-                    System.out.printf("ZAuth: Invalid command %s%n", command);
-                    rc = true;
-                }
-            }
-
-            msg.destroy();
-            if (!rc) {
-                System.out.printf("ZAuth: Command in error %s%n", command);
-            }
-            return rc;
         }
 
         @Override
         public boolean stage(Socket socket, Socket pipe, ZPoller poller, int events)
         {
-            ZapRequest request = ZapRequest.recvRequest(socket, true);
-            if (request == null) {
-                return false;
-            }
-
-            //is the address explicitly whitelisted or blacklisted?
-            boolean allowed = false;
-            boolean denied = false;
-
-            if (!whitelist.isEmpty()) {
-                if (whitelist.containsKey(request.address)) {
-                    allowed = true;
-                    if (verbose) {
-                        System.out.printf("ZAuth: Passed (whitelist) address = %s\n", request.address);
-                    }
-                }
-                else {
-                    denied = true;
-                    if (verbose) {
-                        System.out.printf("ZAuth: Denied (not in whitelist) address = %s\n", request.address);
-                    }
-                }
-            }
-            else if (!blacklist.isEmpty()) {
-                if (blacklist.containsKey(request.address)) {
-                    denied = true;
-                    if (verbose) {
-                        System.out.printf("ZAuth: Denied (blacklist) address = %s\n", request.address);
-                    }
-                }
-                else {
-                    allowed = true;
-                    if (verbose) {
-                        System.out.printf("ZAuth: Passed (not in blacklist) address = %s\n", request.address);
-                    }
-                }
-            }
-
-            //mechanism specific check
-            if (!denied) {
-                final Auth auth = auths.get(request.mechanism);
-                if (auth == null) {
-                    System.out.printf("ZAuth E: Skipping unhandled mechanism %s%n", request.mechanism);
+            // ojrlopez
+            try {
+                ZapRequest request = ZapRequest.recvRequest(socket, true);
+                if (request == null) {
                     return false;
                 }
-                else {
-                    allowed = auth.authorize(request, verbose);
-                }
-            }
 
-            final Socket reply = repliesEnabled ? replies : null;
-            if (allowed) {
-                request.reply(200, OK, reply);
+                //is the address explicitly whitelisted or blacklisted?
+                boolean allowed = false;
+                boolean denied = false;
+
+                if (!whitelist.isEmpty()) {
+                    if (whitelist.containsKey(request.address)) {
+                        allowed = true;
+                        if (verbose) {
+                            System.out.printf("ZAuth: Passed (whitelist) address = %s\n", request.address);
+                        }
+                    } else {
+                        denied = true;
+                        if (verbose) {
+                            System.out.printf("ZAuth: Denied (not in whitelist) address = %s\n", request.address);
+                        }
+                    }
+                } else if (!blacklist.isEmpty()) {
+                    if (blacklist.containsKey(request.address)) {
+                        denied = true;
+                        if (verbose) {
+                            System.out.printf("ZAuth: Denied (blacklist) address = %s\n", request.address);
+                        }
+                    } else {
+                        allowed = true;
+                        if (verbose) {
+                            System.out.printf("ZAuth: Passed (not in blacklist) address = %s\n", request.address);
+                        }
+                    }
+                }
+
+                //mechanism specific check
+                if (!denied) {
+                    final Auth auth = auths.get(request.mechanism);
+                    if (auth == null) {
+                        System.out.printf("ZAuth E: Skipping unhandled mechanism %s%n", request.mechanism);
+                        return false;
+                    } else {
+                        allowed = auth.authorize(request, verbose);
+                    }
+                }
+
+                final Socket reply = repliesEnabled ? replies : null;
+                if (allowed) {
+                    request.reply(200, OK, reply);
+                } else {
+                    request.metadata = null;
+                    request.reply(400, "NO ACCESS", reply);
+                }
+                return true;
+            }catch (Exception e){
+                e.printStackTrace();
+                return false;
             }
-            else {
-                request.metadata = null;
-                request.reply(400, "NO ACCESS", reply);
-            }
-            return true;
         }
     }
 }

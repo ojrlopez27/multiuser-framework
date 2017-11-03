@@ -1,6 +1,7 @@
 package performance;
 
 import common.ConstantsTests;
+import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
@@ -12,15 +13,15 @@ import edu.cmu.inmind.multiuser.controller.session.Session;
  */
 @BlackboardSubscription( messages = "MSG_SEND_RESPONSE" )
 public class PerformanceTestOrchestrator extends ProcessOrchestratorImpl {
-    private String agentId;
+    String agentId;
     private boolean verbose = false;
 
     @Override
     public void initialize(Session session) throws Throwable{
         super.initialize( session );
+        getLogger().turnOn(false);
         this.agentId = session.getId();
         ((PerformanceTestPC) getComponents().get(0)).setAgentId(agentId);
-        ((PerformanceTestPCStateless) getComponents().get(1)).setAgentId(agentId);
         if(verbose)
             Log4J.debug(this, "Initialize Orchestrator for agent: " + agentId);
     }
@@ -28,13 +29,19 @@ public class PerformanceTestOrchestrator extends ProcessOrchestratorImpl {
     @Override
     public void process(String input){
         //we use plain strings instead of SessionMessage to avoid json parsing
+        Log4J.error("PerformanceTestOrchestrator", "21:" + input);
+        if( !input.startsWith("@@@") ){
+            Log4J.error(this, "Wrong message?");
+        }
         blackboard.post(this, ConstantsTests.MSG_PERFORMANCE_COMPONENT, input);
     }
 
     @Override
-    public void onEvent(BlackboardEvent event){
+    public void onEvent(Blackboard blackboard, BlackboardEvent event){
         //we use plain strings instead of SessionMessage to avoid json parsing
-        sendResponse( event.getElement() );
+        //Log4J.warn(this, "sending response " + event.getElement() + " from: " + agentId);
+        Log4J.error("PerformanceTestOrchestrator", "24:" + event.getElement());
+        sendResponse( event.getElement());
         if(verbose)
             Log4J.debug(this, "onEvent sendResponse: " + event.getElement());
     }

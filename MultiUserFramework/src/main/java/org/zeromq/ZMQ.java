@@ -2773,7 +2773,7 @@ public class ZMQ
          *
          * @return the message received, as an array of bytes; null on error.
          */
-        public byte[] recv()
+        public byte[] recv() throws Exception //ojrlopez
         {
             return recv(0);
         }
@@ -2785,7 +2785,7 @@ public class ZMQ
          *            the flags to apply to the receive operation.
          * @return the message received, as an array of bytes; null on error.
          */
-        public byte[] recv(int flags)
+        public byte[] recv(int flags) throws Exception //ojrlopez
         {
             zmq.Msg msg = base.recv(flags);
 
@@ -2812,7 +2812,7 @@ public class ZMQ
          *            the flags to apply to the receive operation.
          * @return the number of bytes read, -1 on error
          */
-        public int recv(byte[] buffer, int offset, int len, int flags)
+        public int recv(byte[] buffer, int offset, int len, int flags) throws Exception //ojrlopez
         {
             zmq.Msg msg = base.recv(flags);
 
@@ -2830,7 +2830,7 @@ public class ZMQ
          * @param flags the flags to apply to the receive operation
          * @return the number of bytes read, -1 on error
          */
-        public int recvByteBuffer(ByteBuffer buffer, int flags)
+        public int recvByteBuffer(ByteBuffer buffer, int flags) throws Exception //ojrlopez
         {
             zmq.Msg msg = base.recv(flags);
 
@@ -2847,7 +2847,7 @@ public class ZMQ
          *
          * @return the message received, as a String object; null on no message.
          */
-        public String recvStr()
+        public String recvStr() throws Exception //ojrlopez
         {
             return recvStr(0);
         }
@@ -2857,7 +2857,7 @@ public class ZMQ
          * @param flags the flags to apply to the receive operation.
          * @return the message received, as a String object; null on no message.
          */
-        public String recvStr(int flags)
+        public String recvStr(int flags) throws Exception //ojrlopez
         {
             byte[] msg = recv(flags);
 
@@ -3580,7 +3580,7 @@ public class ZMQ
          * @return the received event or null if no message was received.
          * @throws ZMQException
          */
-        public static Event recv(Socket socket, int flags)
+        public static Event recv(Socket socket, int flags) throws Exception //ojrlopez
         {
             zmq.ZMQ.Event e = zmq.ZMQ.Event.read(socket.base, flags);
             return e != null ? new Event(e.event, e.arg, e.addr) : null;
@@ -3593,7 +3593,7 @@ public class ZMQ
          * @return the received event.
          * @throws ZMQException
          */
-        public static Event recv(Socket socket)
+        public static Event recv(Socket socket) throws Exception //ojrlopez
         {
             return Event.recv(socket, 0);
         }

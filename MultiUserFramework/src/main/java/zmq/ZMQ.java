@@ -238,7 +238,7 @@ public class ZMQ
             return s.send(msg, 0);
         }
 
-        public static Event read(SocketBase s, int flags)
+        public static Event read(SocketBase s, int flags) throws Exception //ojrlopez
         {
             Msg msg = s.recv(flags);
             if (msg == null) {
@@ -261,7 +261,7 @@ public class ZMQ
             return new Event(event, new String(addr, CHARSET), arg);
         }
 
-        public static Event read(SocketBase s)
+        public static Event read(SocketBase s) throws Exception //ojrlopez
         {
             return read(s, 0);
         }
@@ -494,7 +494,7 @@ public class ZMQ
     }
 
     // Receiving functions.
-    public static Msg recv(SocketBase s, int flags)
+    public static Msg recv(SocketBase s, int flags) throws Exception //ojrlopez
     {
         checkSocket(s);
         Msg msg = recvMsg(s, flags);
@@ -529,7 +529,7 @@ public class ZMQ
     // We assume it is safe to steal these buffers by simply
     // not closing the zmq::msg_t.
     //
-    public int recviov(SocketBase s, byte[][] a, int count, int flags)
+    public int recviov(SocketBase s, byte[][] a, int count, int flags) throws Exception //ojrlopez
     {
         checkSocket(s);
 
@@ -554,7 +554,7 @@ public class ZMQ
         return nread;
     }
 
-    public static Msg recvMsg(SocketBase s, int flags)
+    public static Msg recvMsg(SocketBase s, int flags) throws Exception //ojrlopez
     {
         return s.recv(flags);
     }

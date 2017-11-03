@@ -1,6 +1,7 @@
 package performance;
 
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
@@ -22,15 +23,14 @@ public class PerformanceTestPC extends PluggableComponent {
     }
 
     @Override
-    public void onEvent(BlackboardEvent event) {
-        //if(verbose)
-            Log4J.debug( this, String.format("PC for %s receives message: %s and messageCount is: %s",
-                    agentId, event.getElement(), messageCount) );
-        if( messageCount != Integer.valueOf( event.getElement().toString()) ){
-            Log4J.error(this, String.format("messageCount for %s is %s and element is %s", agentId, messageCount,
-                    event.getElement()));
+    public void onEvent(final Blackboard blackboard, final BlackboardEvent event) throws Throwable{
+//        Log4J.error(this, String.format("messageCount for %s is %s and element is %s", agentId, messageCount,
+//                event.getElement()));
+        Log4J.error("PerformanceTestPC", "22:" + event.getElement());
+        if( !agentId.equals(event.getSessionId()) || !agentId.equals(event.getElement().toString().split(":")[1]) ){
+            Log4J.error("PerformanceTestPC", "22.1: They are not equal");
         }
         messageCount++;
-        blackboard().post(this, "MSG_SEND_TO_STATELESS", event.getElement());
+        blackboard.post(this, "MSG_SEND_TO_STATELESS", event.getElement());
     }
 }

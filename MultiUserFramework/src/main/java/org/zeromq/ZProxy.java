@@ -393,12 +393,17 @@ public class ZProxy
             // consume the status in the pipe
             recvStatus();
 
-            ZMsg reply = agent.recv();
-            assert (reply != null);
+            // ojrlopez
+            try{
+                ZMsg reply = agent.recv();
+                assert (reply != null);
 
-            // refill the pipe with status
-            agent.send(STATUS);
-            return reply;
+                // refill the pipe with status
+                agent.send(STATUS);
+                return reply;
+            }catch (Exception e){
+                e.printStackTrace();
+            }
         }
         return null;
     }
@@ -504,15 +509,21 @@ public class ZProxy
             return EXITED;
         }
         // receive the status response
-        final ZMsg msg = agent.recv();
+        // ojrlopez
+        try {
+            final ZMsg msg = agent.recv();
 
-        if (msg == null) {
-            return EXITED;
+            if (msg == null) {
+                return EXITED;
+            }
+
+            String status = msg.popString();
+            msg.destroy();
+            return status;
+        }catch (Exception e){
+            e.printStackTrace();
+            return null;
         }
-
-        String status = msg.popString();
-        msg.destroy();
-        return status;
     }
 
     /**
@@ -769,47 +780,53 @@ public class ZProxy
         {
             assert (state.hot == null);
 
-            String cmd = pipe.recvStr();
-            // a message has been received from the API
-            if (START.equals(cmd)) {
-                if (start(poller)) {
+            // ojrlopez
+            try{
+                String cmd = pipe.recvStr();
+                // a message has been received from the API
+                if (START.equals(cmd)) {
+                    if (start(poller)) {
+                        return status().send(pipe);
+                    }
+                    // unable to start the proxy, exit
+                    state.restart = false;
+                    return false;
+                }
+                else if (STOP.equals(cmd)) {
+                    stop();
                     return status().send(pipe);
                 }
-                // unable to start the proxy, exit
-                state.restart = false;
+                else if (PAUSE.equals(cmd)) {
+                    pause(poller, true);
+                    return status().send(pipe);
+                }
+                else if (RESTART.equals(cmd)) {
+                    String val = pipe.recvStr();
+                    boolean hot = Boolean.parseBoolean(val);
+                    return restart(pipe, hot);
+                }
+                else if (STATUS.equals(cmd)) {
+                    return status().send(pipe);
+                }
+                else if (CONFIG.equals(cmd)) {
+                    ZMsg cfg = ZMsg.recvMsg(pipe);
+                    boolean rc = provider.configure(pipe, cfg, frontend, backend, capture, args);
+                    cfg.destroy();
+                    return rc;
+                }
+                else if (EXIT.equals(cmd)) {
+                    // stops the proxy and the agent.
+                    // the status will be sent at the end of the loop
+                    state.restart = false;
+                }
+                else {
+                    return provider.custom(pipe, cmd, frontend, backend, capture, args);
+                }
+                return false;
+            }catch (Exception e){
+                e.printStackTrace();
                 return false;
             }
-            else if (STOP.equals(cmd)) {
-                stop();
-                return status().send(pipe);
-            }
-            else if (PAUSE.equals(cmd)) {
-                pause(poller, true);
-                return status().send(pipe);
-            }
-            else if (RESTART.equals(cmd)) {
-                String val = pipe.recvStr();
-                boolean hot = Boolean.parseBoolean(val);
-                return restart(pipe, hot);
-            }
-            else if (STATUS.equals(cmd)) {
-                return status().send(pipe);
-            }
-            else if (CONFIG.equals(cmd)) {
-                ZMsg cfg = ZMsg.recvMsg(pipe);
-                boolean rc = provider.configure(pipe, cfg, frontend, backend, capture, args);
-                cfg.destroy();
-                return rc;
-            }
-            else if (EXIT.equals(cmd)) {
-                // stops the proxy and the agent.
-                // the status will be sent at the end of the loop
-                state.restart = false;
-            }
-            else {
-                return provider.custom(pipe, cmd, frontend, backend, capture, args);
-            }
-            return false;
         }
 
         // returns the status
@@ -889,7 +906,12 @@ public class ZProxy
             state.restart = true;
             if (hot) {
                 assert (provider != null);
-                state.hot = ZMsg.recvMsg(pipe);
+                // ojrlopez
+                try{
+                    state.hot = ZMsg.recvMsg(pipe);
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
                 // continue with the same agent
                 return true;
             }
@@ -1029,36 +1051,42 @@ public class ZProxy
         @Override
         public boolean flow(Plug splug, Socket source, Socket capture, Plug dplug, Socket destination)
         {
-            boolean success;
+            // ojrlopez
+            try{
+                boolean success;
 
-            // we read the whole message
-            ZMsg msg = ZMsg.recvMsg(source);
+                // we read the whole message
+                ZMsg msg = ZMsg.recvMsg(source);
 
-            if (msg == null) {
+                if (msg == null) {
+                    return false;
+                }
+
+                if (capture != null) {
+                    //  Copy transformed message to capture socket if any message
+                    // TODO what if the transformer modifies or destroys the original message ?
+                    ZMsg cpt = transformer.transform(msg, splug, Plug.CAPTURE);
+
+                    //                boolean destroy = !msg.equals(cpt); // TODO ?? which one
+                    boolean destroy = msg != cpt;
+                    success = cpt.send(capture, destroy);
+                    if (!success) {
+                        // not successful, but we can still try to send it to the destination
+                    }
+                }
+
+                ZMsg dst = transformer.transform(msg, splug, dplug);
+                // we send the whole transformed message
+                success = dst.send(destination);
+
+                // finished
+                msg.destroy();
+
+                return success;
+            }catch (Exception e){
+                e.printStackTrace();
                 return false;
             }
-
-            if (capture != null) {
-                //  Copy transformed message to capture socket if any message
-                // TODO what if the transformer modifies or destroys the original message ?
-                ZMsg cpt = transformer.transform(msg, splug, Plug.CAPTURE);
-
-                //                boolean destroy = !msg.equals(cpt); // TODO ?? which one
-                boolean destroy = msg != cpt;
-                success = cpt.send(capture, destroy);
-                if (!success) {
-                    // not successful, but we can still try to send it to the destination
-                }
-            }
-
-            ZMsg dst = transformer.transform(msg, splug, dplug);
-            // we send the whole transformed message
-            success = dst.send(destination);
-
-            // finished
-            msg.destroy();
-
-            return success;
         }
     }
 
@@ -1079,43 +1107,48 @@ public class ZProxy
             SocketBase cpt = capture == null ? null : capture.base();
 
             // we transfer the whole message
-            while (true) {
-                // we read the packet
-                Msg msg = src.recv(0);
+            // ojrlopez
+            try {
+                while (true) {
+                    // we read the packet
+                    Msg msg = src.recv(0);
 
-                if (msg == null) {
-                    return false;
-                }
-
-                // ojrlopez
-                try {
-                    long more = src.getSocketOpt(zmq.ZMQ.ZMQ_RCVMORE);
-
-                    if (more < 0) {
+                    if (msg == null) {
                         return false;
                     }
 
-                    //  Copy message to capture socket if any packet
-                    if (cpt != null) {
-                        Msg ctrl = new Msg(msg);
-                        rc = cpt.send(ctrl, more > 0 ? zmq.ZMQ.ZMQ_SNDMORE : 0);
-                        if (!rc) {
-                            // not successful, but we can still try to send it to the destination
+                    // ojrlopez
+                    try {
+                        long more = src.getSocketOpt(zmq.ZMQ.ZMQ_RCVMORE);
+
+                        if (more < 0) {
+                            return false;
                         }
-                    }
 
-                    // we send the packet
-                    rc = dst.send(msg, more > 0 ? zmq.ZMQ.ZMQ_SNDMORE : 0);
+                        //  Copy message to capture socket if any packet
+                        if (cpt != null) {
+                            Msg ctrl = new Msg(msg);
+                            rc = cpt.send(ctrl, more > 0 ? zmq.ZMQ.ZMQ_SNDMORE : 0);
+                            if (!rc) {
+                                // not successful, but we can still try to send it to the destination
+                            }
+                        }
 
-                    if (!rc) {
-                        return false;
+                        // we send the packet
+                        rc = dst.send(msg, more > 0 ? zmq.ZMQ.ZMQ_SNDMORE : 0);
+
+                        if (!rc) {
+                            return false;
+                        }
+                        if (more == 0) {
+                            break;
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                    if (more == 0) {
-                        break;
-                    }
-                }catch (Exception e){
-                    e.printStackTrace();
                 }
+            }catch (Exception e){
+                e.printStackTrace();
             }
             return true;
         }

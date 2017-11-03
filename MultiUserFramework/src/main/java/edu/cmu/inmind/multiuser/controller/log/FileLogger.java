@@ -37,7 +37,7 @@ public class FileLogger implements MessageLog {
 
     @Override
     public void store() throws Throwable{
-        Utils.execObsParallel( () -> {
+        Utils.execute( () -> {
             try {
                 if (turnedOn && !log.toString().isEmpty()) {
                     File file = new File(path + id + "-" + Utils.getDateString() + ".log");

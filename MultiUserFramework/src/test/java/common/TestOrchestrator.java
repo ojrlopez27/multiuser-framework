@@ -1,6 +1,7 @@
 package common;
 
 import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
@@ -20,7 +21,7 @@ public class TestOrchestrator extends ProcessOrchestratorImpl {
     }
 
     @Override
-    public void onEvent(BlackboardEvent event){
+    public void onEvent(Blackboard blackboard, BlackboardEvent event){
         SessionMessage output = new SessionMessage("", event.getElement().toString() );
         sendResponse( output );
     }

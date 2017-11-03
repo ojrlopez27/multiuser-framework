@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.*;
@@ -18,9 +19,12 @@ import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.StateType;
 import edu.cmu.inmind.multiuser.controller.session.ServiceComponent;
 import org.apache.logging.log4j.Logger;
+import org.zeromq.ZContext;
+import org.zeromq.ZMQ;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -305,6 +309,81 @@ public class ResourceLocator {
     public static void stopStatlessComp() throws Throwable{
         if( statelessServManager != null ){
             statelessServManager.stopAsync().awaitStopped(20, TimeUnit.SECONDS);
+        }
+    }
+
+
+
+    /** ======================== ZeroMQ Contexts =================================== **/
+
+    /**
+     * ZMQ docs: You should create and use exactly one context in your process. Technically, the context is the
+     * container for all sockets in a single process, and acts as the transport for inproc sockets, which are the
+     * fastest way to connect threads in one process. If at runtime a process has two contexts, these are like separate
+     * ZeroMQ instances
+     */
+    private static ZContext context;
+    private static ConcurrentHashMap<DestroyableCallback, Boolean> destroyables = new ConcurrentHashMap<>();
+    private static CopyOnWriteArrayList<ZMQ.Socket> sockets = new CopyOnWriteArrayList<>();
+    private static CopyOnWriteArrayList<ZContext> contexts = new CopyOnWriteArrayList<>();
+
+
+    public static ZContext getContext(DestroyableCallback contextOwner) {
+        if( context == null ){
+            context = new ZContext();
+        }
+        // contexts keeps a record about which owner has released its context.
+        // at initialization, nobody has released it.
+        destroyables.put(contextOwner, false);
+        ZContext ctx = ZContext.shadow(context);
+        contexts.add(ctx);
+        return ctx;
+    }
+
+    public static void setIamDone(DestroyableCallback contextOwner){
+        if( destroyables.get(contextOwner) != null )
+            destroyables.put(contextOwner, true);
+    }
+
+    public static ZMQ.Socket createSocket(ZContext ctx, int type){
+        ZMQ.Socket socket = ctx.createSocket(type);
+        sockets.add(socket);
+        return socket;
+    }
+
+    public static void closeContexts(){
+        try {
+            if (context != null && destroyables != null) {
+                boolean allTerminated;
+                do {
+                    allTerminated = true;
+                    //Log4J.warn(this, "=== 28.1");
+                    for (DestroyableCallback key : destroyables.keySet()) {
+                        if (!destroyables.get(key)) {
+                            //Log4J.warn(this, "=== 28.2 " + key);
+                            key.destroyInCascade(null);
+                            allTerminated = false;
+                            Utils.sleep(50);
+                            break;
+                        }
+                    }
+                    //Log4J.warn(this, "=== 28.3");
+                } while (!allTerminated);
+
+                //Log4J.warn(this, "=== 28.4");
+                try {
+                    for (ZContext ctx : contexts) {
+                        ctx.destroy();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                //Log4J.warn(this, "=== 28.5");
+                //context.destroy();
+                //Log4J.warn(this, "=== 28.6");
+            }
+        }catch (Throwable e){
+            ExceptionHandler.handle(e);
         }
     }
 }

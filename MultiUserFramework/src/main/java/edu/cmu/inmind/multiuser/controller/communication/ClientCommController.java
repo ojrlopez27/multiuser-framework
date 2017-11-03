@@ -7,6 +7,7 @@ import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
+import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
@@ -78,11 +79,11 @@ public class ClientCommController implements DestroyableCallback {
         this.responseListener = builder.responseListener;
         this.sessionManagerService = builder.sessionManagerService;
         this.muf = builder.muf;
-        this.ctx = DependencyManager.getContext( this );
+        this.ctx = ResourceLocator.getContext( this );
         this.callbacks = new ArrayList<>();
         //  Bind to inproc: endpoint, then start upstream thread
         this.inprocName += "-" + this.serviceName;
-        this.clientSocket = DependencyManager.createSocket(ctx, ZMQ.PAIR);
+        this.clientSocket = ResourceLocator.createSocket(ctx, ZMQ.PAIR);
         this.clientSocket.bind(inprocName);
         this.timer = new ResponseTimer();
         this.closeableObjects = new CopyOnWriteArrayList<>();
@@ -264,8 +265,6 @@ public class ClientCommController implements DestroyableCallback {
                             stop.getAndSet(true);
                         }
                     }
-                }else{
-                    System.currentTimeMillis();
                 }
             }
         }catch (Throwable e){
@@ -276,20 +275,20 @@ public class ClientCommController implements DestroyableCallback {
     public void close(DestroyableCallback callback){
         callbacks.add(callback);
         try {
-            Log4J.warn(this, "=== 3.1");
+            //Log4J.warn(this, "=== 3.1");
             Log4J.info(ClientCommController.this, "Closing ClientCommController...");
             stop.getAndSet(true);
             timer.cancel();
             timer.purge();
-            Log4J.warn(this, "=== 3.2");
+            //Log4J.warn(this, "=== 3.2");
             sessionMngrCommAPI.close(this);
-            Log4J.warn(this, "=== 3.6");
+            //Log4J.warn(this, "=== 3.6");
             sessionCommAPI.close(this);
-            Log4J.warn(this, "=== 3.7");
+            //Log4J.warn(this, "=== 3.7");
             sendThread.close(this);
-            Log4J.warn(this, "=== 3.12");
+            //Log4J.warn(this, "=== 3.12");
             receiveThread.close(this);
-            Log4J.warn(this, "=== 3.22");
+            //Log4J.warn(this, "=== 3.22");
         }catch (Throwable e) {
             ExceptionHandler.handle(e);
         }
@@ -298,19 +297,17 @@ public class ClientCommController implements DestroyableCallback {
 
     @Override
     public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
-        Log4J.warn(this, "=== 3.19");
+        //Log4J.warn(this, "=== 3.19");
         stop.getAndSet(true);
         closeableObjects.remove(destroyedObj);
-        Log4J.error(this, String.format("destroyed %s  closeableObjects: %s object: %s  thread: %s",
-                isDestroyed.get(), closeableObjects.size(), closeableObjects.size() > 0? closeableObjects.get(0) : null, Thread.currentThread().getName() ));
         if( closeableObjects.isEmpty() && !isDestroyed.getAndSet(true) ) {
-            Log4J.warn(this, "=== 3.20");
+            //Log4J.warn(this, "=== 3.20");
             sessionMngrCommAPI = null;
             sessionCommAPI = null;
             ctx = null;
-            DependencyManager.setIamDone( this );
+            ResourceLocator.setIamDone( this );
             Log4J.info(this, "Gracefully destroying...");
-            Log4J.warn(this, "=== 3.21");
+            //Log4J.warn(this, "=== 3.21");
             for (DestroyableCallback callback : callbacks) {
                 if(callback != null) callback.destroyInCascade(this);
             }
@@ -323,9 +320,8 @@ public class ClientCommController implements DestroyableCallback {
     public void send(String serviceId, Object message){
         try {
             if( !isDestroyed.get() ) {
-                send(new Pair<>(serviceId, message));
+                sendToInternalSocket(new Pair<>(serviceId, message));
             }else{
-                Log4J.error(this, "It is destroyed!");
                 reconnect();
             }
         }catch (Throwable e){
@@ -333,23 +329,25 @@ public class ClientCommController implements DestroyableCallback {
         }
     }
 
-    public void send(Pair<String, Object> message) throws Throwable{
+    public void sendToInternalSocket(Pair<String, Object> message) throws Throwable{
         try {
+            Log4J.error(this, "4:" + message.snd);
             clientSocket.send(message.fst + TOKEN + (message.snd instanceof String? (String) message.snd
                     : Utils.toJson(message.snd) ));
-            if(ctx.getContext().isTerminated() || Thread.currentThread().isInterrupted() || !Thread.currentThread().isAlive() || clientSocket.getLinger() == 0){
-                Log4J.error(this, "*********** AQUI");
-            }
             String response = clientSocket.recvStr();
+            Log4J.error(this, "5:" + message.snd);
             if (response.equals(Constants.CONNECTION_STARTED)) {
+                Log4J.error(this, "5.1:" + message.snd);
                 sendState.getAndSet( checkFSM(sendState, Constants.CONNECTION_STARTED) );
                 response = clientSocket.recvStr();
             }
             if (response.equals(STOP_FLAG)) {
+                Log4J.error(this, "5.2:" + message.snd);
                 sendState.getAndSet( checkFSM(sendState, Constants.CONNECTION_FINISHED) );
                 if( stop.get() ) sendState.getAndSet( checkFSM(sendState, Constants.CONNECTION_STOPPED) );
                 checkReconnect();
             }
+            Log4J.error(this, "6:" + message.snd);
         }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
@@ -358,10 +356,13 @@ public class ClientCommController implements DestroyableCallback {
     private boolean sendToBroker(String id, String message) throws Throwable{
         ZMsg request = new ZMsg();
         request.addString( message );
+        if(message.startsWith("@@@")) Log4J.error(this, "9:" + message);
         if( isTCPon ) {
             if( id.equals(sessionManagerService) ) {
+                if(message.startsWith("@@@"))  Log4J.error(this, "9.1:@@@:" + serviceName + ":" + message);
                 return sessionMngrCommAPI.send(id, request);
             }else{
+                if(message.startsWith("@@@")) Log4J.error(this, "10:" + message);
                 return sessionCommAPI.send(id, request);
             }
         }else{
@@ -390,7 +391,7 @@ public class ClientCommController implements DestroyableCallback {
         private DestroyableCallback callback;
 
         public SenderThread(){
-            this.context = DependencyManager.getContext( this );
+            this.context = ResourceLocator.getContext( this );
             this.setName("sender-thread-" + serviceName);
         }
 
@@ -399,35 +400,44 @@ public class ClientCommController implements DestroyableCallback {
             try{
                 connect();
                 isSendThreadAlive.getAndSet(true);
-                senderSocket = DependencyManager.createSocket(context, ZMQ.PAIR);
+                senderSocket = ResourceLocator.createSocket(context, ZMQ.PAIR);
                 senderSocket.connect(inprocName);
                 senderSocket.send(String.valueOf(Constants.CONNECTION_STARTED), 0);
                 while( !stop.get() && !Thread.currentThread().isInterrupted() ) {
                     try{
-                        String strMsg = senderSocket.recvStr(ZMQ.DONTWAIT);
+                        String strMsg = senderSocket.recvStr(); //ZMQ.DONTWAIT);
+                        Log4J.error(this, "7:" + strMsg.split(TOKEN)[1]);
                         if( strMsg != null ) {
                             String[] msg = strMsg.split(TOKEN);
+                            Log4J.error(this, "8:" + msg[1]);
                             Utils.setAtom( stop, !sendToBroker(msg[0], msg[1])
                                     && (sentMessages.get() > receivedMessages.get() + difference));
+                            Log4J.error(this, "13:" + msg[1]);
                             if (stop.get()) {
                                 continue;
                             }
                             sentMessages.incrementAndGet();
                             //  Signal downstream to client-thread
+                            Log4J.error(this, "14:" + msg[1]);
                             senderSocket.send("ACK", 0);
                         }else{
                             Utils.sleep(1);
                         }
                     } catch (Throwable e) {
-                        ExceptionHandler.handle(e);
+                        if( !Utils.isZMQException(e) ) {
+                            ExceptionHandler.handle(e);
+                        }
                     }
                 }
                 destroyInCascade(this);
             }catch (Throwable e){
                 try {
-                    destroyInCascade(this);
+                    if( Utils.isZMQException(e) ) {
+                        destroyInCascade(this); // interrupted
+                    }else{
+                        ExceptionHandler.handle(e);
+                    }
                 }catch (Throwable t){
-                    ExceptionHandler.handle(t);
                 }
             }
             isSendThreadAlive.getAndSet(false);
@@ -436,22 +446,22 @@ public class ClientCommController implements DestroyableCallback {
         @Override
         public void close(DestroyableCallback callback) throws Throwable {
             this.callback = callback;
-            Log4J.warn(this, "++++ closing senderThread");
-            Log4J.warn(this, "=== 3.8");
+            //Log4J.warn(this, "++++ closing senderThread");
+            //Log4J.warn(this, "=== 3.8");
             stop.getAndSet(true);
             senderSocket.setLinger(0);
             Thread.currentThread().interrupt();
-            Log4J.warn(this, "=== 3.9");
+            //Log4J.warn(this, "=== 3.9");
             destroyInCascade(this);
         }
 
         @Override
         public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable {
             //nothing
-            Log4J.warn(this, "=== 3.10");
-            Log4J.warn(this, "++++ destroying senderThread");
-            DependencyManager.setIamDone(this);
-            Log4J.warn(this, "=== 3.11");
+            //Log4J.warn(this, "=== 3.10");
+            //Log4J.warn(this, "++++ destroying senderThread");
+            ResourceLocator.setIamDone(this);
+            //Log4J.warn(this, "=== 3.11");
             if(callback != null) callback.destroyInCascade(this);
         }
     }
@@ -476,12 +486,17 @@ public class ClientCommController implements DestroyableCallback {
                 return STOP_FLAG;
             }
         }catch (java.lang.AssertionError e) {
-            Log4J.error("ClientCommController.receive", "Exception 2. Exception: " + e.getMessage());
+            //Log4J.error("ClientCommController.receive", "Exception 2. Exception: " + e.getMessage());
             reconnect();
         }catch (Throwable e){
-            Log4J.error("ClientCommController.receive", "Exception 1");
-            destroyInCascade(this);
-            //ExceptionHandler.handle( e );
+            try {
+                if( Utils.isZMQException(e) ) {
+                    destroyInCascade(this); // interrupted
+                }else{
+                    ExceptionHandler.handle(e);
+                }
+            }catch (Throwable t){
+            }
         }
         return STOP_FLAG;
     }
@@ -507,6 +522,7 @@ public class ClientCommController implements DestroyableCallback {
                         String response = receive(sessionCommAPI);
                         if( "".equals(response) )
                             continue;
+                        Log4J.error(this, "33:" + response);
                         receivedMessages.incrementAndGet();
                         if (response == null && (sentMessages.get() > receivedMessages.get() + difference)) {
                             stop.getAndSet(true);
@@ -514,52 +530,58 @@ public class ClientCommController implements DestroyableCallback {
                             stop.getAndSet(true);
                         } else if (responseListener != null) {
                             if (shouldProcessReply) {
+                                Log4J.error(this, "34:" + response);
                                 responseListener.process(response);
                             } else {
                                 shouldProcessReply = true;
                             }
                         }
                     } catch (Throwable e) {
-                        destroyInCascade(this);
-                        //ExceptionHandler.handle(e);
+                        if( Utils.isZMQException(e) ) {
+                            destroyInCascade(this); // interrupted
+                        }else{
+                            ExceptionHandler.handle(e);
+                        }
                     }
                 }
                 destroyInCascade(this);
             }catch (Throwable e){
-                try{
-                    destroyInCascade(this);
-                }catch (Throwable e1){
-                    //ExceptionHandler.handle( e1 );
+                try {
+                    if( Utils.isZMQException(e) ) {
+                        destroyInCascade(this); // interrupted
+                    }else{
+                        ExceptionHandler.handle(e);
+                    }
+                }catch (Throwable t){
                 }
-                //ExceptionHandler.handle( e );
             }
         }
 
         @Override
         public void close(DestroyableCallback callback) throws Throwable {
             this.callback = callback;
-            Log4J.warn(this, "++++ closing receiverThread");
-            Log4J.warn(this, "=== 3.13");
+            //Log4J.warn(this, "++++ closing receiverThread");
+            //Log4J.warn(this, "=== 3.13");
             stop.getAndSet(true);
             Thread.currentThread().interrupt();
-            Log4J.warn(this, "=== 3.14");
+            //Log4J.warn(this, "=== 3.14");
             destroyInCascade(this);
         }
 
         @Override
         public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable {
-            Log4J.warn(this, "++++ destroying receiverThread");
-            Log4J.warn(this, "=== 3.15");
+            //Log4J.warn(this, "++++ destroying receiverThread");
+            //Log4J.warn(this, "=== 3.15");
             if (isSendThreadAlive.get()) {
                 stop.getAndSet(true);
             }
-            Log4J.warn(this, "=== 3.16");
+            //Log4J.warn(this, "=== 3.16");
             receiveState.getAndSet( checkFSM(receiveState, Constants.CONNECTION_FINISHED) );
             if( stop.get() ) receiveState.getAndSet( checkFSM(receiveState, Constants.CONNECTION_STOPPED) );
-            Log4J.warn(this, "=== 3.17");
+            //Log4J.warn(this, "=== 3.17");
             isReceiveThreadAlive.getAndSet(false);
             checkReconnect();
-            Log4J.warn(this, "=== 3.18");
+            //Log4J.warn(this, "=== 3.18");
             if(callback != null) callback.destroyInCascade(this);
         }
     }
@@ -576,7 +598,7 @@ public class ClientCommController implements DestroyableCallback {
     /*****************************************************************************************/
 
     private void checkReconnect() throws Throwable{
-        Log4J.warn(this, "++++ checking reconnect");
+        //Log4J.warn(this, "++++ checking reconnect");
         if ( stop.get() && sendState.get() == Constants.CONNECTION_FINISHED
                 && receiveState.get() == Constants.CONNECTION_FINISHED){
             reconnect();
@@ -584,13 +606,13 @@ public class ClientCommController implements DestroyableCallback {
     }
 
     private void reconnect() throws Throwable{
-        Log4J.warn(this, "++++ checking reconnect 1");
+        //Log4J.warn(this, "++++ checking reconnect 1");
         release.getAndSet(checkFSM(release, Constants.CONNECTION_STARTED) );
         Utils.execute(new Utils.MyRunnable("reconnect") {
             @Override
             public void run() {
                 try {
-                    Log4J.warn(this, "++++ checking reconnect 2");
+                    //Log4J.warn(this, "++++ checking reconnect 2");
                     release.getAndSet( checkFSM(release, Constants.CONNECTION_FINISHED) );
                     execute();
                 } catch (Throwable e) {
@@ -611,7 +633,7 @@ public class ClientCommController implements DestroyableCallback {
                 || (currentState.get() == Constants.CONNECTION_STOPPED && newState == Constants.CONNECTION_FINISHED)
                 || (currentState.get() == Constants.CONNECTION_FINISHED && newState == Constants.CONNECTION_NEW)) {
             if(newState == Constants.CONNECTION_STOPPED){
-                Log4J.warn(this, "++++ stopping");
+                //Log4J.warn(this, "++++ stopping");
             }
             return newState;
         }

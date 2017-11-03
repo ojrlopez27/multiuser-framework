@@ -46,7 +46,7 @@ public class ExceptionHandler {
     }
 
     public static void handle(Throwable e){
-        if( !(e instanceof org.zeromq.ZMQException && e instanceof ClosedByInterruptException )) {
+        if( !(e instanceof org.zeromq.ZMQException) && (e instanceof ClosedByInterruptException )) {
             if (loggerOn) {
                 logger.add(messageId, Throwables.getStackTraceAsString(e));
                 if (e instanceof OutOfMemoryError)

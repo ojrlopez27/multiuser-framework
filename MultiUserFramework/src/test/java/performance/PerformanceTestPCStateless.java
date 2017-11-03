@@ -1,11 +1,14 @@
 package performance;
 
 import edu.cmu.inmind.multiuser.common.Constants;
+import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.StateType;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by oscarr on 11/1/17.
@@ -13,21 +16,19 @@ import edu.cmu.inmind.multiuser.controller.plugin.StateType;
 @BlackboardSubscription( messages = "MSG_SEND_TO_STATELESS" )
 @StateType( state = Constants.STATELESS )
 public class PerformanceTestPCStateless extends PluggableComponent {
-    private int messageCount = 1;
-    private String agentId;
-    private boolean verbose = false;
-
-    public void setAgentId(String agentId) {
-        this.agentId = agentId;
-    }
+    private AtomicInteger messageCount = new AtomicInteger(0);
 
     @Override
-    public void onEvent(BlackboardEvent event) {
-        if( messageCount != Integer.valueOf( event.getElement().toString()) ){
-            Log4J.error(this, String.format("messageCount for %s is %s and element is %s", agentId, messageCount,
-                    event.getElement()));
+    public void onEvent(Blackboard blackboard, BlackboardEvent event){
+        String[] msgs = event.getElement().toString().split(":");
+        String msg = msgs[0];
+        String agentId = msgs[1];
+//        Log4J.error(this, String.format("messageCount for %s is %s and element is %s", agentId,
+//                messageCount.incrementAndGet(), event.getElement()));
+        Log4J.error("PerformanceTestPCStateless", "23:" + event.getElement());
+        if( !agentId.equals(event.getSessionId()) || !agentId.equals(event.getElement().toString().split(":")[1]) ){
+            Log4J.error("PerformanceTestPCStateless", "23.1: They are not equal");
         }
-        messageCount++;
-        blackboard().post(this, "MSG_SEND_RESPONSE", event.getElement());
+        blackboard.post(this, "MSG_SEND_RESPONSE", event.getElement());
     }
 }

@@ -213,6 +213,7 @@ public class Utils {
     }
 
     private static String trimDoubleQuotes(String stringRepresentation) throws Throwable{
+        if( stringRepresentation == null || stringRepresentation.isEmpty() ) return null;
         boolean trimmed = false;
         if( stringRepresentation.substring(0, 1).equals("\"") ){
             stringRepresentation = stringRepresentation.substring( 1 );
@@ -474,6 +475,19 @@ public class Utils {
         return false;
     }
 
+    /**********************************************************************************************/
+    /************************************** ZMQ ***************************************************/
+    /**********************************************************************************************/
+
+
+    public static boolean isZMQException(Throwable throwable) {
+        String name = throwable.getClass().getPackage().getName();
+        if( name.startsWith("java.nio") || name.contains("zeromq") || name.contains("zmq") ){
+            return true;
+        }
+        return false;
+    }
+
 
     /**********************************************************************************************/
     /************************************** THREADS ***********************************************/
@@ -558,42 +572,6 @@ public class Utils {
     public static <T> Future<T> execute(Callable<T> callable){
         return executor.submit(callable);
     }
-
-    /**
-     * https://praveer09.github.io/technology/2016/02/29/rxjava-part-3-multithreading/
-     * This method executes a callable in a new thread.
-     *
-//     * @param callable
-//     * @param mapper
-//     * @param consumer
-     */
-//    public static void execObsParallel(Callable callable, Function mapper, Consumer consumer){
-//        io.reactivex.Observable.fromCallable(callable)
-//                .map(mapper)
-//                .observeOn(Schedulers.from(executor))
-////                .observeOn(Schedulers.newThread())  // subscriber on different thread
-//                .subscribe(consumer);
-//    }
-
-//    public static void execObsParallel(Consumer consumer){
-//        execObsParallel( () -> "", s -> "", consumer );
-//    }
-    public static void execObsParallel(Runnable runnable){
-        execute(runnable);
-    }
-
-
-    /**
-     * This method executes an observable sequentially (i.e., it doesn't start the next request (consumer) until
-     * the current one finishes)
-//     * @param consumer
-//     */
-//    public static void execObsSequential(Consumer consumer){
-//        io.reactivex.Observable.fromCallable(() -> consumer )
-//                .observeOn(Schedulers.single())
-//                .subscribe( consumer );
-//    }
-
 
     private static Set<Thread> threadSet;
     /**

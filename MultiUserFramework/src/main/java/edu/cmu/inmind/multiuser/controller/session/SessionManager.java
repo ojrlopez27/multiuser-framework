@@ -240,7 +240,7 @@ public class SessionManager extends Utils.MyRunnable implements Runnable, Sessio
         send( msgRequest, new SessionMessage(Constants.SESSION_CLOSED) );
         session.close( this );
         sessions.remove( session.getId() );
-        Log4J.error(this, "start disconnecting session: " + session.getId());
+        //Log4J.error(this, "start disconnecting session: " + session.getId());
     }
 
     /**
@@ -325,7 +325,7 @@ public class SessionManager extends Utils.MyRunnable implements Runnable, Sessio
                     serviceInfo.getResponseListener().process(Utils.toJson(sessionMessage));
                     if (sessionMessage.getRequestType().equals(Constants.REQUEST_SHUTDOWN_SYSTEM)
                             && messageId.equals(Constants.SESSION_MANAGER_SERVICE)) {
-                        Log4J.error(this, "closing clientCommController");
+                        //Log4J.error(this, "closing clientCommController");
                         clientCommController.close(this);
                         //MultiuserFramework.stop();
                     }
@@ -376,7 +376,7 @@ public class SessionManager extends Utils.MyRunnable implements Runnable, Sessio
      * It disconnects all sessions, closes all sockets and stop the multiuser framework.
      */
     public void close(DestroyableCallback callback) throws Throwable{
-        Log4J.warn(this, "=== 10");
+        //Log4J.warn(this, "=== 10");
         stopped.getAndSet(true);
         Log4J.info(this, "Start closing all external services (slave MUF's)...");
         SessionMessage sessionMessage = new SessionMessage();
@@ -385,23 +385,23 @@ public class SessionManager extends Utils.MyRunnable implements Runnable, Sessio
         for( ServiceComponent serviceComponent : ResourceLocator.getServiceRegistry().values() ){
             send( serviceComponent.getMsgTemplate(), sessionMessage );
         }
-        Log4J.warn(this, "=== 11");
+        //Log4J.warn(this, "=== 11");
         Log4J.info(this, "Start closing all sessions...");
         for( Session session : sessions.values() ){
             session.close(this);
         }
-        Log4J.warn(this, "=== 23");
+        //Log4J.warn(this, "=== 23");
         if( config.isTCPon() ) {
             serverCommController.close(this);
             if( numOfPorts > 0 && brokers != null ) {
                 for (Broker broker : brokers) {
-                    Log4J.warn(this, "=== 24");
+                    //Log4J.warn(this, "=== 24");
                     broker.close(this);
                 }
             }
-            Log4J.warn(this, "=== 25");
+            //Log4J.warn(this, "=== 25");
             managerBroker.close(this);
-            Log4J.warn(this, "=== 28.9999");
+            //Log4J.warn(this, "=== 28.9999");
         }
     }
 
@@ -409,18 +409,19 @@ public class SessionManager extends Utils.MyRunnable implements Runnable, Sessio
     public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable {
         closeableObjects.remove(destroyedObj);
         if (closeableObjects.isEmpty()) {
-            Log4J.warn(this, "=== 26");
+            //Log4J.warn(this, "=== 26");
             ResourceLocator.stopStatlessComp();
-            Log4J.warn(this, "=== 27");
+            //Log4J.warn(this, "=== 27");
             Utils.shutdownThreadExecutor();
-            Log4J.warn(this, "=== 28");
-            DependencyManager.setIamDone(this);
+            //Log4J.warn(this, "=== 28");
+            ResourceLocator.setIamDone(this);
             DependencyManager.getInstance().release();
-            Log4J.warn(this, "=== 29");
+            ResourceLocator.closeContexts();
+            //Log4J.warn(this, "=== 29");
             isDestroyed.getAndSet(true);
             Log4J.info(this, "Gracefully destroying...");
             Log4J.info(this, "Session Manager stopped. Bye bye!");
-            Log4J.warn(this, "=== 30");
+            //Log4J.warn(this, "=== 30");
         }
     }
 }

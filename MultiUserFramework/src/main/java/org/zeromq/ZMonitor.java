@@ -117,7 +117,12 @@ public class ZMonitor implements Closeable
             return this;
         }
         agent.send(START);
-        agent.recv();
+        // ojrlopez
+        try {
+            agent.recv();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
         started = true;
         return this;
     }
@@ -156,7 +161,12 @@ public class ZMonitor implements Closeable
         }
         agent.send(VERBOSE, true);
         agent.send(Boolean.toString(verbose));
-        agent.recv();
+        // ojrlopez
+        try{
+            agent.recv();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
         return this;
     }
 
@@ -177,7 +187,12 @@ public class ZMonitor implements Closeable
             msg.add(evt.name());
         }
         agent.send(msg);
-        agent.recv();
+        // ojrlopez
+        try{
+            agent.recv();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
         return this;
     }
 
@@ -198,7 +213,12 @@ public class ZMonitor implements Closeable
             msg.add(evt.name());
         }
         agent.send(msg);
-        agent.recv();
+        // ojrlopez
+        try{
+            agent.recv();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
         return this;
     }
 
@@ -222,11 +242,17 @@ public class ZMonitor implements Closeable
             System.out.println("ZMonitor: Start before getting events.");
             return null;
         }
-        ZMsg msg = agent.recv(wait);
-        if (msg == null) {
+        // ojrlopez
+        try{
+            ZMsg msg = agent.recv(wait);
+            if (msg == null) {
+                return null;
+            }
+            return new ZEvent(msg);
+        }catch (Exception e){
+            e.printStackTrace();
             return null;
         }
-        return new ZEvent(msg);
     }
 
     /**
@@ -240,11 +266,17 @@ public class ZMonitor implements Closeable
             System.out.println("ZMonitor: Start before getting events.");
             return null;
         }
-        ZMsg msg = agent.recv(timeout);
-        if (msg == null) {
+        // ojrlopez
+        try{
+            ZMsg msg = agent.recv(timeout);
+            if (msg == null) {
+                return null;
+            }
+            return new ZEvent(msg);
+        }catch (Exception e){
+            e.printStackTrace();
             return null;
         }
-        return new ZEvent(msg);
     }
 
     private static final String START         = "START";
@@ -272,7 +304,12 @@ public class ZMonitor implements Closeable
         exit = zactor.exit();
 
         // wait for the start of the actor
-        agent.recv().destroy();
+        // ojrlopez
+        try{
+            agent.recv().destroy();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     private static class MonitorActor extends ZActor.SimpleActor
@@ -318,86 +355,110 @@ public class ZMonitor implements Closeable
         @Override
         public boolean stage(Socket socket, Socket pipe, ZPoller poller, int evts)
         {
-            final ZMQ.Event event = ZMQ.Event.recv(socket);
-            assert (event != null);
-            final int code = event.getEvent();
-            final String address = event.getAddress();
-            assert (address != null);
-            final Event type = Event.find(code);
-            assert (type != null);
+            // ojrlopez
+            try{
+                final ZMQ.Event event = ZMQ.Event.recv(socket);
+                assert (event != null);
+                final int code = event.getEvent();
+                final String address = event.getAddress();
+                assert (address != null);
+                final Event type = Event.find(code);
+                assert (type != null);
 
-            final ZMsg msg = new ZMsg();
+                final ZMsg msg = new ZMsg();
 
-            msg.add(type.name());
-            msg.add(Integer.toString(code));
-            msg.add(address);
+                msg.add(type.name());
+                msg.add(Integer.toString(code));
+                msg.add(address);
 
-            final Object value = event.getValue();
-            if (value != null) {
-                msg.add(value.toString());
+                final Object value = event.getValue();
+                if (value != null) {
+                    msg.add(value.toString());
+                }
+                return msg.send(pipe, true);
+            }catch (Exception e){
+                e.printStackTrace();
+                return false;
             }
-            return msg.send(pipe, true);
         }
 
         @Override
         public boolean backstage(ZMQ.Socket pipe, ZPoller poller, int evts)
         {
-            final String command = pipe.recvStr();
-            if (command == null) {
-                System.out.printf("ZMonitor: Closing monitor %s : No command%n", monitored);
-                return false;
-            }
-            switch (command) {
-            case VERBOSE:
-                verbose = Boolean.parseBoolean(pipe.recvStr());
-                return pipe.send(OK);
-            case ADD_EVENTS:
-                return addEvents(pipe);
-            case REMOVE_EVENTS:
-                return removeEvents(pipe);
-            case START:
-                return start(poller, pipe);
-            case CLOSE:
-                return close(poller, pipe);
-            default:
-                System.out.printf("ZMonitor: Closing monitor %s : Unknown command %s%n", monitored, command);
-                pipe.send(ERROR);
+            // ojrlopez
+            try{
+                final String command = pipe.recvStr();
+                if (command == null) {
+                    System.out.printf("ZMonitor: Closing monitor %s : No command%n", monitored);
+                    return false;
+                }
+                switch (command) {
+                case VERBOSE:
+                    verbose = Boolean.parseBoolean(pipe.recvStr());
+                    return pipe.send(OK);
+                case ADD_EVENTS:
+                    return addEvents(pipe);
+                case REMOVE_EVENTS:
+                    return removeEvents(pipe);
+                case START:
+                    return start(poller, pipe);
+                case CLOSE:
+                    return close(poller, pipe);
+                default:
+                    System.out.printf("ZMonitor: Closing monitor %s : Unknown command %s%n", monitored, command);
+                    pipe.send(ERROR);
+                    return false;
+                }
+            }catch (Exception e){
+                e.printStackTrace();
                 return false;
             }
         }
 
         private boolean addEvents(Socket pipe)
         {
-            final ZMsg msg = ZMsg.recvMsg(pipe);
-            if (msg == null) {
-                return false; // interrupted
-            }
-            for (ZFrame frame : msg) {
-                final String evt = frame.getString(ZMQ.CHARSET);
-                final Event event = Event.valueOf(evt);
-                if (verbose) {
-                    System.out.printf("ZMonitor: Adding" + " event %s%n", event);
+            // ojrlopez
+            try{
+                final ZMsg msg = ZMsg.recvMsg(pipe);
+                if (msg == null) {
+                    return false; // interrupted
                 }
-                events |= event.events;
+                for (ZFrame frame : msg) {
+                    final String evt = frame.getString(ZMQ.CHARSET);
+                    final Event event = Event.valueOf(evt);
+                    if (verbose) {
+                        System.out.printf("ZMonitor: Adding" + " event %s%n", event);
+                    }
+                    events |= event.events;
+                }
+                return pipe.send(OK);
+            }catch (Exception e){
+                e.printStackTrace();
+                return false;
             }
-            return pipe.send(OK);
         }
 
         private boolean removeEvents(Socket pipe)
         {
-            final ZMsg msg = ZMsg.recvMsg(pipe);
-            if (msg == null) {
-                return false; // interrupted
-            }
-            for (ZFrame frame : msg) {
-                final String evt = frame.getString(ZMQ.CHARSET);
-                final Event event = Event.valueOf(evt);
-                if (verbose) {
-                    System.out.printf("ZMonitor: Removing" + " event %s%n", event);
+            // ojrlopez
+            try{
+                final ZMsg msg = ZMsg.recvMsg(pipe);
+                if (msg == null) {
+                    return false; // interrupted
                 }
-                events &= ~event.events;
+                for (ZFrame frame : msg) {
+                    final String evt = frame.getString(ZMQ.CHARSET);
+                    final Event event = Event.valueOf(evt);
+                    if (verbose) {
+                        System.out.printf("ZMonitor: Removing" + " event %s%n", event);
+                    }
+                    events &= ~event.events;
+                }
+                return pipe.send(OK);
+            }catch (Exception e){
+                e.printStackTrace();
+                return false;
             }
-            return pipe.send(OK);
         }
 
         private boolean start(ZPoller poller, Socket pipe)

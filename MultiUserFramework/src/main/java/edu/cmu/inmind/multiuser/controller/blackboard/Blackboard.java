@@ -207,7 +207,8 @@ public class Blackboard {
         return subscribers.remove( subscriber );
     }
 
-    private void notifySubscribers(BlackboardListener sender, String status, String key, Object element){
+    private void notifySubscribers(final BlackboardListener sender, final String status, final String key,
+                                   final Object element){
         if(notifySubscribers && key != null) {
             try {
                 List<BlackboardListener> listeners = subscriptions.get(key);
@@ -215,33 +216,42 @@ public class Blackboard {
                     ExceptionHandler.handle( new MultiuserException(ErrorMessages.NOBODY_IS_SUBSCRIBED, key) );
                 }
                 if (listeners != null) {
-                    BlackboardEvent event = new BlackboardEvent(status, key, element);
-                    final String sessionId = sender.getSessionId();
-
-                    for(BlackboardListener subscriber : listeners ){
+                    for(final BlackboardListener subscriber : listeners ){
                         if( subscriber == null ){
                             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
                                     "subscriber: " + subscriber));
+                            continue;
                         }
-                        Utils.execObsParallel( () -> {
-                            if (subscriber instanceof PluggableComponent) {
-                                ((PluggableComponent) subscriber).setActiveSession(sessionId);
-                            }
-                            try {
-                                subscriber.onEvent(event);
-                                if (subscriber instanceof PluggableComponent && subscriber.getClass()
-                                        .isAnnotationPresent(ConnectRemoteService.class)) {
-                                    SessionMessage sessionMessage = new SessionMessage();
-                                    sessionMessage.setSessionId(sender.getSessionId());
-                                    sessionMessage.setRequestType(status);
-                                    sessionMessage.setMessageId(key);
-                                    sessionMessage.setPayload(Utils.toJson( event.getElement() ));
-                                    ((PluggableComponent) subscriber).send(sessionMessage);
+                        if( !subscriber.isClosing() ) {
+                            Utils.execute(new Utils.MyRunnable("blackboard-onEvent-" + sender.getSessionId()) {
+                                @Override
+                                public void run() {
+                                    try {
+                                        final String sessionId = sender.getSessionId();
+                                        final BlackboardEvent event = new BlackboardEvent(status, key, element, sessionId);
+                                        Blackboard bb = null;
+                                        if (subscriber instanceof PluggableComponent) {
+                                            ((PluggableComponent) subscriber).setActiveSession(sessionId);
+                                            bb = ((PluggableComponent) subscriber).getBlackBoard(sessionId);
+                                            if( bb == null ) return;
+                                        }
+                                        //Log4J.warn(this, "executing onEvent from " + Thread.currentThread().getName());
+                                        subscriber.onEvent(bb, event);
+                                        if (subscriber instanceof PluggableComponent && subscriber.getClass()
+                                                .isAnnotationPresent(ConnectRemoteService.class)) {
+                                            SessionMessage sessionMessage = new SessionMessage();
+                                            sessionMessage.setSessionId(sender.getSessionId());
+                                            sessionMessage.setRequestType(status);
+                                            sessionMessage.setMessageId(key);
+                                            sessionMessage.setPayload(Utils.toJson(event.getElement()));
+                                            ((PluggableComponent) subscriber).send(sessionMessage);
+                                        }
+                                    } catch (Throwable e) {
+                                        ExceptionHandler.handle(e);
+                                    }
                                 }
-                            }catch (Throwable e){
-                                ExceptionHandler.handle( e );
-                            }
-                        });
+                            });
+                        }
                     }
                 }
             } catch (Throwable e) {

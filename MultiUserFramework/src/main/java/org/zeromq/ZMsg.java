@@ -198,7 +198,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
      * @return
      *          ZMsg object, null if interrupted
      */
-    public static ZMsg recvMsg(Socket socket)
+    public static ZMsg recvMsg(Socket socket) throws Exception //ojrlopez
     {
         return recvMsg(socket, 0);
     }
@@ -211,7 +211,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
      * @return
      *          ZMsg object, null if interrupted
      */
-    public static ZMsg recvMsg(Socket socket, boolean wait)
+    public static ZMsg recvMsg(Socket socket, boolean wait) throws Exception //ojrlopez
     {
         return recvMsg(socket, wait ? 0 : ZMQ.DONTWAIT);
     }
@@ -224,7 +224,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
      * @return
      *          ZMsg object, null if interrupted
      */
-    public static ZMsg recvMsg(Socket socket, int flag)
+    public static ZMsg recvMsg(Socket socket, int flag) throws Exception //ojrlopez
     {
         if (socket == null) {
             throw new IllegalArgumentException("socket is null");

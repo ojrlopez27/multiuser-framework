@@ -209,11 +209,17 @@ public class ZSocket implements AutoCloseable
 
     public byte[] receive(int flags)
     {
-        final Msg msg = socketBase.recv(flags);
-        if (msg == null) {
+        // ojrlopez
+        try{
+            final Msg msg = socketBase.recv(flags);
+            if (msg == null) {
+                return null;
+            }
+            return msg.data();
+        }catch (Exception e){
+            e.printStackTrace();
             return null;
         }
-        return msg.data();
     }
 
     public String receiveStringUtf8()

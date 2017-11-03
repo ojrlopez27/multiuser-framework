@@ -44,7 +44,6 @@ public class MockClient {
                 } else if (input.equals("sr")) {
                     client.send(sessionId, new SessionMessage("MSG_SR", ""));
                 } else if (input.equals("disconnect")) {
-                    //client.send(sessionId, new SessionMessage(Constants.REQUEST_DISCONNECT, "" + System.currentTimeMillis(), sessionId));
                     client.disconnect(sessionId);
                 } else if (input.equals("asr")) {
                     SessionMessage sessionMessage = new SessionMessage();

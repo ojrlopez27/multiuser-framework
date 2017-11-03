@@ -13,6 +13,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.awaitility.Awaitility.*;
@@ -33,13 +34,13 @@ public class PerformanceTests {
     // constants:
     static boolean          useExternalMUF = false;
     static final long       timeout = 1000 * 60 * 5; // 5 minutes
-    static final long       delaySendMsg = 200;
+    static final long       delaySendMsg = 100;
     static final boolean    verbose = false;
     static final int        numAgents = 1;
     static final int        numMessages = 10;
     static final String     url = useExternalMUF? "tcp://34.203.160.208" : "tcp://127.0.0.1";
     static final long       delayMUF = 2000;
-    static final int        portMUF = 5666;
+    static final int        portMUF = 5555;
     static final long       delayAgentCreation = 100;
     static final boolean    usePrintWriter = false;
 
@@ -100,7 +101,7 @@ public class PerformanceTests {
         await().atMost(timeout, TimeUnit.MILLISECONDS).until( () -> receivedMsgs.get() == totalMessages);
         //Utils.sleep(5000);
 
-        Log4J.warn(this, "=== 4");
+        //Log4J.warn(this, "=== 4");
         time = System.currentTimeMillis() - time;
         System.out.println("Total time: " + time + " and total received: " + receivedMsgs.get()+ " total: " + totalMessages );
         System.out.println("Average per message: " + (time / (double) totalMessages) );
@@ -112,11 +113,11 @@ public class PerformanceTests {
         System.out.println("Total time by sections: " + total);
         if(usePrintWriter) printWriter.write( String.format("%s\t%s\t%s\n", numAgents, numMessages, total ) );
 
-//        for(Agent agent : agents){
-//            agent.destroy();
-//        }
+        for(Agent agent : agents){
+            agent.destroy();
+        }
         if( !useExternalMUF ) {
-            Log4J.warn(this, "=== 5");
+            //Log4J.warn(this, "=== 5");
             MultiuserFrameworkContainer.stopFramework(muf);
             muf = null;
         }
@@ -131,7 +132,7 @@ public class PerformanceTests {
         private int numMessages;
         int receivedMessages = 0;
         private ConcurrentHashMap<Integer, Long> times;
-        private boolean stop = false;
+        private AtomicBoolean stop = new AtomicBoolean(true);
 
         public long getTotalTime() {
             long totalTime = 0;
@@ -146,7 +147,7 @@ public class PerformanceTests {
             this.id = Integer.valueOf(agentId.split("-")[1]);
             this.numMessages = numMessages;
             this.times = new ConcurrentHashMap<>();
-
+            Log4J.error(this, "1:@@@:" + agentId + ".");
             ccc = new ClientCommController.Builder()
                     .setServerAddress(url + ":" + portMUF)
                     .setServiceName( agentId )
@@ -155,27 +156,27 @@ public class PerformanceTests {
                     .setResponseListener(message -> {
                         try {
                             //Utils.printNewAddedThreads();
-                            Log4J.error(this, "Active: "+Thread.activeCount());
+                            //Log4J.error(this, "Active: "+Thread.activeCount());
                             if( message.contains(Constants.SESSION_INITIATED) ){
                                 initializedAgents.incrementAndGet();
                                 //if(verbose)
                                     Log4J.debug(this, String.format("initialized agent %s  total: %s", agentId,
                                             initializedAgents.get() ) );
+                                stop.getAndSet( false );
+                                Log4J.error(this, "2:@@@:" + agentId + ".");
                             }else if( !message.contains(Constants.SESSION_CLOSED) && !message.contains(Constants.SESSION_RECONNECTED)){
-                                int key = Integer.valueOf(message);
+                                Log4J.error(this, "35:" + message);
+                                int key = Integer.valueOf(message.split(":")[2]);
                                 long value = times.get(key);
                                 times.put( key,  System.nanoTime() - value );
-                                Log4J.warn(this, "=== 1");
+                                //Log4J.warn(this, "=== 1");
                                 receivedMsgs.incrementAndGet();
                                 receivedMessages++;
-                                if( receivedMessages != key ){
-                                    Log4J.error(this, String.format("receivedMessages: %s and payload: %s", receivedMessages,
-                                            message));
-                                }
                                 if(receivedMsgs.get() % 1 == 0)//if(verbose)
                                     Log4J.debug(this, String.format("%s receives: %s receivedMessages: %s total: %s", agentId,
                                             message, receivedMessages, receivedMsgs.get()));
                                 if(receivedMessages == numMessages ){
+                                    Log4J.error(this, "36:" + message);
                                     ids[id] = null;
                                     StringBuffer faltan =  new StringBuffer("");
                                     for( Integer id : ids ){
@@ -184,9 +185,8 @@ public class PerformanceTests {
                                         }
                                     }
                                     Log4J.debug(this, "Faltan: " + faltan);
-                                    Log4J.error(this, String.format("**** %s completed", agentId));
-                                    Log4J.warn(this, "=== 2");
-                                    destroy();
+                                    //Log4J.error(this, String.format("**** %s completed", agentId));
+                                    //Log4J.warn(this, "=== 2");
                                 }
                             }
                         } catch (Throwable e) {
@@ -198,9 +198,15 @@ public class PerformanceTests {
 
         public void run(){
             try {
+                // let's wait until it connects
+                while( stop.get() ){
+                    Utils.sleep(100);
+                }
+                String message = "";
                 for (int i = 0; i < numMessages; i++) {
                     //we send plain strings instead of SessionMessage to avoid json parsing
-                    String message = "" + (i + 1);
+                    message = "@@@:" + agentId + ":"  +(i + 1);
+                    Log4J.error(this, "3:" + message);
                     times.put( (i + 1), System.nanoTime() );
                     ccc.send(agentId, message);
                     int sent = sentMessages.incrementAndGet();
@@ -208,19 +214,20 @@ public class PerformanceTests {
                     //if (verbose)
                         Log4J.debug(this, String.format("%s sends: %s Total sent: %s", agentId, message, sent));
                 }
-                while( !stop ){
+                while( !stop.get() ){
                     Utils.sleep(100);
                 }
-                Log4J.warn(this, "Chao from " + agentId);
+                //Log4J.warn(this, "Chao from " + agentId);
+                Log4J.error(this, "37:" + message);
             }catch (Exception e){
                 e.printStackTrace();
             }
         }
 
         public void destroy(){
-            Log4J.warn(this, "=== 3");
+            //Log4J.warn(this, "=== 3");
             ccc.close( null );
-            stop = true;
+            stop.getAndSet( true );
             if( Thread.currentThread().isAlive() ){
                 Thread.currentThread().interrupt();
             }

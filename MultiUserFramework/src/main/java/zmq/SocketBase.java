@@ -789,7 +789,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         return true;
     }
 
-    public final Msg recv(int flags)
+    public final Msg recv(int flags) throws Exception //ojrlopez
     {
         //  Check whether the library haven't been shut down yet.
         if (ctxTerminated) {
@@ -866,13 +866,8 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         //  we are able to fetch a message.
         boolean block = (ticks != 0);
         while (true) {
-            // ojrlopez
-            try {
-                if (!processCommands(block ? timeout : 0, false)) {
-                    return null;
-                }
-            }catch (Exception e){
-                e.printStackTrace();
+            if (!processCommands(block ? timeout : 0, false)) {
+                return null;
             }
             msg = xrecv();
 

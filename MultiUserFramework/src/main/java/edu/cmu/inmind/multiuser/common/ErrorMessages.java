@@ -35,7 +35,9 @@ public class ErrorMessages {
     public static final String BLACKBOARD_MESSAGES_NULL = "The list of subscription messages is empty or null";
     public static final String BLACKBOARD_SENDER_NULL = "Blackboard sender is null";
     public static final String BLACKBOARD_EVENT = "Blackboard event contains a null or empty parameter. status: %, " +
-            "id: %s, element: %s";
+            "id: %s, element: %s, sessionId: %s";
+    public static final String NO_BLACKBOARD = "There is no blackboard associated to this session id: %s. Try using" +
+            "addBlackboard() method first";
     public static final String NO_SUBSCRIPTION_MESSSAGES = "The service '%s' has no subscription messages. Please " +
             "check your services.json file";
     public static final StringBuffer ANY_ELEMENT_IS_NULL = new StringBuffer("One or more of these elements is/are null (or empty):");

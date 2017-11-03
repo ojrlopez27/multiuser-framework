@@ -307,7 +307,7 @@ public class ZFrame
      * @return
      *          byte[] data
      */
-    private byte[] recv(Socket socket, int flags)
+    private byte[] recv(Socket socket, int flags) throws Exception //ojrlopez
     {
         if (socket == null) {
             throw new IllegalArgumentException("socket parameter must not be null");
@@ -328,7 +328,7 @@ public class ZFrame
      * @return
      *              received frame, else null
      */
-    public static ZFrame recvFrame(Socket socket)
+    public static ZFrame recvFrame(Socket socket) throws Exception //ojrlopez
     {
         return ZFrame.recvFrame(socket, 0);
     }
@@ -343,7 +343,7 @@ public class ZFrame
      * @return
      *              received frame, else null
      */
-    public static ZFrame recvFrame(Socket socket, int flags)
+    public static ZFrame recvFrame(Socket socket, int flags) throws Exception //ojrlopez
     {
         ZFrame f = new ZFrame();
         byte[] data = f.recv(socket, flags);

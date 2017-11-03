@@ -2,8 +2,10 @@ package edu.cmu.inmind.multiuser.controller.communication;
 
 import edu.cmu.inmind.multiuser.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
+import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
@@ -33,7 +35,7 @@ public class ClientCommAPI implements DestroyableCallback {
 
     public ClientCommAPI(String broker) throws Throwable{
         this.broker = broker;
-        ctx = DependencyManager.getInstance().getContext(this);
+        ctx = ResourceLocator.getContext(this);
         reconnectToBroker();
     }
 
@@ -45,7 +47,7 @@ public class ClientCommAPI implements DestroyableCallback {
         if (clientSocket != null) {
             ctx.destroySocket(clientSocket);
         }
-        clientSocket = DependencyManager.createSocket(ctx, ZMQ.DEALER);
+        clientSocket = ResourceLocator.createSocket(ctx, ZMQ.DEALER);
         clientSocket.setSendTimeOut(0); //  Send messages immediately or return EAGAIN  ojrl
         clientSocket.setHWM(highWaterMark); //  Set a high-water mark that allows for reasonable activity
         clientSocket.setRcvHWM(highWaterMark);
@@ -70,7 +72,6 @@ public class ClientCommAPI implements DestroyableCallback {
             if (!isDestroyed.get()) {
                 ZMsg reply = null;
                 if (items.poll(timeout) == -1) {
-                    Log4J.warn(this, "Interrupted or Context has been shut down");
                     return null; // Interrupted or Context has been shut down
                 }
                 if (items.pollin(0)) {
@@ -97,11 +98,14 @@ public class ClientCommAPI implements DestroyableCallback {
                 return reply;
             }
         } catch (Throwable e) {
-            Log4J.error(this, "****** AQUI");
             try {
-                destroyInCascade(this);
-            } catch (Throwable t) {
-            } finally {
+                if( Utils.isZMQException(e) ) {
+                    destroyInCascade(this); // interrupted
+                }else{
+                    ExceptionHandler.handle(e);
+                }
+            }catch (Throwable t){
+            }finally {
                 return null;
             }
         }
@@ -123,16 +127,24 @@ public class ClientCommAPI implements DestroyableCallback {
             request.addFirst(MDP.C_CLIENT.newFrame());
             request.addFirst("");
             checkAndSleep("send");
+            String temp = request.peekLast().toString();
+            if(temp.startsWith("@@@")) Log4J.error(this, "11:" + temp);
             boolean wentWell = request.send(clientSocket);
             canUseSocket.getAndSet(true);
             if (!wentWell) {
                 return false;
             }
+            if(temp.startsWith("@@@")) Log4J.error(this, "12:" + temp);
             return true;
         }catch (Throwable e){
-            Log4J.error(this, "**** Throwing an exception");
-            e.printStackTrace();
-            destroyInCascade(this);
+            try {
+                if( Utils.isZMQException(e) ) {
+                    destroyInCascade(this); // interrupted
+                }else{
+                    ExceptionHandler.handle(e);
+                }
+            }catch (Throwable t){
+            }
             return false;
         }
     }
@@ -140,18 +152,18 @@ public class ClientCommAPI implements DestroyableCallback {
     public void close(DestroyableCallback callback) throws Throwable{
         this.callback = callback;
         items.close();
-        Log4J.warn(this, "=== 3.3");
+        //Log4J.warn(this, "=== 3.3");
         destroyInCascade(this);
     }
 
     @Override
     public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
         if( !isDestroyed.getAndSet(true) ) {
-            Log4J.warn(this, "=== 3.4");
+            //Log4J.warn(this, "=== 3.4");
             checkAndSleep("destroyInCascade");
             ctx = null;
-            DependencyManager.setIamDone( this );
-            Log4J.warn(this, "=== 3.5");
+            ResourceLocator.setIamDone( this );
+            //Log4J.warn(this, "=== 3.5");
             Log4J.info(this, "Gracefully destroying...");
             if(callback != null) callback.destroyInCascade( this );
         }
@@ -162,11 +174,8 @@ public class ClientCommAPI implements DestroyableCallback {
         try {
             int times = 0;
             while (!canUseSocket.get() && times++ < maxNumTries) { // 200 * 5 = 1000 milliseconds
-                Log4J.error(this, "waiting for atomic boolean: " + who + "\tbefore: " + whoPrevious);
+                //Log4J.error(this, "waiting for atomic boolean: " + who + "\tbefore: " + whoPrevious);
                 Utils.sleep(delayCheckAndSleep);
-                if(times == 200){
-                    System.currentTimeMillis();
-                }
             }
             canUseSocket.getAndSet(false);
             whoPrevious = who;

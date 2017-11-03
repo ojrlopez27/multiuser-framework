@@ -16,6 +16,7 @@ import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
+import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -127,7 +128,7 @@ public class Session extends Utils.MyRunnable implements Runnable, OrchestratorL
      * @throws Throwable
      */
     public void close(DestroyableCallback callback) throws Throwable{
-        Log4J.warn(this, "=== 12");
+        //Log4J.warn(this, "=== 12");
         if(this.callback == null && this.callback != this)
             this.callback = callback;
         if( !isClosed.getAndSet(true) ) {
@@ -137,20 +138,20 @@ public class Session extends Utils.MyRunnable implements Runnable, OrchestratorL
                 //notify the client
                 sessionCommController.disconnect();
             }
-            Log4J.warn(this, "=== 13");
-            orchestrator.close( this );
-            Log4J.warn(this, "=== 14");
+            //Log4J.warn(this, "=== 13");
+            if(orchestrator != null) orchestrator.close( this );
+            //Log4J.warn(this, "=== 14");
             sessionCommController.close(this);
-            Log4J.warn(this, "=== 22");
+            //Log4J.warn(this, "=== 22");
         }
     }
 
     @Override
     public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
         closeableObjects.remove( destroyedObj );
-        Log4J.warn(this, "=== 19");
+        //Log4J.warn(this, "=== 19");
         if( closeableObjects.isEmpty() ) {
-            Log4J.warn(this, "=== 20");
+            //Log4J.warn(this, "=== 20");
             orchestrator = null;
             if (sessionCommController != null) { // it is null when TCP is off
                 sessionCommController = null;
@@ -159,10 +160,10 @@ public class Session extends Utils.MyRunnable implements Runnable, OrchestratorL
                     timer.purge();
                 }
                 status = Constants.SESSION_CLOSED;
-                DependencyManager.setIamDone( this );
+                ResourceLocator.setIamDone( this );
                 Log4J.info(this, "Gracefully destroying...");
                 Log4J.info(this, String.format("Session: %s has been disconnected!", id));
-                Log4J.warn(this, "=== 21");
+                //Log4J.warn(this, "=== 21");
                 callback.destroyInCascade(this);
             }
         }
@@ -192,8 +193,9 @@ public class Session extends Utils.MyRunnable implements Runnable, OrchestratorL
             while (!status.equals(Constants.SESSION_CLOSED) && !Thread.currentThread().isInterrupted()) {
                 if( sessionCommController != null ) { //sessionCommController is null when not using TCP
                     ZMsgWrapper request = sessionCommController.receive(replyMsg.getMsg());
-                    if (request == null)
+                    if (request == null) {
                         break; //Interrupted
+                    }
                     replyMsg = request; //  Echo is complex :-)
                     String message = replyMsg.getMsg().peekLast().toString();
                     stopTimer();
@@ -223,6 +225,7 @@ public class Session extends Utils.MyRunnable implements Runnable, OrchestratorL
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "output: " + output));
         }
         if( config.isTCPon() ) {
+            Log4J.error("ProcessOrchestratorImpl", "26:" + output);
             sessionCommController.send(output);
         }else{
             client.getResponseListener().process( Utils.toJson(output) );
