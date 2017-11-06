@@ -1,17 +1,21 @@
 package common;
 
-import edu.cmu.inmind.multiuser.common.Constants;
-import edu.cmu.inmind.multiuser.common.Utils;
-import edu.cmu.inmind.multiuser.controller.MultiuserFramework;
-import edu.cmu.inmind.multiuser.controller.MultiuserFrameworkContainer;
+import edu.cmu.inmind.multiuser.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
-import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
+import edu.cmu.inmind.multiuser.controller.common.Constants;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
+import edu.cmu.inmind.multiuser.controller.muf.MUFLifetimeManager;
+import edu.cmu.inmind.multiuser.controller.muf.MultiuserController;
+import edu.cmu.inmind.multiuser.test.TestOrchestrator;
+import edu.cmu.inmind.multiuser.test.TestPluggableComponent;
+import edu.cmu.inmind.multiuser.test.TestUtils;
 import org.junit.Test;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.*;
 
 
@@ -33,13 +37,13 @@ public class MUFTestSuite {
      */
     @Test
     public void testStartAndStopOneMUF() throws Throwable{
-        MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
+        MultiuserController muf = MUFLifetimeManager.startFramework(
                 TestUtils.getModules( TestOrchestrator.class ),
                 TestUtils.createConfig( serverAddress, ports[0] ) );
         assertNotNull(muf);
         Utils.sleep(delay); //give some time to initialize the MUF
-        MultiuserFrameworkContainer.stopFramework( muf );
-        assertNull( MultiuserFrameworkContainer.get( muf.getId() ) );
+        MUFLifetimeManager.stopFramework( muf );
+        assertNull( MUFLifetimeManager.get( muf.getId() ) );
     }
 
     /**
@@ -49,20 +53,20 @@ public class MUFTestSuite {
      */
     @Test
     public void testStartAndStopTwoMUFs() throws Throwable{
-        MultiuserFramework muf1 = MultiuserFrameworkContainer.startFramework(
+        MultiuserController muf1 = MUFLifetimeManager.startFramework(
                 TestUtils.getModules(TestOrchestrator.class ),
                 TestUtils.createConfig( serverAddress, ports[0] ) );
         assertNotNull(muf1);
-        MultiuserFramework muf2 = MultiuserFrameworkContainer.startFramework(
+        MultiuserController muf2 = MUFLifetimeManager.startFramework(
                 TestUtils.getModules(TestOrchestrator.class ),
                 TestUtils.createConfig( serverAddress, ports[1] ) );
         assertNotNull(muf2);
         assertNotSame( muf1, muf2 );
         Utils.sleep(delay); //give some time to initialize the MUF
-        MultiuserFrameworkContainer.stopFramework( muf1 );
-        assertNull( MultiuserFrameworkContainer.get( muf1.getId() ) );
-        MultiuserFrameworkContainer.stopFramework( muf2 );
-        assertNull( MultiuserFrameworkContainer.get( muf2.getId() ) );
+        MUFLifetimeManager.stopFramework( muf1 );
+        assertNull( MUFLifetimeManager.get( muf1.getId() ) );
+        MUFLifetimeManager.stopFramework( muf2 );
+        assertNull( MUFLifetimeManager.get( muf2.getId() ) );
     }
 
     /**
@@ -104,7 +108,7 @@ public class MUFTestSuite {
         Utils.addOrChangeAnnotation(TestPluggableComponent.class.getAnnotation(BlackboardSubscription.class), "messages",
                 new String[]{ messageId2 });
         // creates a MUF and set TCP to on or off
-        MultiuserFramework muf = MultiuserFrameworkContainer.startFramework(
+        MultiuserController muf = MUFLifetimeManager.startFramework(
                 TestUtils.getModules(TestOrchestrator.class ),
                 TestUtils.createConfig( serverAddress, ports[0] ).setTCPon( isTCPon ) );
         assertNotNull(muf);
@@ -117,7 +121,6 @@ public class MUFTestSuite {
                     .setClientAddress(clientAddress + ports[0])
                     .setRequestType(Constants.REQUEST_CONNECT)
                     .setTCPon(isTCPon)
-                    .setMuf(isTCPon ? null : muf) //when TCP is off, we need to explicitly tell the client who the MUF is
                     .build();
             // this method will be executed asynchronuously, so we need to add a delay before stopping the MUF
             client.setResponseListener(message -> {
@@ -140,7 +143,7 @@ public class MUFTestSuite {
         }
 
         Utils.sleep( delay * 2 );
-        MultiuserFrameworkContainer.stopFramework( muf );
+        MUFLifetimeManager.stopFramework( muf );
         assertTrue( checkAsyncCall );
     }
 
@@ -154,7 +157,6 @@ public class MUFTestSuite {
                     .setClientAddress(clientAddress + ports[0])
                     .setRequestType(Constants.REQUEST_CONNECT)
                     .setTCPon(true)
-                    .setMuf(null)
                     .build();
             // this method will be executed asynchronuously, so we need to add a delay before stopping the MUF
             client.setResponseListener(message -> {

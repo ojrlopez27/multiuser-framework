@@ -1,10 +1,11 @@
 package edu.cmu.inmind.multiuser.controller.session;
 
 import com.google.common.util.concurrent.ServiceManager;
-import edu.cmu.inmind.multiuser.common.DestroyableCallback;
-import edu.cmu.inmind.multiuser.common.Constants;
-import edu.cmu.inmind.multiuser.common.ErrorMessages;
-import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.communication.ClientCommController;
+import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
+import edu.cmu.inmind.multiuser.controller.common.Constants;
+import edu.cmu.inmind.multiuser.controller.common.ErrorMessages;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.*;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
@@ -24,9 +25,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * Created by oscarr on 3/3/17.
  * This class will control the sessions lifecycle (connect, disconnect, pause, resume)
  */
-public class SessionManager implements Utils.NamedRunnable, Session.SessionObserver, DestroyableCallback {
+public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionObserver, DestroyableCallback {
     /** sessions handled by the session manager */
-    private ConcurrentHashMap<String, Session> sessions;
+    private ConcurrentHashMap<String, SessionImpl> sessions;
     private CopyOnWriteArrayList<Object> closeableObjects;
     /** communication controller that process
      * lifecycle request messages (connect a client, disconnect, etc.)*/
@@ -170,7 +171,7 @@ public class SessionManager implements Utils.NamedRunnable, Session.SessionObser
             }else{
                 request = new SessionMessage();
             }
-            Session session = sessions.get(request.getSessionId());
+            SessionImpl session = sessions.get(request.getSessionId());
             if (session != null) {
                 if (request.getRequestType().equals(Constants.REQUEST_PAUSE)) {
                     pause(session, msgRequest);
@@ -228,19 +229,19 @@ public class SessionManager implements Utils.NamedRunnable, Session.SessionObser
         }
     }
 
-    private void resume(Session session, ZMsgWrapper msgRequest) throws Throwable{
+    private void resume(SessionImpl session, ZMsgWrapper msgRequest) throws Throwable{
         Log4J.info(this, "Resuming session: " + session.getId());
         session.resume();
         send( msgRequest, new SessionMessage(Constants.SESSION_RESUMED) );
     }
 
-    private void pause(Session session, ZMsgWrapper msgRequest) throws Throwable{
+    private void pause(SessionImpl session, ZMsgWrapper msgRequest) throws Throwable{
         Log4J.info(this, "Pausing session: " + session.getId());
         session.pause();
         send( msgRequest, new SessionMessage(Constants.SESSION_PAUSED) );
     }
 
-    private void disconnect(Session session, ZMsgWrapper msgRequest) throws Throwable{
+    private void disconnect(SessionImpl session, ZMsgWrapper msgRequest) throws Throwable{
         Log4J.info(this, "Disconnecting session: " + session.getId());
         send( msgRequest, new SessionMessage(Constants.SESSION_CLOSED) );
         session.close( this );
@@ -292,7 +293,7 @@ public class SessionManager implements Utils.NamedRunnable, Session.SessionObser
         final String address = fullAddress.replace("" + sessionMngPort, "" + port);
         String key = request.getSessionId();
         Log4J.info(this, "Creating session: " + key);
-        Session session = DependencyManager.getInstance().getComponent(Session.class);
+        SessionImpl session = DependencyManager.getInstance().getComponent(SessionImpl.class);
         session.onClose(this);
         session.setConfig( config );
         session.setId(key, msgRequest, address);
@@ -341,7 +342,7 @@ public class SessionManager implements Utils.NamedRunnable, Session.SessionObser
         }
     }
 
-    private void reconnect(ZMsgWrapper msgRequest, SessionMessage request, Session session) throws Throwable{
+    private void reconnect(ZMsgWrapper msgRequest, SessionMessage request, SessionImpl session) throws Throwable{
         Log4J.info(this, "Reconnecting session: " + session.getId() + " as per request "
                 + request.getSessionId());
         if(request.getSessionId().equals(session.getId())){
@@ -366,7 +367,7 @@ public class SessionManager implements Utils.NamedRunnable, Session.SessionObser
     }
 
     @Override
-    public void notifyCloseSession(Session session) {
+    public void notifyCloseSession(SessionImpl session) {
         if( session == null || sessions == null ){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "session: " + session,
                     "sessions: " + sessions));
@@ -387,7 +388,7 @@ public class SessionManager implements Utils.NamedRunnable, Session.SessionObser
             send( serviceComponent.getMsgTemplate(), sessionMessage );
         }
         Log4J.info(this, "Start closing all sessions...");
-        for( Session session : sessions.values() ){
+        for( SessionImpl session : sessions.values() ){
             session.close(this);
         }
         if( config.isTCPon() ) {

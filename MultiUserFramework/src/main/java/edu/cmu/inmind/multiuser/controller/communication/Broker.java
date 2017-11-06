@@ -4,8 +4,8 @@ package edu.cmu.inmind.multiuser.controller.communication;
  * Created by oscarr on 3/28/17.
  */
 
-import edu.cmu.inmind.multiuser.common.*;
-import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *  Majordomo Protocol broker
  *  A minimal implementation of http://rfc.zeromq.org/spec:7 and spec:8
  */
-public class Broker implements Utils.NamedRunnable, DestroyableCallback{
+public class Broker implements Utils.NamedRunnable, DestroyableCallback {
 
     // We'd normally pull these from config data
     private static final String INTERNAL_SERVICE_PREFIX = "mmi.";
@@ -190,7 +190,7 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback{
             isDestroyed.getAndSet(true);
             ResourceLocator.setIamDone( this );
             Log4J.info(this, "Gracefully destroying...");
-            callback.destroyInCascade(this);
+            if(callback != null) callback.destroyInCascade(this);
         }
     }
 
@@ -219,7 +219,8 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback{
         ZFrame command = msg.pop();
         boolean workerReady = workers.containsKey(sender.strhex());
         Worker worker = requireWorker(sender);
-        if(msg.peekLast().toString().startsWith("@@@")) Log4J.track(this, "31:" + msg.peekLast());
+        if(msg.peekLast() != null && msg.peekLast().toString().startsWith("@@@"))
+            Log4J.track(this, "31:" + msg.peekLast());
         if (MDP.S_READY.frameEquals(command)) {
             // Not first command in session || Reserved service name
             if (workerReady

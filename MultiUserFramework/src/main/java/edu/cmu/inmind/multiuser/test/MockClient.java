@@ -1,8 +1,8 @@
 package edu.cmu.inmind.multiuser.test;
 
-import edu.cmu.inmind.multiuser.common.Constants;
-import edu.cmu.inmind.multiuser.common.Utils;
-import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
+import edu.cmu.inmind.multiuser.communication.ClientCommController;
+import edu.cmu.inmind.multiuser.controller.common.Constants;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
@@ -25,7 +25,6 @@ public class MockClient {
                     .setServiceName(sessionId)
                     .setRequestType(Constants.REQUEST_CONNECT)
                     .setTCPon(true)
-                    .setMuf(null) //when TCP is off, we need to explicitly tell the client who the MUF is
                     .setResponseListener(message -> {
                         SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
                         Log4J.info(ResponseListener.class, "Received message: " + message);

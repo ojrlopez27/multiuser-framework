@@ -1,19 +1,22 @@
 package edu.cmu.inmind.multiuser.controller.blackboard;
 
-import edu.cmu.inmind.multiuser.common.Constants;
-import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.controller.common.Constants;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.FileLogger;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
+import edu.cmu.inmind.multiuser.controller.plugin.Pluggable;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.StateType;
 import edu.cmu.inmind.multiuser.controller.session.Session;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+
+import edu.cmu.inmind.multiuser.controller.session.SessionImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,7 +55,7 @@ public class BlackboardTest {
 
         // create a blackboard object
         // and set the loggers
-        blackboard = new Blackboard(createLogger());
+        blackboard = new BlackboardImpl(createLogger());
         blackboard.setShouldThrowException(true);
         setExceptionHandlerLogger();
 
@@ -67,7 +70,7 @@ public class BlackboardTest {
     public void testParameterizedConstructor() throws Throwable {
 
         // create a blackboard object, set the loggers, and create the components
-        blackboard = new Blackboard(createComponents(),
+        blackboard = new BlackboardImpl(createComponents(),
                 createDummySession().getId(),
                 createLogger());
         setExceptionHandlerLogger();
@@ -100,7 +103,7 @@ public class BlackboardTest {
     public void testSetComponentsNoneSubscribed() throws Throwable {
 
         // create a dummy session and set the blackboard components
-        Session session = new Session();
+        Session session = new SessionImpl();
         blackboard.setComponents(null, session.getId());
 
         // assert that no components have been subscribed
@@ -113,7 +116,7 @@ public class BlackboardTest {
 
         // create a dummy session and set the blackboard components
         Session session = createDummySession();
-        Set<PluggableComponent> components = new CopyOnWriteArraySet<>();
+        Set<Pluggable> components = new CopyOnWriteArraySet<>();
         blackboard.setComponents(components, session.getId());
 
         // assert that no components have been subscribed
@@ -123,6 +126,8 @@ public class BlackboardTest {
 
     @Test
     public void setKeepModel() throws Throwable {
+        // by default keep model is false
+        blackboard.setKeepModel(true);
 
         // assert that the model is kept
         Assert.assertTrue(blackboard.isModelKept());
@@ -269,6 +274,7 @@ public class BlackboardTest {
 
     @Test
     public void getWhenValidKey() throws Throwable {
+        blackboard.setKeepModel(true);
 
         // create a dummy session and set the components
         Session session = createDummySession();
@@ -323,6 +329,7 @@ public class BlackboardTest {
         PluggableComponent sendMsgResponsePC = createSendMsgResponsePC(session);
         sendMsgResponsePC.addBlackboard(session.getId(), blackboard);
         blackboard.subscribe(sendMsgResponsePC);
+        blackboard.setKeepModel(true);
 
         // assert that the listener is subscribed
         Assert.assertNotNull(blackboard.getSubscribers());
@@ -479,6 +486,8 @@ public class BlackboardTest {
     @Test
     public void reset() throws Throwable {
 
+        blackboard.setKeepModel( true );
+
         // create a dummy session and set the components
         Session session = createDummySession();
         blackboard.setComponents(createComponents(), session.getId());
@@ -511,15 +520,15 @@ public class BlackboardTest {
         // TODO
     }
 
-    private static Set<PluggableComponent> createComponents() {
-        Set<PluggableComponent> components = new CopyOnWriteArraySet<>();
+    private static Set<Pluggable> createComponents() {
+        Set<Pluggable> components = new CopyOnWriteArraySet<>();
         components.add(createPluggableComponent());
         //components.add(createExternalComponent(new String[]{MSG_ASR, MSG_NLU}));
         return components;
     }
 
     private static Session createDummySession() {
-        Session session = new Session();
+        Session session = new SessionImpl();
         session.setId (DUMMY_SESSION_ID, new ZMsgWrapper(), SERVICE_URL);
         return session;
     }

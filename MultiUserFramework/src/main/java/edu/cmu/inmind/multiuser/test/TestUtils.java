@@ -1,7 +1,7 @@
 package edu.cmu.inmind.multiuser.test;
 
-import edu.cmu.inmind.multiuser.common.Constants;
-import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.controller.common.Constants;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
@@ -20,6 +20,14 @@ public class TestUtils {
         };
     }
 
+
+    public static PluginModule[] getModulesPerf(Class<? extends ProcessOrchestratorImpl> orchestrator){
+        return new PluginModule[]{
+                new PluginModule.Builder( orchestrator, PerformanceTestPC.class, "test")
+                        .addPlugin(PerformanceTestPCStateless.class, "stateless")
+                        .build()
+        };
+    }
 
 
     public static PluginModule[] getModules(Class<? extends ProcessOrchestratorImpl> orchestrator, Class[] pluggins){
@@ -41,6 +49,8 @@ public class TestUtils {
                 .setServerAddress(serverAddress)
 //                .setJsonServicesConfig("services.json")
                 .setExceptionTraceLevel(Constants.SHOW_ALL_EXCEPTIONS)
+                .setCorePoolSize(1000)
+                .setNumOfSockets(1)
                 .build();
     }
 }

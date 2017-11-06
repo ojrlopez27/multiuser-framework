@@ -1,13 +1,14 @@
 package edu.cmu.inmind.multiuser.controller.plugin;
 
 import com.google.common.util.concurrent.AbstractIdleService;
-import edu.cmu.inmind.multiuser.common.DestroyableCallback;
-import edu.cmu.inmind.multiuser.common.Constants;
-import edu.cmu.inmind.multiuser.common.ErrorMessages;
-import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
+import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
+import edu.cmu.inmind.multiuser.controller.common.Constants;
+import edu.cmu.inmind.multiuser.controller.common.ErrorMessages;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
+import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardImpl;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardListener;
-import edu.cmu.inmind.multiuser.controller.communication.ClientCommController;
+import edu.cmu.inmind.multiuser.controller.communication.ClientController;
 import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
@@ -16,6 +17,7 @@ import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import edu.cmu.inmind.multiuser.controller.session.Session;
+import edu.cmu.inmind.multiuser.controller.session.SessionImpl;
 import edu.cmu.inmind.multiuser.controller.sync.SynchronizableEvent;
 
 import java.util.ArrayList;
@@ -35,7 +37,7 @@ public abstract class PluggableComponent extends AbstractIdleService
     private Session activeSession;
     private AtomicBoolean isShutDown = new AtomicBoolean(false);
     private AtomicBoolean isClosed = new AtomicBoolean(false);
-    private ClientCommController clientCommController;
+    private ClientController clientCommController;
     private CopyOnWriteArrayList<DestroyableCallback> callbacks;
     private String type;
     private String defaultSessionId;
@@ -53,10 +55,12 @@ public abstract class PluggableComponent extends AbstractIdleService
         }
     }
 
+    @Override
     public String getType() {
         return type;
     }
 
+    @Override
     public void addBlackboard(String sessionId, Blackboard blackboard) {
         if( blackboards == null || sessionId == null || blackboard == null ){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "blackboards: "+blackboards,
@@ -163,12 +167,13 @@ public abstract class PluggableComponent extends AbstractIdleService
         }
         //TODO: why blackboard is null?
         if( bb == null ){
-            bb = new Blackboard( getMessageLogger() );
+            bb = new BlackboardImpl( getMessageLogger() );
         }
         return bb;
     }
 
-    public void setClientCommController(ClientCommController clientCommController) {
+    @Override
+    public void setClientCommController(ClientController clientController) {
         this.clientCommController = clientCommController;
     }
 
@@ -201,6 +206,7 @@ public abstract class PluggableComponent extends AbstractIdleService
         }
     }
 
+    @Override
     public void setActiveSession(Session activeSession){
         this.activeSession = activeSession;
         if( this.activeSession != null && this.activeSession.getId() != null ) defaultSessionId = this.activeSession.getId();
@@ -211,6 +217,7 @@ public abstract class PluggableComponent extends AbstractIdleService
         if( activeSession != null && activeSession.getId() != null ) defaultSessionId = activeSession.getId();
     }
 
+    @Override
     public MessageLog getMessageLogger(){
         try {
             if( !isClosed.get() ) {
@@ -239,6 +246,7 @@ public abstract class PluggableComponent extends AbstractIdleService
         return activeSession;
     }
 
+    @Override
     public void addMessageLogger(String sessionId, MessageLog messageLogger) {
         if( messageLoggers == null || sessionId == null || sessionId.isEmpty() || messageLogger == null ){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
@@ -247,6 +255,7 @@ public abstract class PluggableComponent extends AbstractIdleService
         messageLoggers.put(sessionId, messageLogger);
     }
 
+    @Override
     public void addSession(Session session){
         if( session == null || sessions == null ){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
@@ -255,6 +264,7 @@ public abstract class PluggableComponent extends AbstractIdleService
         sessions.put(session.getId(), session);
     }
 
+    @Override
     public void close(String sessionId, DestroyableCallback callback) throws Throwable{
         close(callback);
         sessions.remove( sessionId );
@@ -282,7 +292,7 @@ public abstract class PluggableComponent extends AbstractIdleService
         }
     }
 
-    public void notifyNext(PluggableComponent component){
+    public void notifyNext(Pluggable component){
         try {
             if( blackboards == null || component == null || component.getSessionId() == null ){
                 ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
