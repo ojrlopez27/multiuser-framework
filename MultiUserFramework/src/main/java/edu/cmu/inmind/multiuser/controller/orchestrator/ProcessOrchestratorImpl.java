@@ -2,28 +2,19 @@ package edu.cmu.inmind.multiuser.controller.orchestrator;
 
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.Inject;
-import edu.cmu.inmind.multiuser.common.DestroyableCallback;
-import edu.cmu.inmind.multiuser.common.Constants;
-import edu.cmu.inmind.multiuser.common.ErrorMessages;
-import edu.cmu.inmind.multiuser.common.Utils;
-import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
-import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
-import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardListener;
-import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
+import edu.cmu.inmind.multiuser.communication.ClientCommController;
+import edu.cmu.inmind.multiuser.controller.blackboard.*;
+import edu.cmu.inmind.multiuser.controller.common.*;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.FileLogger;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
-import edu.cmu.inmind.multiuser.controller.plugin.ExternalComponent;
-import edu.cmu.inmind.multiuser.controller.plugin.Interceptable;
-import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
-import edu.cmu.inmind.multiuser.controller.plugin.StateType;
+import edu.cmu.inmind.multiuser.controller.plugin.*;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
-import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
-import edu.cmu.inmind.multiuser.controller.session.ServiceComponent;
+import edu.cmu.inmind.multiuser.controller.communication.ServiceComponent;
 import edu.cmu.inmind.multiuser.controller.session.Session;
 import edu.cmu.inmind.multiuser.controller.sync.ForceSync;
 import edu.cmu.inmind.multiuser.controller.sync.SynchronizableEvent;
@@ -38,10 +29,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Created by oscarr on 3/10/17.
  * 
  */
-public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, BlackboardListener, DestroyableCallback {
+public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, DestroyableCallback {
 
     @Inject Set<PluggableComponent> componentsSet;
-    protected Set<PluggableComponent> components;
+    protected Set<Pluggable> components;
     protected Blackboard blackboard;
     protected String status;
     protected CopyOnWriteArrayList<OrchestratorListener> orchestratorListeners;
@@ -60,7 +51,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         if( logger == null ){
             logger = new FileLogger();
         }
-        blackboard = new Blackboard( logger );
+        blackboard = new BlackboardImpl( logger );
         components = new CopyOnWriteArraySet();
         closeableObjects = new CopyOnWriteArrayList();
         orchestratorListeners = new CopyOnWriteArrayList<>();
@@ -70,27 +61,30 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         return session;
     }
 
+    @Override
     public MessageLog getLogger() {
         return logger;
     }
 
+    @Override
     public void setStatus(String status) {
         this.status = status;
     }
 
+    @Override
     public void setStatefullServManager(ServiceManager statefullServManager) {
         this.statefullServManager = statefullServManager;
     }
 
     @Override
-    public List<PluggableComponent> getComponents(){
+    public List<Pluggable> getComponents(){
         return new ArrayList<>(components);
     }
 
-    public <T extends PluggableComponent> T get(Class<T> clazz){
+    public <T extends Pluggable> T get(Class<T> clazz){
         try {
             String className = clazz.getName();
-            for (PluggableComponent component : components) {
+            for (Pluggable component : components) {
                 if (component.getClass().getName().contains(className)) {
                     return (T) component;
                 }
@@ -99,6 +93,11 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
             ExceptionHandler.handle(e);
         }
         return null;
+    }
+
+    @Override
+    public void addBlackboard(String sessionId, Blackboard blackboard){
+        this.blackboard = blackboard;
     }
 
     public String getPrefix(String message) {
@@ -164,11 +163,22 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
             ExceptionHandler.handle(new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "logger: " + logger));
         }
         logger.setId( sessionId );
-        ResourceLocator.addServiceToComponent(components, sessionId, fullAddress );
+        List<Pair<Pluggable, ServiceComponent>> srvcs = ResourceLocator.addServiceToComponent(components, sessionId, fullAddress );
+        for(Pair pair : srvcs ){
+            if( pair != null ){
+                ((Pluggable) pair.fst).setClientCommController( new ClientCommController.Builder()
+                        .setServerAddress( ((ServiceComponent)pair.snd).getServiceURL())
+                        .setServiceName(sessionId)
+                        .setClientAddress( fullAddress )
+                        .setMsgTemplate( ((ServiceComponent)pair.snd).getMsgTemplate() )
+                        .setRequestType( Constants.REQUEST_CONNECT )
+                        .build() );
+            }
+        }
         blackboard.setComponents( components, sessionId );
         blackboard.subscribe( this );
-        for( PluggableComponent component : components ){
-            if( component instanceof PluggableComponent){
+        for( Pluggable component : components ){
+            if( component instanceof Pluggable){
                 component.addMessageLogger(sessionId, logger);
                 component.addSession(session);
                 component.postCreate();
@@ -180,7 +190,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     }
 
     private void addOnlyStatefullToCloseable() throws Throwable{
-        for(PluggableComponent component : components) {
+        for(Pluggable component : components) {
             if( Utils.getAnnotation(component.getClass(), StateType.class).state().equals(Constants.STATEFULL) ){
                 closeableObjects.add( component );
             }
@@ -221,7 +231,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
             Log4J.info(this, String.format("Closing Process Orchestrator for session: %s", sessionId));
             logger.store();
             status = Constants.ORCHESTRATOR_STOPPED;
-            for(PluggableComponent component : components ){
+            for(Pluggable component : components ){
                 component.close( sessionId, this );
             }
         }
@@ -263,14 +273,14 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     }
 
     @Override
-    public PluggableComponent processMsg(SessionMessage message){
+    public Pluggable processMsg(SessionMessage message){
         try {
             if ( message == null || message.getMessageId() == null) {
                 throw new MultiuserException(ErrorMessages.OBJECT_NULL, "message");
             }
-            Class<? extends PluggableComponent> clazz = ResourceLocator.getMsgMapping(message.getMessageId());
+            Class<? extends Pluggable> clazz = ResourceLocator.getMsgMapping(message.getMessageId());
             if (clazz == null) {
-                for( PluggableComponent component : components ){
+                for( Pluggable component : components ){
                     if( component.getClass().isAnnotationPresent(BlackboardSubscription.class) ){
                         for(String mssg : component.getClass().getAnnotation(BlackboardSubscription.class).messages() ){
                             if(mssg.equals(message.getMessageId())){
@@ -284,7 +294,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
                     throw new MultiuserException( ErrorMessages.PREFIX_NOT_MAPPED, message );
                 }
             }
-            for (PluggableComponent component : components) {
+            for (Pluggable component : components) {
                 if (component.getClass() == clazz) {
                     return component;
                 }
@@ -296,9 +306,9 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     }
 
 
-    public void executeSync(List<PluggableComponent> components) {
+    public void executeSync(List<Pluggable> components) {
         try {
-            for (PluggableComponent component : components) {
+            for (Pluggable component : components) {
                 component.setActiveSession( session );
                 execute(component);
             }
@@ -307,9 +317,9 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         }
     }
 
-    public void executeAsync(List<PluggableComponent> components) {
+    public void executeAsync(List<Pluggable> components) {
         try{
-            for (PluggableComponent component : components) {
+            for (Pluggable component : components) {
                 component.setActiveSession( session );
                 Utils.execute(() -> {
                     try{
@@ -324,21 +334,21 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
         }
     }
 
-    public void forceSync(List<PluggableComponent> asynComponents){
+    public void forceSync(List<Pluggable> asynComponents){
         checkComponents( asynComponents );
         forceSync(asynComponents, blackboard);
     }
 
-    public void forceSync(List<PluggableComponent> asynComponents, List<SynchronizableEvent> events){
+    public void forceSync(List<Pluggable> asynComponents, List<SynchronizableEvent> events){
         checkComponents( asynComponents );
         forceSync(asynComponents, events, blackboard);
     }
 
-    private void forceSync(List<PluggableComponent> asynComponents, Blackboard blackboard) {
+    private void forceSync(List<Pluggable> asynComponents, Blackboard blackboard) {
         forceSync( asynComponents, null, blackboard);
     }
 
-    private void forceSync(List<PluggableComponent> asynComponents, List<SynchronizableEvent> events,
+    private void forceSync(List<Pluggable> asynComponents, List<SynchronizableEvent> events,
                            Blackboard blackboard) {
         try {
             if (asynComponents != null && !asynComponents.isEmpty() && blackboard != null) {
@@ -348,7 +358,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
                     compSyncEvents.add(new CompSyncEvent(asynComponents.get(i),
                             events == null || i >= events.size() ? null : events.get(i)));
                 }
-                PluggableComponent component = compSyncEvents.get(0).component;
+                Pluggable component = compSyncEvents.get(0).component;
                 if (component.getClass().isAnnotationPresent(ForceSync.class)) {
                     String id = component.getClass().getAnnotation(ForceSync.class).id();
                     Queue<CompSyncEvent> queue = new LinkedList<>(compSyncEvents);
@@ -394,25 +404,26 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
     }
 
     static class CompSyncEvent{
-        PluggableComponent component;
+        Pluggable component;
         SynchronizableEvent event;
 
-        public CompSyncEvent(PluggableComponent component, SynchronizableEvent event) {
+        public CompSyncEvent(Pluggable component, SynchronizableEvent event) {
             this.component = component;
             this.event = event;
         }
     }
 
-    private void checkComponents( List<PluggableComponent> otherComponents ){
+    private void checkComponents( List<Pluggable> otherComponents ){
         if( components == null || components.isEmpty() ){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.COMPONENTS_NULL) );
         }
         try {
-            for (PluggableComponent component : otherComponents) {
+            for (Pluggable component : otherComponents) {
                 if (!components.contains(component)) {
-                    if (component instanceof PluggableComponent) {
+                    if (component instanceof Pluggable) {
                         component.addMessageLogger(sessionId, logger);
-                        component.addBlackboard(sessionId, blackboard);
+                        if( component instanceof BlackboardListener)
+                            ((BlackboardListener) component).addBlackboard(sessionId, blackboard);
                     }
                     components.add(component);
                 }
@@ -443,7 +454,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, Bl
 
     @Override
     @Interceptable
-    public void execute(PluggableComponent component){
+    public void execute(Pluggable component){
         component.execute();
     }
 

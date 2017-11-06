@@ -1,13 +1,12 @@
 package edu.cmu.inmind.multiuser.controller.communication;
 
-import edu.cmu.inmind.multiuser.common.Constants;
-import edu.cmu.inmind.multiuser.common.DestroyableCallback;
-import edu.cmu.inmind.multiuser.common.ErrorMessages;
-import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.controller.common.Constants;
+import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
+import edu.cmu.inmind.multiuser.controller.common.ErrorMessages;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
-import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
@@ -15,7 +14,6 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by oscarr on 3/28/17.

@@ -1,7 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.plugin;
 
 import com.google.inject.Provider;
-import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
