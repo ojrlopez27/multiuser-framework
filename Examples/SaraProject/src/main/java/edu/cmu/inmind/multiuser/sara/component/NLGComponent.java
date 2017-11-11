@@ -1,12 +1,13 @@
 package edu.cmu.inmind.multiuser.sara.component;
 
-import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.SaraCons;
 import edu.cmu.inmind.multiuser.common.model.SaraInput;
 import edu.cmu.inmind.multiuser.common.model.SaraOutput;
 import edu.cmu.inmind.multiuser.common.model.VerbalOutput;
+import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
+import edu.cmu.inmind.multiuser.controller.common.Constants;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.StateType;
@@ -32,16 +33,27 @@ public class NLGComponent extends PluggableComponent {
     }
 
     private SaraOutput extractAndProcess() {
-        SaraInput saraInput = (SaraInput) blackboard().get(SaraCons.MSG_ASR);
-        SaraOutput saraOutput = (SaraOutput) blackboard().get(SaraCons.MSG_SR);
-
+        SaraInput saraInput = new SaraInput();
+        SaraOutput saraOutput = new SaraOutput();
+        try {
+             saraInput = (SaraInput) getBlackBoard(getSessionId()).get(SaraCons.MSG_ASR);
+             saraOutput = (SaraOutput) getBlackBoard(getSessionId()).get(SaraCons.MSG_SR);
+        }catch(Throwable e)
+        {
+            e.printStackTrace();
+        }
         // do some fancy processing
         // ....
         saraOutput.setVerbal(new VerbalOutput("system realization", "VSN"));
         Log4J.info(this, "Input: " + saraInput + ", Output: " + saraOutput + "\n");
 
         //update the blackboard
-        blackboard().post( this, SaraCons.MSG_NLG, saraOutput );
+        try {
+            getBlackBoard(getSessionId()).post(this, SaraCons.MSG_NLG, saraOutput);
+        }catch (Throwable t)
+        {
+            t.printStackTrace();
+        }
 
         return saraOutput;
     }
@@ -51,7 +63,7 @@ public class NLGComponent extends PluggableComponent {
      * processes in parallel rather than sequentially.
      */
     @Override
-    public void onEvent(BlackboardEvent event) {
+    public void onEvent(Blackboard blackboard, BlackboardEvent event) throws Throwable {
         //TODO: add code here
         //...
         Log4J.info(this, "NLGComponent. These objects have been updated at the blackboard: " + event.toString());

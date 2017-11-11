@@ -1,11 +1,12 @@
 package edu.cmu.inmind.multiuser.sara.orchestrator;
 
 import edu.cmu.inmind.multiuser.common.SaraCons;
-import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.common.model.SaraInput;
 import edu.cmu.inmind.multiuser.common.model.SaraOutput;
+import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.session.Session;
@@ -23,7 +24,7 @@ public class SaraOrchestratorEx15 extends ProcessOrchestratorImpl {
     }
 
     @Override
-    public void process(String message) {
+    public void process(String message)throws Throwable {
         super.process(message);
         SessionMessage inputMessage = Utils.fromJson(message, SessionMessage.class);
         SaraInput saraInput = new SaraInput();
@@ -35,7 +36,7 @@ public class SaraOrchestratorEx15 extends ProcessOrchestratorImpl {
     /**
      * This method will be called when the system has a response to send out to client.
      */
-    public void onEvent(BlackboardEvent event){
+    public void onEvent(Blackboard blackboard,BlackboardEvent event)throws Throwable{
         response = (SaraOutput) blackboard.get(SaraCons.MSG_NLG);
         sendResponse( new SessionMessage(SaraCons.MSG_NLG, Utils.toJson(response) ) );
     }

@@ -1,9 +1,12 @@
 import java.util.concurrent.TimeUnit
 
 group 'edu.cmu.inmind.multiuser.framework'
-version '2.0.1'
+//version '2.0.1'
+group 'edu.cmu.inmind.multiuser'
+version "$project.muf_version"
 
 apply plugin: 'java'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 sourceCompatibility = 1.8
 
@@ -19,7 +22,9 @@ repositories {
         }
         url "http://www.cs.cmu.edu/afs/cs/project/inmind-cmu-yahoo/www/maven2"
     }
+    maven { url 'https://oss.jfrog.org/libs-snapshot' }
 }
+
 
 configurations {
     deployerJars
@@ -28,9 +33,9 @@ configurations {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     //compile project(':commons')
-    compile "edu.cmu.inmind.framework:multiuser:commons-$project.mufVersion"
-
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile ("edu.cmu.inmind.framework.multiuser:commons:$project.muf_version:fat") {
+        transitive=true }
+    //compile fileTree(dir: 'libs', include: ['*.jar'])
     deployerJars 'org.apache.maven.wagon:wagon-ssh:2.9'
 }
 
@@ -39,7 +44,22 @@ task sourceJar(type: Jar) {
     classifier "sources"
 }
 
+shadowJar {
+    baseName = project.name + '-all'
+    classifier = 'fat'
+}
+tasks.getByPath('build').dependsOn(shadowJar)
 
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Implementation-Title': 'client',
+                'Implementation-Version': version
+                //'Main-Class': 'edu.cmu.inmind.multiuser.communication'
+    }
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
 apply plugin: 'maven'
 
 uploadArchives {
@@ -55,13 +75,13 @@ uploadArchives {
 
             pom.project {
                 name 'MultiuserFramework'
-                packaging 'jar'
+                packaging 'fatJar'
                 description 'Multiuser Framework. rc = Release Candidate, probably feature complete and should be ' +
                         'pretty stable - problems should be relatively rare and minor, but worth reporting to try to ' +
                         'get them fixed for release.'
-                pom.version = "client-$project.muf_version"
-                pom.artifactId = 'multiuser'
-                pom.groupId = "edu.cmu.inmind.framework"
+                pom.version = "$project.muf_version"
+                pom.artifactId = 'client'
+                pom.groupId = "edu.cmu.inmind.framework.multiuser"
 
                 licenses {
                     license {
@@ -83,6 +103,46 @@ uploadArchives {
 }
 
 
+uploadShadow {
+    repositories {
+        mavenDeployer {
+            configuration = configurations.deployerJars
+            repository(url: "scp://linux.gp.cs.cmu.edu:/afs/cs/project/inmind-cmu-yahoo/www/maven2/") {
+                //http://stackoverflow.com/questions/12749225/where-to-put-gradle-configuration-i-e-credentials-that-should-not-be-committe
+                authentication(userName: mavenUser, password: mavenPassword)
+            }
+            //deploy locally
+            //repository(url: "file:///Users/oscarr/.m2/repository/")
+
+            pom.project {
+                name 'MultiuserFramework'
+                packaging 'jar'
+                description 'Multiuser Framework. rc = Release Candidate, probably feature complete and should be ' +
+                        'pretty stable - problems should be relatively rare and minor, but worth reporting to try to ' +
+                        'get them fixed for release.'
+                pom.version = "$project.muf_version"
+                pom.artifactId = 'client'
+                pom.groupId = "edu.cmu.inmind.framework.multiuser"
+
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        distribution 'repo'
+                    }
+                }
+
+                developers {
+                    developer {
+                        name 'Oscar Romero'
+                        email 'oscarr@andrew.cmu.edu'
+                    }
+                }
+            }
+        }
+    }
+}
+
 task showMeCache {
     doLast{
         configurations.compile.each { println it }
@@ -93,6 +153,6 @@ task showMeCache {
 configurations.all {
     // Check for updates every hour.
     // You can force it to an immediate update by passing 0 instead of 3600
-    resolutionStrategy.cacheChangingModulesFor(60, TimeUnit.MINUTES)
-    resolutionStrategy.cacheDynamicVersionsFor(60, TimeUnit.MINUTES)
+    resolutionStrategy.cacheChangingModulesFor(0, TimeUnit.MINUTES)
+    resolutionStrategy.cacheDynamicVersionsFor(0, TimeUnit.MINUTES)
 }

@@ -1,6 +1,6 @@
 package edu.cmu.inmind.multiuser.sara.log;
 
-import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
 

@@ -1,11 +1,8 @@
 package edu.cmu.inmind.multiuser.sara.examples;
 
 import edu.cmu.inmind.multiuser.common.SaraCons;
-import edu.cmu.inmind.multiuser.common.Utils;
-import edu.cmu.inmind.multiuser.controller.MultiuserFramework;
-import edu.cmu.inmind.multiuser.controller.MultiuserFrameworkContainer;
-import edu.cmu.inmind.multiuser.controller.ShutdownHook;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.muf.ShutdownHook;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.sara.component.*;
@@ -29,14 +26,14 @@ public class Ex16_MasterCallsSlaves extends Main {
     public static void main(String args[]){
         try {
             List<ShutdownHook> hooks = new ArrayList<>();
-            // You can add hooks that will be executed when the MUF is stopped
-            hooks.add(new ShutdownHook() {
+            ShutdownHook hook = new ShutdownHook() {
                 @Override
                 public void execute() {
-                    //TODO: do something
-                    //ExceptionHandler.storeLog();
+
                 }
-            });
+            };
+            // You can add hooks that will be executed when the MUF is stopped
+            hooks.add(hook);
             new Ex16_MasterCallsSlaves().execute(hooks);
         }catch (Throwable e){
             ExceptionHandler.handle( e );

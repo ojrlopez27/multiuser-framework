@@ -1,12 +1,13 @@
 package edu.cmu.inmind.multiuser.sara.component;
 
-import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.SaraCons;
-import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.common.model.SaraInput;
 import edu.cmu.inmind.multiuser.common.model.SaraOutput;
+import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
+import edu.cmu.inmind.multiuser.controller.common.Constants;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ConnectRemoteService;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
@@ -43,7 +44,12 @@ public class RemoteNLUComponent extends PluggableComponent {
         // prefer to send messages implicitly and automatically, use only the onEvent method instead.
         // Let's intercept the message coming from the client (MSG_ASR), then modify it and forward
         // it to the remote service:
-        SaraInput saraInput = (SaraInput) blackboard().get(SaraCons.MSG_ASR);
+        SaraInput saraInput = new SaraInput();
+        try {
+            saraInput = (SaraInput) getBlackBoard(getSessionId()).get(SaraCons.MSG_ASR);
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+        }
         saraInput.setASRinput( saraInput.getASRinput() + " - this is my contribution on execute");
         // sending message to remote service. You ALWAYS have to add the session id to message:
         send(new SessionMessage(SaraCons.MSG_ASR, Utils.toJson(saraInput)));
@@ -60,12 +66,16 @@ public class RemoteNLUComponent extends PluggableComponent {
 
             // notify those components that are subscribed to messages from NLUComponent
             //blackboard().setNotifySubscribers(true);
-            blackboard().post( this, SaraCons.MSG_ASR,  saraOutput);
+            try {
+                getBlackBoard(getSessionId()).post( this, SaraCons.MSG_ASR,  saraOutput);
+            } catch (Throwable throwable) {
+                throwable.printStackTrace();
+            }
         });
     }
 
     @Override
-    public void onEvent(BlackboardEvent event) {
+    public void onEvent(Blackboard blackboard,BlackboardEvent event) {
         // TODO: add code here
         //...
         Log4J.info(this, "RemoteNLUComponent. These objects have been updated at the blackboard: "

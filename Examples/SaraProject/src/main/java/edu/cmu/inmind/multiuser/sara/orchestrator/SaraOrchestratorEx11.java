@@ -23,7 +23,7 @@ public class SaraOrchestratorEx11 extends ProcessOrchestratorImpl {
     }
 
     @Override
-    public void process(String message) {
+    public void process(String message) throws Throwable{
         super.process(message);
 
         //TODO: change this to test both scenarios

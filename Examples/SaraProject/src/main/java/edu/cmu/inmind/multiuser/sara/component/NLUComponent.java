@@ -1,12 +1,13 @@
 package edu.cmu.inmind.multiuser.sara.component;
 
-import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.SaraCons;
 import edu.cmu.inmind.multiuser.common.model.SaraInput;
 import edu.cmu.inmind.multiuser.common.model.SaraOutput;
 import edu.cmu.inmind.multiuser.common.model.UserIntent;
+import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
+import edu.cmu.inmind.multiuser.controller.common.Constants;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.StateType;
@@ -31,15 +32,22 @@ public class NLUComponent extends PluggableComponent {
     @Override
     public void execute() {
         Log4J.info(this, "NLUComponent: " + hashCode());
-        SaraOutput saraOutput = extractAndProcess();
+        SaraInput saraInput = new SaraInput();
+        try {
+             saraInput = (SaraInput) getBlackBoard(getSessionId()).get(SaraCons.MSG_ASR);
+
+        SaraOutput saraOutput = extractAndProcess(saraInput);
 
         //update the blackboard
-        blackboard().post(this, SaraCons.MSG_NLU, saraOutput );
+        getBlackBoard(getSessionId()).post(this, SaraCons.MSG_NLU, saraOutput );
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+        }
     }
 
 
-    private SaraOutput extractAndProcess() {
-        SaraInput saraInput = (SaraInput) blackboard().get(SaraCons.MSG_ASR);
+    private SaraOutput extractAndProcess(SaraInput saraInput ) {
+
         SaraOutput saraOutput = new SaraOutput();
         // do some fancy processing
         // ....
@@ -53,18 +61,21 @@ public class NLUComponent extends PluggableComponent {
      * processes in parallel rather than sequentially.
      */
     @Override
-    public void onEvent(BlackboardEvent event) {
+    public void onEvent(Blackboard blackboard, BlackboardEvent event) throws Throwable {
         //TODO: add code here
         //...
+        SaraInput saraInput = (SaraInput) blackboard.get(SaraCons.MSG_ASR);
         Log4J.info(this, "NLUComponent. These objects have been updated at the blackboard: " + event.toString());
-        SaraOutput saraOutput = extractAndProcess();
+        SaraOutput saraOutput = extractAndProcess(saraInput);
 
         //TODO: uncomment this code to run Ex13_UserModel and Ex15_WholePipeline
         saraOutput.getUserIntent().setUserIntent("user-interests");
         List<String> entities = Arrays.asList(new String[]{"robotics", "IA", "cooking"});
         saraOutput.getUserIntent().setEntitities( entities );
         //update the blackboard
-        blackboard().post(this, SaraCons.MSG_NLU, saraOutput );
+
+        blackboard.post(this, SaraCons.MSG_NLU, saraOutput);
+
     }
 
     @Override

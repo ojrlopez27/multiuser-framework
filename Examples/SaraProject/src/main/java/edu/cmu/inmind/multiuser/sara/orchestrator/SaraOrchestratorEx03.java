@@ -1,12 +1,13 @@
 package edu.cmu.inmind.multiuser.sara.orchestrator;
 
 import edu.cmu.inmind.multiuser.common.SaraCons;
-import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.common.model.SaraInput;
 import edu.cmu.inmind.multiuser.common.model.SaraOutput;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
+import edu.cmu.inmind.multiuser.controller.plugin.Pluggable;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.session.Session;
 
@@ -23,7 +24,7 @@ public class SaraOrchestratorEx03 extends ProcessOrchestratorImpl {
     }
 
     @Override
-    public void process(String message) {
+    public void process(String message) throws Throwable{
         super.process(message);
         SessionMessage inputMessage = Utils.fromJson(message, SessionMessage.class);
 
@@ -33,7 +34,7 @@ public class SaraOrchestratorEx03 extends ProcessOrchestratorImpl {
         blackboard.post( this, inputMessage.getMessageId(), Utils.fromJson(inputMessage.getPayload(), SaraInput.class));
 
         // it selects only one component and then execute it:
-        PluggableComponent selectedComponent = processMsg( inputMessage );
+        Pluggable selectedComponent = processMsg( inputMessage );
         if( selectedComponent != null ){
             // remember that you have to execute component by using orchestrator's execute method, like this:
             execute(selectedComponent);

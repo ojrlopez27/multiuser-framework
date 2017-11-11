@@ -1,12 +1,13 @@
 package edu.cmu.inmind.multiuser.sara.component;
 
-import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.SaraCons;
 import edu.cmu.inmind.multiuser.common.model.SaraInput;
 import edu.cmu.inmind.multiuser.common.model.SaraOutput;
 import edu.cmu.inmind.multiuser.common.model.SocialIntent;
+import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
+import edu.cmu.inmind.multiuser.controller.common.Constants;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.StateType;
@@ -27,21 +28,27 @@ public class SocialReasonerComponent extends PluggableComponent {
     @Override
     public void execute() {
         Log4J.info(this, "SocialReasonerComponent: " + hashCode());
-
-        extractAndProcess();
+        Blackboard blackboard = getBlackBoard(getSessionId());
+        extractAndProcess(blackboard);
     }
 
-    private SaraOutput extractAndProcess() {
-        SaraInput saraInput = (SaraInput) blackboard().get(SaraCons.MSG_ASR);
-        SaraOutput saraOutput = (SaraOutput) blackboard().get(SaraCons.MSG_TR);
+    private SaraOutput extractAndProcess(Blackboard blackboard) {
+        SaraOutput saraOutput = new SaraOutput();
+        try {
+            SaraInput saraInput = (SaraInput) blackboard.get(SaraCons.MSG_ASR);
+             saraOutput = (SaraOutput) blackboard.get(SaraCons.MSG_TR);
 
-        // do some fancy processing
-        // ....
-        saraOutput.setSocialIntent(new SocialIntent( 2.5, "low-rapport", "ASN") );
-        Log4J.info(this, "Input: " + saraInput + ", Output: " + saraOutput + "\n");
+            // do some fancy processing
+            // ....
+            saraOutput.setSocialIntent(new SocialIntent(2.5, "low-rapport", "ASN"));
+            Log4J.info(this, "Input: " + saraInput + ", Output: " + saraOutput + "\n");
 
-        //update the blackboard
-        blackboard().post(this, SaraCons.MSG_SR, saraOutput);
+            //update the blackboard
+            blackboard.post(this, SaraCons.MSG_SR, saraOutput);
+        }catch (Throwable t)
+        {
+            t.printStackTrace();
+        }
 
         return saraOutput;
     }
@@ -51,11 +58,11 @@ public class SocialReasonerComponent extends PluggableComponent {
      * processes in parallel rather than sequentially.
      */
     @Override
-    public void onEvent(BlackboardEvent event) {
+    public void onEvent(Blackboard blackboard,BlackboardEvent event) {
         //TODO: add code here
         //...
         Log4J.info(this, "SocialReasonerComponent. These objects have been updated at the blackboard: " + event.toString());
-        extractAndProcess();
+        extractAndProcess(blackboard);
     }
 
     @Override
