@@ -32,23 +32,26 @@ public class NLUComponent extends PluggableComponent {
     @Override
     public void execute() {
         Log4J.info(this, "NLUComponent: " + hashCode());
-        SaraInput saraInput = new SaraInput();
+        final Blackboard blackboard = getBlackBoard(getSessionId());
         try {
-             saraInput = (SaraInput) getBlackBoard(getSessionId()).get(SaraCons.MSG_ASR);
-
-        SaraOutput saraOutput = extractAndProcess(saraInput);
-
-        //update the blackboard
-        getBlackBoard(getSessionId()).post(this, SaraCons.MSG_NLU, saraOutput );
+            SaraOutput saraOutput = extractAndProcess(blackboard);
+            //update the blackboard
+            blackboard.post(this, SaraCons.MSG_NLU, saraOutput );
         } catch (Throwable throwable) {
             throwable.printStackTrace();
         }
     }
 
 
-    private SaraOutput extractAndProcess(SaraInput saraInput ) {
+    private SaraOutput extractAndProcess(Blackboard blackboard ) {
 
         SaraOutput saraOutput = new SaraOutput();
+        SaraInput saraInput = null;
+        try {
+            saraInput = (SaraInput) blackboard.get(SaraCons.MSG_ASR);
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+        }
         // do some fancy processing
         // ....
         saraOutput.setUserIntent( new UserIntent( "user-intent", new ArrayList<>() ) );
@@ -64,9 +67,8 @@ public class NLUComponent extends PluggableComponent {
     public void onEvent(Blackboard blackboard, BlackboardEvent event) throws Throwable {
         //TODO: add code here
         //...
-        SaraInput saraInput = (SaraInput) blackboard.get(SaraCons.MSG_ASR);
         Log4J.info(this, "NLUComponent. These objects have been updated at the blackboard: " + event.toString());
-        SaraOutput saraOutput = extractAndProcess(saraInput);
+        SaraOutput saraOutput = extractAndProcess(blackboard);
 
         //TODO: uncomment this code to run Ex13_UserModel and Ex15_WholePipeline
         saraOutput.getUserIntent().setUserIntent("user-interests");

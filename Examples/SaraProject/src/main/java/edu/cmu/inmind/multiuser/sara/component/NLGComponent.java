@@ -35,24 +35,21 @@ public class NLGComponent extends PluggableComponent {
     private SaraOutput extractAndProcess() {
         SaraInput saraInput = new SaraInput();
         SaraOutput saraOutput = new SaraOutput();
-        try {
-             saraInput = (SaraInput) getBlackBoard(getSessionId()).get(SaraCons.MSG_ASR);
-             saraOutput = (SaraOutput) getBlackBoard(getSessionId()).get(SaraCons.MSG_SR);
+        final Blackboard blackboard = getBlackBoard(getSessionId());
+        try
+        {
+            saraInput = (SaraInput) blackboard.get(SaraCons.MSG_ASR);
+            saraOutput = (SaraOutput) blackboard.get(SaraCons.MSG_SR);
+            // do some fancy processing
+            // ....
+            saraOutput.setVerbal(new VerbalOutput("system realization", "VSN"));
+            Log4J.info(this, "Input: " + saraInput + ", Output: " + saraOutput + "\n");
+
+            //update the blackboard
+            blackboard.post(this, SaraCons.MSG_NLG, saraOutput);
         }catch(Throwable e)
         {
             e.printStackTrace();
-        }
-        // do some fancy processing
-        // ....
-        saraOutput.setVerbal(new VerbalOutput("system realization", "VSN"));
-        Log4J.info(this, "Input: " + saraInput + ", Output: " + saraOutput + "\n");
-
-        //update the blackboard
-        try {
-            getBlackBoard(getSessionId()).post(this, SaraCons.MSG_NLG, saraOutput);
-        }catch (Throwable t)
-        {
-            t.printStackTrace();
         }
 
         return saraOutput;

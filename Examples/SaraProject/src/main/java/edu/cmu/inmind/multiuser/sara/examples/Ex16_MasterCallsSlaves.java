@@ -26,14 +26,14 @@ public class Ex16_MasterCallsSlaves extends Main {
     public static void main(String args[]){
         try {
             List<ShutdownHook> hooks = new ArrayList<>();
-            ShutdownHook hook = new ShutdownHook() {
+            // You can add hooks that will be executed when the MUF is stopped
+            hooks.add( new ShutdownHook() {
                 @Override
                 public void execute() {
 
                 }
-            };
-            // You can add hooks that will be executed when the MUF is stopped
-            hooks.add(hook);
+            });
+
             new Ex16_MasterCallsSlaves().execute(hooks);
         }catch (Throwable e){
             ExceptionHandler.handle( e );
