@@ -52,7 +52,7 @@ task sourceJar(type: Jar) {
     from sourceSets.main.allJava
     classifier "sources"
 }
-task fatJar(type: Jar) {
+/*task fatJar(type: Jar) {
     manifest {
         attributes 'Implementation-Title': 'commons',
                 'Implementation-Version': version
@@ -61,14 +61,13 @@ task fatJar(type: Jar) {
     baseName = project.name + '-all'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
-}
+}*/
 
 tasks.getByPath('build').dependsOn(shadowJar)
 
 
 shadowJar {
-    baseName = project.name + '-all'
-    classifier = 'fat'
+    baseName = project.name
 }
 
 apply plugin: 'java'

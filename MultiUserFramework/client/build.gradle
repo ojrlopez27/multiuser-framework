@@ -33,7 +33,7 @@ configurations {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     //compile project(':commons')
-    compile ("edu.cmu.inmind.framework.multiuser:commons:$project.muf_version:fat") {
+    compile ("edu.cmu.inmind.framework.multiuser:commons:$project.muf_version:all") {
         transitive=true }
     //compile fileTree(dir: 'libs', include: ['*.jar'])
     deployerJars 'org.apache.maven.wagon:wagon-ssh:2.9'
@@ -45,12 +45,11 @@ task sourceJar(type: Jar) {
 }
 
 shadowJar {
-    baseName = project.name + '-all'
-    classifier = 'fat'
+    baseName = project.name
 }
 tasks.getByPath('build').dependsOn(shadowJar)
 
-task fatJar(type: Jar) {
+/*task fatJar(type: Jar) {
     manifest {
         attributes 'Implementation-Title': 'client',
                 'Implementation-Version': version
@@ -59,7 +58,7 @@ task fatJar(type: Jar) {
     baseName = project.name + '-all'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
-}
+}*/
 apply plugin: 'maven'
 
 uploadArchives {

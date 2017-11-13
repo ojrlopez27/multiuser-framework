@@ -5,17 +5,17 @@ group 'edu.cmu.inmind.multiuser.framework'
 
 //group 'edu.cmu.inmind.multiuser'
 
-project.ext.set("muf_version", '3.0-rc3')
+project.ext.set("muf_version", '3.0-rc1')
 
 ext {
-    mufVersion = '3.0-rc3'
+    mufVersion = '3.0-rc1'
 }
 version "$project.muf_version"
 
 
 apply plugin: 'java'
 apply plugin: 'maven'
-apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: "com.github.johnrengelman.shadow"
 
 sourceCompatibility = 1.8
 
@@ -40,10 +40,13 @@ repositories {
 buildscript {
     repositories {
         jcenter()
+        maven{
+            url "https://plugins.gradle.org/m2/"
+        }
     }
     dependencies {
         // used for zip big files
-        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.4'
+        classpath "com.github.jengelman.gradle.plugins:shadow:2.0.1"
     }
 }
 
@@ -55,7 +58,7 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     compile group: 'org.awaitility', name: 'awaitility', version: '3.0.0'
     //compile project(':client')
-    compile ("edu.cmu.inmind.framework.multiuser:client:$project.muf_version:fat") {
+    compile ("edu.cmu.inmind.framework.multiuser:client:$project.muf_version:all") {
         transitive= true}
     //compile fileTree(dir: 'libs', include: ['*.jar'])
     deployerJars 'org.apache.maven.wagon:wagon-ssh:2.9'
@@ -68,10 +71,9 @@ task sourceJar(type: Jar) {
 
 shadowJar {
     baseName = "muf" + '-all'
-    classifier = 'fat'
 }
 tasks.getByPath('build').dependsOn(shadowJar)
-task fatJar(type: Jar) {
+/*task fatJar(type: Jar) {
     manifest {
         attributes 'Implementation-Title': 'muf',
                 'Implementation-Version': version
@@ -80,7 +82,7 @@ task fatJar(type: Jar) {
     baseName = "muf" + '-all'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
-}
+}*/
 apply plugin: 'maven'
 
 uploadArchives {
