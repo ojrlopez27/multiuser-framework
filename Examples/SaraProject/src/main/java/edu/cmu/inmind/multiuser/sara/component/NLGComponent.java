@@ -29,13 +29,12 @@ public class NLGComponent extends PluggableComponent {
     public void execute() {
         Log4J.info(this, "NLGComponent: " + hashCode());
 
-        extractAndProcess();
+        extractAndProcess(getBlackBoard(getSessionId()));
     }
 
-    private SaraOutput extractAndProcess() {
-        SaraInput saraInput = new SaraInput();
+    private SaraOutput extractAndProcess(Blackboard blackboard) {
+        SaraInput saraInput = null;
         SaraOutput saraOutput = new SaraOutput();
-        final Blackboard blackboard = getBlackBoard(getSessionId());
         try
         {
             saraInput = (SaraInput) blackboard.get(SaraCons.MSG_ASR);
@@ -64,7 +63,7 @@ public class NLGComponent extends PluggableComponent {
         //TODO: add code here
         //...
         Log4J.info(this, "NLGComponent. These objects have been updated at the blackboard: " + event.toString());
-        extractAndProcess();
+        extractAndProcess(blackboard);
     }
 
     @Override
