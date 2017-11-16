@@ -460,6 +460,9 @@ public class Utils {
     public static boolean isURLvalid(String address){
         //TODO: we need to replace this with a proper reg exp
         if( address.startsWith("tcp://") ){
+            if( !address.contains(":") ){
+                address += address + ":" + Constants.DEFAULT_PORT;
+            }
             String[] ip = address.substring( 6 ).split("\\." );
             for(String segment : ip ){
                 if( segment.contains(":") ){

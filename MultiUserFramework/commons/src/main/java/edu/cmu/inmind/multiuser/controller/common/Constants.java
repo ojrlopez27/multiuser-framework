@@ -29,6 +29,7 @@ public class Constants {
     public static final int CONNECTION_FINISHED = 2;
     public static final int CONNECTION_STOPPED = 3;
     public static final int QUEUE_CAPACITY = 100;
+    public static final int DEFAULT_PORT = 5555;
 
 
     //session
@@ -67,4 +68,5 @@ public class Constants {
     /** This annotation should be used by those stateless components that can setId multiple instances of itself (a
      * pool of instances) **/
     public static final String POOL = "POOL";
+
 }
