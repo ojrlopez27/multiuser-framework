@@ -1,11 +1,12 @@
 package edu.cmu.inmind.multiuser.sara.orchestrator;
 
 import edu.cmu.inmind.multiuser.common.SaraCons;
-import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.common.model.SaraInput;
 import edu.cmu.inmind.multiuser.common.model.SaraOutput;
+import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.session.Session;
@@ -34,7 +35,7 @@ public class SaraOrchestratorEx02 extends ProcessOrchestratorImpl {
      * @param message
      */
     @Override
-    public void process(String message) {
+    public void process(String message) throws Throwable{
         super.process(message);
 
         // how to extract and translate the message that comes from clients:
@@ -56,7 +57,7 @@ public class SaraOrchestratorEx02 extends ProcessOrchestratorImpl {
      * This method will be called when the system has a response to send out, that is (in our example), when message
      * MSG_NLU is posted in the blackboard by NLUComponent. Note that SaraOrchestratorEx02 is subscribed to MSG_NLU
      */
-    public void onEvent(BlackboardEvent event){
+    public void onEvent(Blackboard blackboard,BlackboardEvent event) throws Throwable{
         // obtain the response from blackboard.
         response = (SaraOutput) blackboard.get(SaraCons.MSG_NLU);
         //once you have a response, notify the orchestrator's listeners (the corresponding session and any other listener)

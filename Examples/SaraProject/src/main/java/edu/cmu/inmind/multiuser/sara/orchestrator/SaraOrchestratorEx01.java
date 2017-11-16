@@ -1,9 +1,9 @@
 package edu.cmu.inmind.multiuser.sara.orchestrator;
 
 import edu.cmu.inmind.multiuser.common.SaraCons;
-import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.common.model.SaraInput;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
@@ -22,7 +22,7 @@ public class SaraOrchestratorEx01 extends ProcessOrchestratorImpl {
     }
 
     @Override
-    public void process(String message) {
+    public void process(String message) throws Throwable {
         super.process(message);
 
         SessionMessage sessionMessage = Utils.fromJson( message, SessionMessage.class );

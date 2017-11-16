@@ -1,9 +1,12 @@
 import java.util.concurrent.TimeUnit
 
 group 'edu.cmu.inmind.multiuser.framework'
-version '2.0.1'
+//version '2.0.1'
+group 'edu.cmu.inmind.multiuser'
+version "$project.muf_version"
 
 apply plugin: 'java'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 sourceCompatibility = 1.8
 
@@ -22,7 +25,7 @@ configurations {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
 
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    //compile fileTree(dir: 'libs', include: ['*.jar'])
     deployerJars 'org.apache.maven.wagon:wagon-ssh:2.9'
 
     compile group: 'aopalliance', name: 'aopalliance', version: '1.0'
@@ -45,14 +48,23 @@ dependencies {
 }
 
 task sourceJar(type: Jar) {
+    classifier 'all'
     from sourceSets.main.allJava
     classifier "sources"
 }
 
+tasks.getByPath('build').dependsOn(shadowJar)
 
+
+shadowJar {
+    baseName = project.name
+}
+
+apply plugin: 'java'
 apply plugin: 'maven'
+apply plugin: 'com.github.johnrengelman.shadow'
 
-uploadArchives {
+uploadShadow {
     repositories {
         mavenDeployer {
             configuration = configurations.deployerJars
@@ -69,9 +81,9 @@ uploadArchives {
                 description 'Multiuser Framework. rc = Release Candidate, probably feature complete and should be ' +
                         'pretty stable - problems should be relatively rare and minor, but worth reporting to try to ' +
                         'get them fixed for release.'
-                pom.version = "commons-$project.muf_version"
-                pom.artifactId = 'multiuser'
-                pom.groupId = "edu.cmu.inmind.framework"
+                pom.version = "$project.muf_version"
+                pom.artifactId = 'commons'
+                pom.groupId = "edu.cmu.inmind.framework.multiuser"
 
                 licenses {
                     license {
@@ -92,17 +104,9 @@ uploadArchives {
     }
 }
 
-
-task showMeCache {
-    doLast{
-        configurations.compile.each { println it }
-    }
-}
-
-
 configurations.all {
     // Check for updates every hour.
     // You can force it to an immediate update by passing 0 instead of 3600
-    resolutionStrategy.cacheChangingModulesFor(60, TimeUnit.MINUTES)
-    resolutionStrategy.cacheDynamicVersionsFor(60, TimeUnit.MINUTES)
+    resolutionStrategy.cacheChangingModulesFor(0, TimeUnit.MINUTES)
+    resolutionStrategy.cacheDynamicVersionsFor(0, TimeUnit.MINUTES)
 }

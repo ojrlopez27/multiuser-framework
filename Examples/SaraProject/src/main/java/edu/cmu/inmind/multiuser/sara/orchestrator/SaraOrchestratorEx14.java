@@ -18,7 +18,7 @@ public class SaraOrchestratorEx14 extends ProcessOrchestratorImpl {
     }
 
     @Override
-    public void process(String message) {
+    public void process(String message) throws Throwable {
         super.process(message);
 
         PoolExComponent component = get(PoolExComponent.class);

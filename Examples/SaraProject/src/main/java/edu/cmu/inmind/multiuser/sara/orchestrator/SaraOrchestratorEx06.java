@@ -4,7 +4,7 @@ import edu.cmu.inmind.multiuser.common.SaraCons;
 import edu.cmu.inmind.multiuser.common.model.SaraOutput;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
-import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
+import edu.cmu.inmind.multiuser.controller.plugin.Pluggable;
 import edu.cmu.inmind.multiuser.controller.session.Session;
 import edu.cmu.inmind.multiuser.sara.component.AsyncComponent;
 
@@ -24,10 +24,10 @@ public class SaraOrchestratorEx06 extends ProcessOrchestratorImpl {
     }
 
     @Override
-    public void process(String message) {
+    public void process(String message)throws Throwable {
         super.process(message);
 
-        List<PluggableComponent> asyncComponents = new ArrayList<>();
+        List<Pluggable> asyncComponents = new ArrayList<>();
         for( int i = 0; i < 5; i++ ){
             // AsyncComponent is async by nature (it runs on its own thread)
             asyncComponents.add( new AsyncComponent("Component " + i) );

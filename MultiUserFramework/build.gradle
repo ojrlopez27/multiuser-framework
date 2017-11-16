@@ -1,17 +1,23 @@
 import java.util.concurrent.TimeUnit
 
 group 'edu.cmu.inmind.multiuser.framework'
-version '2.0.1'
+//version '2.0.1'
 
-apply plugin: 'java'
-
-sourceCompatibility = 1.8
+//group 'edu.cmu.inmind.multiuser'
 
 project.ext.set("muf_version", '3.0-rc1')
 
 ext {
     mufVersion = '3.0-rc1'
 }
+version "$project.muf_version"
+
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: "com.github.johnrengelman.shadow"
+
+sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
@@ -25,6 +31,23 @@ repositories {
         }
         url "http://www.cs.cmu.edu/afs/cs/project/inmind-cmu-yahoo/www/maven2"
     }
+    jcenter()
+    maven {
+        url 'https://oss.jfrog.org/libs-snapshot'
+    }
+}
+
+buildscript {
+    repositories {
+        jcenter()
+        maven{
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        // used for zip big files
+        classpath "com.github.jengelman.gradle.plugins:shadow:2.0.1"
+    }
 }
 
 configurations {
@@ -34,10 +57,10 @@ configurations {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     compile group: 'org.awaitility', name: 'awaitility', version: '3.0.0'
-    compile project(':client')
-    //compile "edu.cmu.inmind.framework:multiuser:client-$project.mufVersion"
-
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    //compile project(':client')
+    compile ("edu.cmu.inmind.framework.multiuser:client:$project.muf_version:all") {
+        transitive= true}
+    //compile fileTree(dir: 'libs', include: ['*.jar'])
     deployerJars 'org.apache.maven.wagon:wagon-ssh:2.9'
 }
 
@@ -46,10 +69,14 @@ task sourceJar(type: Jar) {
     classifier "sources"
 }
 
+shadowJar {
+    baseName = "muf" + '-all'
+}
+tasks.getByPath('build').dependsOn(shadowJar)
 
 apply plugin: 'maven'
 
-uploadArchives {
+uploadShadow {
     repositories {
         mavenDeployer {
             configuration = configurations.deployerJars
@@ -66,9 +93,9 @@ uploadArchives {
                 description 'Multiuser Framework. rc = Release Candidate, probably feature complete and should be ' +
                         'pretty stable - problems should be relatively rare and minor, but worth reporting to try to ' +
                         'get them fixed for release.'
-                pom.version = "muf-$project.muf_version"
-                pom.artifactId = 'multiuser'
-                pom.groupId = "edu.cmu.inmind.framework"
+                pom.version = "$project.muf_version"
+                pom.artifactId = 'server'
+                pom.groupId = "edu.cmu.inmind.framework.multiuser"
 
                 licenses {
                     license {
@@ -89,7 +116,6 @@ uploadArchives {
     }
 }
 
-
 task showMeCache {
     doLast{
         configurations.compile.each { println it }
@@ -100,6 +126,6 @@ task showMeCache {
 configurations.all {
     // Check for updates every hour.
     // You can force it to an immediate update by passing 0 instead of 3600
-    resolutionStrategy.cacheChangingModulesFor(60, TimeUnit.MINUTES)
-    resolutionStrategy.cacheDynamicVersionsFor(60, TimeUnit.MINUTES)
+    resolutionStrategy.cacheChangingModulesFor(0, TimeUnit.MINUTES)
+    resolutionStrategy.cacheDynamicVersionsFor(0, TimeUnit.MINUTES)
 }

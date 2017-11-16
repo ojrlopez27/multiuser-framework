@@ -1,12 +1,13 @@
 package edu.cmu.inmind.multiuser.sara.component;
 
-import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.SaraCons;
 import edu.cmu.inmind.multiuser.common.model.SaraInput;
 import edu.cmu.inmind.multiuser.common.model.SaraOutput;
 import edu.cmu.inmind.multiuser.common.model.VerbalOutput;
+import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
+import edu.cmu.inmind.multiuser.controller.common.Constants;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.StateType;
@@ -28,20 +29,27 @@ public class NLGComponent extends PluggableComponent {
     public void execute() {
         Log4J.info(this, "NLGComponent: " + hashCode());
 
-        extractAndProcess();
+        extractAndProcess(getBlackBoard(getSessionId()));
     }
 
-    private SaraOutput extractAndProcess() {
-        SaraInput saraInput = (SaraInput) blackboard().get(SaraCons.MSG_ASR);
-        SaraOutput saraOutput = (SaraOutput) blackboard().get(SaraCons.MSG_SR);
+    private SaraOutput extractAndProcess(Blackboard blackboard) {
+        SaraInput saraInput = null;
+        SaraOutput saraOutput = new SaraOutput();
+        try
+        {
+            saraInput = (SaraInput) blackboard.get(SaraCons.MSG_ASR);
+            saraOutput = (SaraOutput) blackboard.get(SaraCons.MSG_SR);
+            // do some fancy processing
+            // ....
+            saraOutput.setVerbal(new VerbalOutput("system realization", "VSN"));
+            Log4J.info(this, "Input: " + saraInput + ", Output: " + saraOutput + "\n");
 
-        // do some fancy processing
-        // ....
-        saraOutput.setVerbal(new VerbalOutput("system realization", "VSN"));
-        Log4J.info(this, "Input: " + saraInput + ", Output: " + saraOutput + "\n");
-
-        //update the blackboard
-        blackboard().post( this, SaraCons.MSG_NLG, saraOutput );
+            //update the blackboard
+            blackboard.post(this, SaraCons.MSG_NLG, saraOutput);
+        }catch(Throwable e)
+        {
+            e.printStackTrace();
+        }
 
         return saraOutput;
     }
@@ -51,11 +59,11 @@ public class NLGComponent extends PluggableComponent {
      * processes in parallel rather than sequentially.
      */
     @Override
-    public void onEvent(BlackboardEvent event) {
+    public void onEvent(Blackboard blackboard, BlackboardEvent event) throws Throwable {
         //TODO: add code here
         //...
         Log4J.info(this, "NLGComponent. These objects have been updated at the blackboard: " + event.toString());
-        extractAndProcess();
+        extractAndProcess(blackboard);
     }
 
     @Override

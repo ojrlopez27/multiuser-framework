@@ -18,10 +18,10 @@ public class MockClient {
         try {
             String sessionId = args[0];
             ClientCommController client = new ClientCommController.Builder()
-                    .setServerAddress("tcp://34.203.160.208:5666") //5666
-                    .setClientAddress("tcp://34.203.160.208:5666")
-//                    .setServerAddress("tcp://127.0.0.1:5555")
-//                    .setClientAddress("tcp://127.0.0.1:5555")
+//                    .setServerAddress("tcp://34.203.160.208:5666") //5666
+//                    .setClientAddress("tcp://34.203.160.208:5666")
+                    .setServerAddress("tcp://127.0.0.1:5555")
+                    .setClientAddress("tcp://127.0.0.1:5555")
                     .setServiceName(sessionId)
                     .setRequestType(Constants.REQUEST_CONNECT)
                     .setTCPon(true)
@@ -40,7 +40,10 @@ public class MockClient {
                     break;
                 } else if (input.equals("dm")) {
                     client.send(sessionId, new SessionMessage("MSG_START_DM", ""));
-                } else if (input.equals("sr")) {
+                } else if (input.equals("start")) {
+                    client.send(sessionId, new SessionMessage("MSG_START_SESSION", "RESET_NONE"));
+                }
+                else if (input.equals("sr")) {
                     client.send(sessionId, new SessionMessage("MSG_SR", ""));
                 } else if (input.equals("disconnect")) {
                     client.disconnect(sessionId);
