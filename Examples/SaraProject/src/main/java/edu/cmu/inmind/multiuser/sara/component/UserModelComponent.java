@@ -1,13 +1,14 @@
 package edu.cmu.inmind.multiuser.sara.component;
 
-import edu.cmu.inmind.multiuser.common.Constants;
-import edu.cmu.inmind.multiuser.common.ErrorMessages;
 import edu.cmu.inmind.multiuser.common.SaraCons;
-import edu.cmu.inmind.multiuser.common.Utils;
 import edu.cmu.inmind.multiuser.common.model.SaraOutput;
 import edu.cmu.inmind.multiuser.common.model.UserIntent;
+import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
+import edu.cmu.inmind.multiuser.controller.common.Constants;
+import edu.cmu.inmind.multiuser.controller.common.ErrorMessages;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
@@ -49,7 +50,7 @@ public class UserModelComponent extends PluggableComponent {
     }
 
     @Override
-    public void onEvent(BlackboardEvent event) {
+    public void onEvent(Blackboard blackboard, BlackboardEvent event) {
         // Since this component is listening to NLUComponent messages, you can cast event.getElement to any kind of
         // known representation for user intents. For instance:
         UserIntent userIntent = ((SaraOutput)event.getElement()).getUserIntent();

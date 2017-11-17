@@ -25,7 +25,7 @@ public class SaraOrchestratorEx12 extends ProcessOrchestratorImpl {
     }
 
     @Override
-    public void process(String message) {
+    public void process(String message) throws Throwable {
         super.process(message);
 
         // All messages that goes through the Blackboard are "automatically" posted to a MessageLogger (a class that

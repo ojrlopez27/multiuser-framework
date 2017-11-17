@@ -1,7 +1,7 @@
 package edu.cmu.inmind.multiuser.sara.examples;
 
 import edu.cmu.inmind.multiuser.common.SaraCons;
-import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.sara.orchestrator.SaraOrchestratorEx03;
 

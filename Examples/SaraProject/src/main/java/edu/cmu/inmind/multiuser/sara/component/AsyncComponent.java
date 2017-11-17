@@ -1,8 +1,9 @@
 package edu.cmu.inmind.multiuser.sara.component;
 
-import edu.cmu.inmind.multiuser.common.Constants;
-import edu.cmu.inmind.multiuser.common.Utils;
+import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
+import edu.cmu.inmind.multiuser.controller.common.Constants;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.plugin.StateType;
@@ -49,16 +50,16 @@ public class AsyncComponent extends PluggableComponent {
         }.start();
     }
 
-    @Override
-    public void onEvent(BlackboardEvent event) {
-        //TODO: add code here
-        //...
-        Log4J.info(this, "AsyncComponent. These objects have been updated at the blackboard: " + event.toString() );
-    }
 
     @Override
     public void shutDown() {
         super.shutDown();
         // TODO: add code to release resources
+    }
+
+    @Override
+    public void onEvent( Blackboard blackboard, BlackboardEvent blackboardEvent) throws Throwable {
+        Log4J.info(this, "AsyncComponent. These objects have been updated at the blackboard: " + blackboardEvent.toString() );
+
     }
 }

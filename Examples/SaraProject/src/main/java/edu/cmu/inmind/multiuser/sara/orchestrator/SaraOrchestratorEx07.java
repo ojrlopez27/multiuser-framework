@@ -5,6 +5,7 @@ import edu.cmu.inmind.multiuser.common.model.SaraOutput;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
+import edu.cmu.inmind.multiuser.controller.plugin.Pluggable;
 import edu.cmu.inmind.multiuser.controller.plugin.PluggableComponent;
 import edu.cmu.inmind.multiuser.controller.session.Session;
 import edu.cmu.inmind.multiuser.controller.sync.SynchronizableEvent;
@@ -26,16 +27,16 @@ public class SaraOrchestratorEx07 extends ProcessOrchestratorImpl {
     }
 
     @Override
-    public void process(String message) {
+    public void process(String message) throws Throwable{
         super.process(message);
 
-        List<PluggableComponent> asyncComponents = new ArrayList<>();
+        List<Pluggable> asyncComponents = new ArrayList<>();
         for( int i = 0; i < 5; i++ ){
             // AsyncComponent is async by nature (it runs on its own thread)
             asyncComponents.add( new AsyncComponent("Component " + i) );
         }
         List<SynchronizableEvent> events = new ArrayList<>();
-        for( PluggableComponent comp : asyncComponents ){
+        for( Pluggable comp : asyncComponents ){
             events.add( () -> {
                 Log4J.info(this, "Adding some logic before sync component: " + ((AsyncComponent) comp).getName());
                 //do something else here....
