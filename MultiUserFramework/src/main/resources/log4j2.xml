@@ -11,7 +11,7 @@
                 TRACK=red blink, WARN=yellow bold, INFO=green bold, DEBUG=cyan, TRACE=black}"/>
         </Console>
 
-        <File name="Logs" fileName="/Users/oscarr/Development/logs/app.log">
+        <File name="Logs" fileName="/logs/app.log">
             <PatternLayout>
                 <Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
             </PatternLayout>

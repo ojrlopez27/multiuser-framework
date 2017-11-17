@@ -530,7 +530,7 @@ public class Utils {
     public static void initThreadExecutor(int corePoolSize){
         if( executor == null ) {
             executor = new ManagableThreadPool(
-                        corePoolSize,
+                        corePoolSize==0?DEFAULT_CORE_POOL_SIZE:corePoolSize,
                         Integer.MAX_VALUE,
                         5000,
                         TimeUnit.MILLISECONDS,
