@@ -334,12 +334,9 @@ public class ClientCommController implements ClientController, DestroyableCallba
     private boolean sendToBroker(String id, String message) throws Throwable{
         ZMsg request = new ZMsg();
         request.addString( message );
-        if(message.startsWith("@@@")) Log4J.track(this, "9:" + message);
         if( id.equals(sessionManagerService) ) {
-            if(message.startsWith("@@@"))  Log4J.track(this, "9.1:@@@:" + serviceName + ":" + message);
             return sessionMngrCommAPI.send(id, request);
         }else{
-            if(message.startsWith("@@@")) Log4J.track(this, "10:" + message);
             return sessionCommAPI.send(id, request);
         }
     }
