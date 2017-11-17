@@ -121,8 +121,6 @@ public class ServerCommController implements DestroyableCallback {
                             // up to a null part, but for now, just save one
                             replyTo = msg.unwrap();
                             command.destroy();
-                            if( msg.peek().toString().startsWith("@@@"))
-                                Log4J.track(this, "20:" + msg.peek().toString() );
                             return new ZMsgWrapper(msg, replyTo); // We have a request to process
                         } else if (MDP.S_HEARTBEAT.frameEquals(command)) {
                             // Do nothing for heartbeats
@@ -187,7 +185,6 @@ public class ServerCommController implements DestroyableCallback {
 
     public void send(ZMsgWrapper reply, Object message) throws Throwable{
         try {
-            if(message.toString().startsWith("@@@")) Log4J.track(this, "27:" + message);
             if (reply != null && message != null) {
                 if (replyTo == null || replyTo.toString().isEmpty() ) {
                     if (reply.getReplyTo() != null && !reply.getReplyTo().toString().isEmpty() ) {
@@ -202,7 +199,6 @@ public class ServerCommController implements DestroyableCallback {
                 } else {
                     reply.getMsg().addLast(Utils.toJson(message));
                 }
-                if(message.toString().startsWith("@@@")) Log4J.track(this, "28:" + reply.getMsg().peekLast());
                 sendToBroker(MDP.S_REPLY, null, reply.getMsg());
                 reply.destroy();
             }else{
@@ -242,7 +238,6 @@ public class ServerCommController implements DestroyableCallback {
                 msg.addFirst(command.newFrame());
                 msg.addFirst(MDP.S_ORCHESTRATOR.newFrame());
                 msg.addFirst(new ZFrame(new byte[0]));
-                if(msg.peekLast().toString().startsWith("@@@")) Log4J.track(this, "29:" + msg.peekLast());
                 msg.send(workerSocket);
             } catch (Exception e) {
                 e.printStackTrace();

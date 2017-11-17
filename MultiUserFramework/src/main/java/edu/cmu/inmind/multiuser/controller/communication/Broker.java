@@ -137,11 +137,8 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
                     ZFrame header = msg.pop();
                     if (sender != null && empty != null && header != null) {
                         if (MDP.C_CLIENT.frameEquals(header)) {
-                            if(msg.peekLast().toString().startsWith("@@@")) Log4J.track(this, "15:" + msg.peekLast());
                             processClient(sender, msg);
                         } else if (MDP.S_ORCHESTRATOR.frameEquals(header)) {
-                            if(msg.peekLast().toString().startsWith("@@@"))
-                                Log4J.track(this, "30:" + msg.peekLast());
                             processWorker(sender, msg);
                         } else {
                             msg.destroy();
@@ -205,7 +202,6 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
         if (serviceFrame.toString().startsWith(INTERNAL_SERVICE_PREFIX))
             serviceInternal(serviceFrame, msg);
         else {
-            if(msg.peekLast().toString().startsWith("@@@")) Log4J.track(this, "16:" + msg.peekLast());
             dispatch(requireService(serviceFrame), msg);
         }
         serviceFrame.destroy();
@@ -219,8 +215,6 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
         ZFrame command = msg.pop();
         boolean workerReady = workers.containsKey(sender.strhex());
         Worker worker = requireWorker(sender);
-        if(msg.peekLast() != null && msg.peekLast().toString().startsWith("@@@"))
-            Log4J.track(this, "31:" + msg.peekLast());
         if (MDP.S_READY.frameEquals(command)) {
             // Not first command in session || Reserved service name
             if (workerReady
@@ -379,14 +373,7 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
      */
     private void dispatch(Service service, ZMsg msg) throws Throwable{
         ExceptionHandler.checkAssert( (service != null) );
-        boolean capacity = false;
-        if (msg != null)// Queue message if any
-            capacity = service.requests.offerLast(msg);
-        if( !capacity ){
-            //Log4J.error(this, "Could not add message " + msg + " to queue: " + service.requests.size() );
-        }
         purgeWorkers();
-        if(msg != null && msg.peekLast().toString().startsWith("@@@")) Log4J.track(this, "17:" + msg.peekLast());
         while (!service.waiting.isEmpty() && !service.requests.isEmpty()) {
             msg = service.requests.pop();
             Worker worker = service.waiting.pop();
@@ -402,7 +389,6 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
      */
     public void sendToWorker(Worker worker, MDP command, String option,
                              ZMsg msgp) throws Throwable{
-        if(msgp != null && msgp.peekLast().toString().startsWith("@@@")) Log4J.track(this, "18:" + msgp.peekLast());
         if( !Thread.currentThread().isInterrupted() && Thread.currentThread().isAlive() ) {
             ZMsg msg = msgp == null ? new ZMsg() : msgp.duplicate();
             // Stack protocol envelope to start of message
@@ -412,8 +398,6 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
             msg.addFirst(MDP.S_ORCHESTRATOR.newFrame());
             // Stack routing envelope to start of message
             msg.wrap(worker.address.duplicate());
-            if(msg.peekLast().toString().startsWith("@@@"))
-                Log4J.track(this, "19:" + msg.peekLast());
             msg.send(socket);
         }
     }
