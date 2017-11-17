@@ -127,7 +127,6 @@ public class ClientCommAPI implements DestroyableCallback {
             request.addFirst(MDP.C_CLIENT.newFrame());
             request.addFirst("");
             checkAndSleep("send");
-            String temp = request.peekLast().toString();
             boolean wentWell = request.send(clientSocket);
             canUseSocket.getAndSet(true);
             if (!wentWell) {

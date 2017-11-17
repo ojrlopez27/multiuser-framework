@@ -28,7 +28,7 @@ public class PerformanceTestMain {
     private static final boolean    useScanner = false;
     private static final long       delaySendMsg = 100;
     private static final boolean    verbose = false;
-    private static final int        numAgents = 100;
+    private static final int        numAgents = 10;
     private static final int        numMessages = 10;
     private static final String     url = useExternalMUF? "tcp://34.203.160.208" : "tcp://127.0.0.1";
     private static final long       delayMUF = 1000;

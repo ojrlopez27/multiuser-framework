@@ -373,6 +373,8 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
      */
     private void dispatch(Service service, ZMsg msg) throws Throwable{
         ExceptionHandler.checkAssert( (service != null) );
+        if (msg != null)// Queue message if any
+            service.requests.offerLast(msg);
         purgeWorkers();
         while (!service.waiting.isEmpty() && !service.requests.isEmpty()) {
             msg = service.requests.pop();

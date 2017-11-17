@@ -16,8 +16,12 @@ import edu.cmu.inmind.multiuser.test.TestUtils;
 import org.junit.Test;
 
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static junit.framework.TestCase.assertTrue;
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.*;
 
 
@@ -101,6 +105,9 @@ public class MUFTestSuite {
     }
 
     private void runClient(boolean isTCPon, String... sessionIds) throws Throwable{
+        AtomicInteger countConnected = new AtomicInteger(0);
+        AtomicBoolean allConnected = new AtomicBoolean(false);
+        long timeout = 1000 * 10; // ten seconds
         String messageId1 = "MSG_INITIAL_REQUEST", messageId2 = "MSG_COMPONENT_1",
                 messageId3 = "MSG_SEND_RESPONSE";
         long uniqueMsgId = System.currentTimeMillis();
@@ -124,28 +131,16 @@ public class MUFTestSuite {
                     .setClientAddress(clientAddress + ports[0])
                     .setRequestType(Constants.REQUEST_CONNECT)
                     .setTCPon(isTCPon)
+                    .setResponseListener( new ProcessResponse(countConnected, allConnected, sessionIds.length, sessionId) )
                     .build();
              clientCommControllerHashMap.put(sessionId, clientCommController);
-            // this method will be executed asynchronuously, so we need to add a delay before stopping the MUF
-            clientCommController.setResponseListener(message -> {
-                try {
-                    SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
-                    assertNotNull(sessionMessage);
-                    if (!sessionMessage.getRequestType().equals(Constants.SESSION_CLOSED)) {
-                        //assertEquals("Response from MUF : " + uniqueMsgId, sessionMessage.getPayload());
-                    }
-                    //client.send(sessionId, new SessionMessage(Constants.REQUEST_DISCONNECT, "" + uniqueMsgId, sessionId));
-                    clientCommController.disconnect(sessionId);
-                    Log4J.info(ResponseListener.class, "1. expected and received messages are the same");
-                    MUFTestSuite.this.checkAsyncCall = true;
-                } catch (Throwable e) {
-                    ExceptionHandler.handle(e);
-                }
-            });
-                SessionMessage message = new SessionMessage( messageId1, "Message from client : " + uniqueMsgId, sessionId );
-            clientCommController.send( sessionId, message);
         }
 
+        await().atMost(timeout, TimeUnit.MILLISECONDS).until( () -> allConnected.get() );
+        for(String sessionId : sessionIds){
+            SessionMessage message = new SessionMessage( messageId1, "Message from client : " + uniqueMsgId, sessionId );
+            clientCommController.send( sessionId, message);
+        }
         Utils.sleep( delay * 2 );
         MUFLifetimeManager.stopFramework( muf );
         assertTrue( checkAsyncCall );
@@ -175,6 +170,43 @@ public class MUFTestSuite {
             client.send("session-1", message);
         }catch (Throwable e){
             ExceptionHandler.handle(e);
+        }
+    }
+
+    class ProcessResponse implements ResponseListener{
+        private AtomicInteger countConnected;
+        private AtomicBoolean allConnected;
+        private int totalSessions;
+        private String sessionId;
+
+        public ProcessResponse(AtomicInteger countConnected, AtomicBoolean allConnected, int totalSessions, String sessionId) {
+            this.countConnected = countConnected;
+            this.allConnected = allConnected;
+            this.totalSessions = totalSessions;
+            this.sessionId = sessionId;
+        }
+
+        @Override
+        public void process(String message) {
+            try {
+                if( message.contains(Constants.SESSION_INITIATED) ){
+                    countConnected.incrementAndGet();
+                    if( countConnected.get() == totalSessions ){
+                        allConnected.set(true);
+                    }
+                }
+                SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
+                assertNotNull(sessionMessage);
+                if (!sessionMessage.getRequestType().equals(Constants.SESSION_CLOSED)) {
+                    //assertEquals("Response from MUF : " + uniqueMsgId, sessionMessage.getPayload());
+                }
+                //client.send(sessionId, new SessionMessage(Constants.REQUEST_DISCONNECT, "" + uniqueMsgId, sessionId));
+                clientCommController.disconnect(sessionId);
+                Log4J.info(ResponseListener.class, "1. expected and received messages are the same");
+                MUFTestSuite.this.checkAsyncCall = true;
+            } catch (Throwable e) {
+                ExceptionHandler.handle(e);
+            }
         }
     }
 }

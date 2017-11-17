@@ -29,7 +29,7 @@ public class TestUtils {
         };
     }
 
-
+    @Deprecated
     public static PluginModule[] getModules(Class<? extends ProcessOrchestratorImpl> orchestrator, Class[] pluggins){
         PluginModule.Builder builder = new PluginModule.Builder( orchestrator );
         for( Class clazz : pluggins ){

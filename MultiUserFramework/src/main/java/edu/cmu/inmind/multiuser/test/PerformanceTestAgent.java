@@ -114,6 +114,7 @@ public class PerformanceTestAgent implements Utils.NamedRunnable {
             String message = "";
             for (int i = 0; i < numMessages; i++) {
                 //we send plain strings instead of SessionMessage to avoid json parsing
+                message = "@@@:" + agentId + ":"  +(i + 1);
                 Log4J.track(this, "3:" + message);
                 times.put( (i + 1), System.nanoTime() );
                 ccc.send(agentId, message);
