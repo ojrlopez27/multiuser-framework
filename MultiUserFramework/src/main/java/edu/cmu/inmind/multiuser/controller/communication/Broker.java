@@ -235,7 +235,6 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
             }
         } else if (MDP.S_REPLY.frameEquals(command)) {
             if (workerReady) {
-                if(msg.peekLast().toString().startsWith("@@@")) Log4J.track(this, "32:" + msg.peekLast());
                 // Remove & save client return envelope and insert the
                 // protocol header and service name, then rewrap envelope.
                 ZFrame client = msg.unwrap();
