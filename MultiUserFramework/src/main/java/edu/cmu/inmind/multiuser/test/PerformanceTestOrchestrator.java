@@ -30,9 +30,6 @@ public class PerformanceTestOrchestrator extends ProcessOrchestratorImpl {
     public void process(String input) throws Throwable{
         //we use plain strings instead of SessionMessage to avoid json parsing
         Log4J.track("PerformanceTestOrchestrator", "21:" + input);
-        if( !input.startsWith("@@@") ){
-            Log4J.error(this, "Wrong message?");
-        }
         blackboard.post(this, ConstantsTests.MSG_PERFORMANCE_COMPONENT, input);
     }
 

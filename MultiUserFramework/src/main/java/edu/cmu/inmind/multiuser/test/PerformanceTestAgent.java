@@ -52,7 +52,6 @@ public class PerformanceTestAgent implements Utils.NamedRunnable {
         this.receivedMsgs = receivedMsgs;
         this.verbose = verbose;
         this.ids = ids;
-        Log4J.track(this, "1:@@@:" + agentId + ".");
         ccc = new ClientCommController.Builder()
                 .setServerAddress(url + ":" + port)
                 .setServiceName( agentId )
@@ -76,7 +75,6 @@ public class PerformanceTestAgent implements Utils.NamedRunnable {
                     Log4J.debug(this, String.format("initialized agent %s  total: %s", agentId,
                             initializedAgents.get() ) );
                     stop.getAndSet( false );
-                    Log4J.track(this, "2:@@@:" + agentId + ".");
                 }else if( !message.contains(Constants.SESSION_CLOSED) && !message.contains(Constants.SESSION_RECONNECTED)){
                     Log4J.track(this, "35:" + message);
                     int key = Integer.valueOf(message.split(":")[2]);
@@ -116,7 +114,6 @@ public class PerformanceTestAgent implements Utils.NamedRunnable {
             String message = "";
             for (int i = 0; i < numMessages; i++) {
                 //we send plain strings instead of SessionMessage to avoid json parsing
-                message = "@@@:" + agentId + ":"  +(i + 1);
                 Log4J.track(this, "3:" + message);
                 times.put( (i + 1), System.nanoTime() );
                 ccc.send(agentId, message);
