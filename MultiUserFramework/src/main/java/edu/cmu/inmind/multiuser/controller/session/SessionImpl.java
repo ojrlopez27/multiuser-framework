@@ -160,7 +160,7 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
                 ResourceLocator.setIamDone( this );
                 Log4J.info(this, "Gracefully destroying...");
                 Log4J.info(this, String.format("Session: %s has been disconnected!", id));
-                callback.destroyInCascade(this);
+                if(callback != null) callback.destroyInCascade(this);
             }
         }
     }
@@ -196,7 +196,7 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
                     String message = replyMsg.getMsg().peekLast().toString();
                     stopTimer();
                     if (message.contains(Constants.REQUEST_DISCONNECT)) {
-                        status = Constants.SESSION_CLOSED;
+                           status = Constants.SESSION_CLOSED;
                     } else {
                         if( orchestrator != null ) {
                             orchestrator.process(message);
@@ -205,6 +205,9 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
                         }
                     }
                 }
+            }
+            if( status.equals(Constants.SESSION_CLOSED )){
+                close( null );
             }
         }catch (Throwable e){
             ExceptionHandler.handle(e);

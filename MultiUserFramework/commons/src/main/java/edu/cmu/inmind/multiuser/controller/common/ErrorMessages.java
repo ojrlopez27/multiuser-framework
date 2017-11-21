@@ -54,4 +54,6 @@ public class ErrorMessages {
     public static final String NOT_EXPECTED_DESTROYED_OBJ = "The destroyed object has an unexpected type. Received: %s, Expected: %s";
     public static final String INCORRECT_NUM_SOCKETS = "A valid number of sockets should be a value between 1 - 200";
     public static final String INCORRECT_CORE_POOL_SIZE = "A minimum of 100 threads is required to properly execute the MUF";
+    public static final String SESSION_MESSAGE_IS_EMPTY = "you are passing an empty string message when calling your " +
+            "process orchestrator's sendResponse method. You should send a non-empty string message.";
 }

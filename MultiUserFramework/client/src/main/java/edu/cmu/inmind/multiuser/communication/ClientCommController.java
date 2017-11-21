@@ -243,8 +243,9 @@ public class ClientCommController implements ClientController, DestroyableCallba
                                 if( responseListener == null ){
                                     ExceptionHandler.handle(new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
                                             "responseListener: " + responseListener ));
+                                }else {
+                                    responseListener.process(replyString);
                                 }
-                                responseListener.process(replyString);
                             }
                         } else {
                             stop.getAndSet(true);
@@ -314,7 +315,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
                     : Utils.toJson(message.snd) ));
             String response = clientSocket.recvStr();
             Log4J.track(this, "5:" + message.snd);
-            if (response.equals(Constants.CONNECTION_STARTED)) {
+            if (response.equals( String.valueOf( Constants.CONNECTION_STARTED )) ){
                 Log4J.track(this, "5.1:" + message.snd);
                 sendState.getAndSet( checkFSM(sendState, Constants.CONNECTION_STARTED) );
                 response = clientSocket.recvStr();
