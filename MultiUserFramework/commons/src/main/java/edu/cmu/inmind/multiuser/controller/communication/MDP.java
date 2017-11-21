@@ -52,4 +52,8 @@ public enum MDP {
     public boolean frameEquals (ZFrame frame) {
         return Arrays.equals(data, frame.getData());
     }
+
+    public boolean frameEquals (ZFrame frame, String prefix) {
+        return frame.toString().equals(prefix + name() + prefix);
+    }
 }

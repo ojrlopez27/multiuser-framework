@@ -711,7 +711,7 @@ public class ZMQ
             }
 
             //  Wait for events.
-            try {
+//            try {
                 int rc;
                 if (waitMillis < 0) {
                     rc = selector.select(0);
@@ -736,10 +736,11 @@ public class ZMQ
                 }
                 selector.selectedKeys().clear();
 
-            }
-            catch (IOException e) {
-                throw new ZError.IOException(e);
-            }
+//            }
+//            catch (Exception e) {
+//                //throw new ZError.IOException(e);
+//                throw e;
+//            }
             //  If timeout is zero, exit immediately whether there are events or not.
             if (timeout == 0) {
                 break;

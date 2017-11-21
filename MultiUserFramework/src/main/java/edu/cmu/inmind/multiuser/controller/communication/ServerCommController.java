@@ -82,10 +82,6 @@ public class ServerCommController implements DestroyableCallback {
     /*******************************************************************************************/
     /********************************** RECEIVE ************************************************/
     /*******************************************************************************************/
-
-    /**
-     * Send reply, if any, to broker and wait for next request.
-     */
     public ZMsgWrapper receive(ZMsg reply){
         try {
             // Format and send the reply if we were provided one
@@ -94,6 +90,10 @@ public class ServerCommController implements DestroyableCallback {
                 try {
                     // Poll socket for a reply, with timeout
                     if (items.poll(timeout) == -1) {
+                        /**
+                         * Send reply, if any, to broker and wait for next request.
+                         */
+
                         break; // Interrupted
                     }
 
@@ -192,6 +192,9 @@ public class ServerCommController implements DestroyableCallback {
                     } else {
                         ExceptionHandler.checkAssert(replyTo != null);
                     }
+                }
+                if( message.equals("") ){
+                    ExceptionHandler.handle( new MultiuserException(ErrorMessages.SESSION_MESSAGE_IS_EMPTY ));
                 }
                 reply.getMsg().wrap(replyTo);
                 if (reply.getMsg().peekLast() != null) {
