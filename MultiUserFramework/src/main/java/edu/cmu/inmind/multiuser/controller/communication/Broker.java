@@ -180,7 +180,6 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
             ArrayList<Worker> wrkrs = new ArrayList(workers.values());
             wrkrs.forEach(worker -> {
                 try {
-                    Log4J.error(this, String.format("deleteWorker [%s] in %s", worker, "destroyInCascade"));
                     deleteWorker(worker, true);
                 } catch (Throwable throwable) {
                     throwable.printStackTrace();
@@ -377,7 +376,6 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
             Worker w = iterator.next();
             if (w.expiry < System.currentTimeMillis()){
                 iterator.remove();
-                Log4J.error(this, String.format("deleteWorker [%s] in %s", w, "purgeWorkers"));
                 deleteWorker(w, false);
             }
         }
