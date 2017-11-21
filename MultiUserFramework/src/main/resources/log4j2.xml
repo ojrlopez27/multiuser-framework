@@ -21,7 +21,7 @@
         <!--<Logger name="edu.cmu" level="info" additivity="false">-->
             <!--<appender-ref ref="file-log" level="info"/>-->
         <!--</Logger>-->
-        <Root level="trace">
+        <Root level="track">
             <!-- Only events at DIAG level or more specific are sent to the console. -->
             <AppenderRef ref="Console" level="trace" />
             <AppenderRef ref="Logs" level="trace" />

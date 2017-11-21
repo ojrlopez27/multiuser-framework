@@ -11,6 +11,7 @@ import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.zeromq.*;
 
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -27,6 +28,7 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
     private static final int HEARTBEAT_INTERVAL = 2500; // msecs
     private static final int HEARTBEAT_EXPIRY = HEARTBEAT_INTERVAL * HEARTBEAT_LIVENESS;
     private AtomicBoolean isDestroyed = new AtomicBoolean(false);
+    private ConcurrentHashMap<Service, Boolean> statusResponseMsgs = new ConcurrentHashMap<>();
     private int port;
     private DestroyableCallback callback;
     private ZMQ.Poller items;
@@ -178,6 +180,7 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
             ArrayList<Worker> wrkrs = new ArrayList(workers.values());
             wrkrs.forEach(worker -> {
                 try {
+                    Log4J.error(this, String.format("deleteWorker [%s] in %s", worker, "destroyInCascade"));
                     deleteWorker(worker, true);
                 } catch (Throwable throwable) {
                     throwable.printStackTrace();
@@ -202,25 +205,50 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
         if (serviceFrame.toString().startsWith(INTERNAL_SERVICE_PREFIX))
             serviceInternal(serviceFrame, msg);
         else {
-            dispatch(requireService(serviceFrame), msg);
+            // if orchestrator hasn't sent a response back but receives a new message, then
+            // it has to inform that is ready to receive new messages
+            Service service = requireService(serviceFrame);
+            Worker worker = reactivateWorker(service, msg == null? null : msg.peekFirst() );
+            if( worker != null){
+                workerWaiting(worker);
+            }else{
+                dispatch(service, msg);
+            }
         }
         serviceFrame.destroy();
+    }
+
+    private Worker reactivateWorker(Service service, ZFrame sender) throws Throwable{
+        // if broker hasn't received a message back from orchestrator, then reactivate
+        // the worker automatically
+        Boolean status = statusResponseMsgs.get( service );
+        if( status != null && !status ) {
+            Worker worker = service.waiting.isEmpty()?
+                    (sender == null? null : requireWorker(sender))
+                    : service.waiting.peek();
+            if( worker != null ) {
+                if( worker.service == null )
+                    worker.service = service;
+                return worker;
+            }
+        }
+        return null;
     }
 
     /**
      * Process message sent to us by a worker.
      */
-    private void processWorker(ZFrame sender, ZMsg msg) throws Throwable{
-        ExceptionHandler.checkAssert( (msg.size() >= 1) ); // At least, command
+    private void processWorker(ZFrame sender, ZMsg msg) throws Throwable {
+        ExceptionHandler.checkAssert((msg.size() >= 1)); // At least, command
         ZFrame command = msg.pop();
         boolean workerReady = workers.containsKey(sender.strhex());
         Worker worker = requireWorker(sender);
         if (MDP.S_READY.frameEquals(command)) {
             // Not first command in session || Reserved service name
             if (workerReady
-                    || sender.toString().startsWith(INTERNAL_SERVICE_PREFIX))
+                    || sender.toString().startsWith(INTERNAL_SERVICE_PREFIX)) {
                 deleteWorker(worker, true);
-            else {
+            } else {
                 // Attach worker to service and mark as idle
                 ZFrame serviceFrame = msg.pop();
                 worker.service = requireService(serviceFrame);
@@ -232,10 +260,13 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
                 // Remove & save client return envelope and insert the
                 // protocol header and service name, then rewrap envelope.
                 ZFrame client = msg.unwrap();
-                msg.addFirst(worker.service.name);
-                msg.addFirst(MDP.C_CLIENT.newFrame());
-                msg.wrap(client);
-                msg.send(socket);
+                if( !MDP.S_READY.frameEquals(msg.peekLast(), "\"")) {
+                    msg.addFirst(worker.service.name);
+                    msg.addFirst(MDP.C_CLIENT.newFrame());
+                    msg.wrap(client);
+                    msg.send(socket);
+                }
+                statusResponseMsgs.put( worker.service, true );
                 workerWaiting(worker);
             } else {
                 deleteWorker(worker, true);
@@ -246,9 +277,9 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
             } else {
                 deleteWorker(worker, true);
             }
-        } else if (MDP.S_DISCONNECT.frameEquals(command))
+        } else if (MDP.S_DISCONNECT.frameEquals(command)){
             deleteWorker(worker, false);
-        else {
+        }else {
             Log4J.error(this, "invalid message: " + command.toString());
         }
         msg.destroy();
@@ -342,18 +373,13 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
      */
     public synchronized void purgeWorkers() throws Throwable{
         Iterator<Worker> iterator = waiting.iterator();
-        boolean hayWorkers = false;
         while(iterator.hasNext()){
             Worker w = iterator.next();
             if (w.expiry < System.currentTimeMillis()){
                 iterator.remove();
+                Log4J.error(this, String.format("deleteWorker [%s] in %s", w, "purgeWorkers"));
                 deleteWorker(w, false);
-            }else{
-                hayWorkers = true;
             }
-        }
-        if( hayWorkers ){
-            //Log4J.track(this, "17:" + waiting.size());
         }
     }
 
@@ -380,6 +406,7 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
             msg = service.requests.pop();
             Worker worker = service.waiting.pop();
             waiting.remove(worker);
+            statusResponseMsgs.put( service, false );
             sendToWorker(worker, MDP.S_REQUEST, null, msg);
             msg.destroy();
         }

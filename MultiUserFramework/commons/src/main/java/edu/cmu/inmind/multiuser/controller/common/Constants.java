@@ -28,7 +28,6 @@ public class Constants {
     public static final int CONNECTION_STARTED = 1;
     public static final int CONNECTION_FINISHED = 2;
     public static final int CONNECTION_STOPPED = 3;
-    public static final int QUEUE_CAPACITY = 100;
     public static final int DEFAULT_PORT = 5555;
 
 
