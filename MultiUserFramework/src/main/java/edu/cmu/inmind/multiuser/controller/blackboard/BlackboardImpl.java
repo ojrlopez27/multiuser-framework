@@ -289,7 +289,7 @@ public class BlackboardImpl implements Blackboard {
         return getSyncEvent( keyElement, true );
     }
 
-    private SynchronizableEvent getSyncEvent(Pluggable keyElement, boolean shouldClone) {
+    private SynchronizableEvent getSyncEvent(Pluggable keyElement, boolean shouldClone){
         Object value = null;
         try {
             if (keyElement.getClass().isAnnotationPresent(ForceSync.class)) {
