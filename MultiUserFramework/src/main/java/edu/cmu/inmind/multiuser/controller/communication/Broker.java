@@ -209,7 +209,7 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
             Service service = requireService(serviceFrame);
             Worker worker = reactivateWorker(service, msg == null? null : msg.peekFirst() );
             if( worker != null){
-                workerWaiting(worker);
+                workerWaiting(worker, msg);
             }else{
                 dispatch(service, msg);
             }
@@ -272,7 +272,8 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
             }
         } else if (MDP.S_HEARTBEAT.frameEquals(command)) {
             if (workerReady) {
-                worker.expiry = System.currentTimeMillis() + HEARTBEAT_EXPIRY;
+                renewExpiration(worker);
+                workerWaiting(worker);
             } else {
                 deleteWorker(worker, true);
             }
@@ -282,6 +283,10 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
             Log4J.error(this, "invalid message: " + command.toString());
         }
         msg.destroy();
+    }
+
+    private void renewExpiration(Worker worker){
+        worker.expiry = System.currentTimeMillis() + HEARTBEAT_EXPIRY;
     }
 
     /**
@@ -384,12 +389,16 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
     /**
      * This worker is now waiting for work.
      */
-    public synchronized void workerWaiting(Worker worker) throws Throwable{
+    public synchronized void workerWaiting(Worker worker, ZMsg msg) throws Throwable{
         // Queue to broker and service waiting lists
         waiting.addLast(worker);
         worker.service.waiting.addLast(worker);
-        worker.expiry = System.currentTimeMillis() + HEARTBEAT_EXPIRY;
-        dispatch(worker.service, null);
+        renewExpiration(worker);
+        dispatch(worker.service, msg);
+    }
+
+    public synchronized void workerWaiting(Worker worker) throws Throwable{
+        workerWaiting( worker, null );
     }
 
     /**
