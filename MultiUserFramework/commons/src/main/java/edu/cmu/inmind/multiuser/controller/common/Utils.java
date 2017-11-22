@@ -436,7 +436,7 @@ public class Utils {
     private static Cloner cloner = new Cloner();
 
     public static <T> T clone( T object ){
-        return cloner.deepClone(object);
+        return cloner.shallowClone(object);
     }
 
     public static <T extends List> T cloneList( T list ){
