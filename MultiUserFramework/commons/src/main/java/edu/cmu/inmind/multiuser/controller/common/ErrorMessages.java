@@ -56,4 +56,6 @@ public class ErrorMessages {
     public static final String INCORRECT_CORE_POOL_SIZE = "A minimum of 100 threads is required to properly execute the MUF";
     public static final String SESSION_MESSAGE_IS_EMPTY = "you are passing an empty string message when calling your " +
             "process orchestrator's sendResponse method. You should send a non-empty string message.";
+    public static final String MASTER_SLAVE_NOT_NULL = "Both Master and Slave MUF address cannot be null nor empty. " +
+            "Current values are: %s and %s.";
 }
