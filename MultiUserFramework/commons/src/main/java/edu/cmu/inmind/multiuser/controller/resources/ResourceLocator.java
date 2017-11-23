@@ -68,6 +68,19 @@ public class ResourceLocator {
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "serviceInfo: "
                     + serviceInfo) );
         }
+        if( serviceInfo.getMasterMUFAddress() == null || serviceInfo.getSlaveMUFAddress() == null
+                || serviceInfo.getMasterMUFAddress().isEmpty() || serviceInfo.getSlaveMUFAddress().isEmpty() ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.MASTER_SLAVE_NOT_NULL, "Master MUF address: "
+                    + serviceInfo.getMasterMUFAddress(), "Slave MUF address: " + serviceInfo.getSlaveMUFAddress() ) );
+        }
+        if( !Utils.isURLvalid( serviceInfo.getMasterMUFAddress() ) ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.INCORRECT_IP_ADDRESS,
+                    serviceInfo.getMasterMUFAddress()));
+        }
+        if( !Utils.isURLvalid( serviceInfo.getSlaveMUFAddress() ) ){
+            ExceptionHandler.handle( new MultiuserException(ErrorMessages.INCORRECT_IP_ADDRESS,
+                    serviceInfo.getSlaveMUFAddress()));
+        }
         ServiceComponent serviceComponent = serviceRegistry.get( serviceInfo.getServiceName() );
         serviceComponent = serviceComponent != null ? serviceComponent.setServiceInfo( serviceInfo )
                 : new ServiceComponent(null, serviceInfo, null);
