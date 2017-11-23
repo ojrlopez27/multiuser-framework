@@ -174,7 +174,7 @@ public abstract class PluggableComponent extends AbstractIdleService
 
     @Override
     public void setClientCommController(ClientController clientController) {
-        this.clientCommController = clientCommController;
+        this.clientCommController = clientController;
     }
 
 
