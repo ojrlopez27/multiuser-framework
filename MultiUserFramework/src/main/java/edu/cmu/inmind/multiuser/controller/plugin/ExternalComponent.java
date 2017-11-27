@@ -9,6 +9,7 @@ import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.communication.*;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 
 
@@ -30,7 +31,8 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
             ResourceLocator.addComponentSubscriptions( this.hashCode(), messages );
             setClientCommController( new ClientCommController.Builder()
                 .setServerAddress(serviceInfo.getSlaveMUFAddress())
-                .setServiceName(sessionId)
+                .setServiceName(serviceInfo.getServiceName())
+                .setSessionId(sessionId)
                 .setClientAddress( clientAddress )
                 .setMsgTemplate( zMsgWrapper )
                 .setSubscriptionMessages( messages )
@@ -69,6 +71,7 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
                 String msg = "This message from Python (or any other external server) has an empty or null id. Make " +
                         "sure you send a message with a proper id, otherwise it won't be delivered through the Blackboard. " +
                         "Message: " + sessionMessage.getPayload();
+                Log4J.error(this, msg);
             }
             if( !sessionMessage.getRequestType().equals(Constants.SESSION_CLOSED)
                     && !sessionMessage.getRequestType().equals(Constants.REQUEST_SHUTDOWN_SYSTEM) ) {

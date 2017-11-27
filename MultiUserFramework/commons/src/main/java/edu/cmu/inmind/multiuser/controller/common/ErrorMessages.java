@@ -25,7 +25,8 @@ public class ErrorMessages {
     public static final String BLACKBOARD_ELEMENT_NULL = "You are posting a null object through the Blackboard. Please " +
             "check that";
     public static final String BLACKBOARD_KEY_NULL = "You are posting a null message id through the Blackboard. Please " +
-            "check that";
+            "make sure you include the message id (also, external services that are included in your services.json may " +
+            "return messages with empty/null message ids).";
     public static final String NOBODY_IS_SUBSCRIBED = "There are no components/orchestrators subscribed to message: %s. " +
             "Check your services.json file OR make sure your components have the @BlackboardSubscription annotation";
     public static final String PAIR_VALUE_NULL = "One (or both) of the Pair variables is null. var1: &s, var2: %s";
