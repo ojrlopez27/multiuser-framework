@@ -57,8 +57,8 @@ configurations {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     compile group: 'org.awaitility', name: 'awaitility', version: '3.0.0'
-    compile project(':client')
-//    compile ("edu.cmu.inmind.framework.multiuser:client:$project.muf_version:all") { transitive= true}
+    //compile project(':client')
+compile ("edu.cmu.inmind.framework.multiuser:client:$project.muf_version:all") { transitive= true}
     deployerJars 'org.apache.maven.wagon:wagon-ssh:2.9'
 }
 

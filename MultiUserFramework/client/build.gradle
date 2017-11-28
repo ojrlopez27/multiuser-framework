@@ -30,8 +30,8 @@ configurations {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    compile project(':commons')
-//    compile ("edu.cmu.inmind.framework.multiuser:commons:$project.muf_version:all") {transitive=true }
+    //compile project(':commons')
+compile ("edu.cmu.inmind.framework.multiuser:commons:$project.muf_version:all") {transitive=true }
     deployerJars 'org.apache.maven.wagon:wagon-ssh:2.9'
 }
 
