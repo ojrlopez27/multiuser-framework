@@ -20,9 +20,9 @@ public class MockClient {
             ClientCommController client = new ClientCommController.Builder()
 //                    .setServerAddress("tcp://34.203.160.208:5666") //5666
 //                    .setClientAddress("tcp://34.203.160.208:5666")
-                    .setServerAddress("tcp://127.0.0.1:5555")
-                    .setClientAddress("tcp://127.0.0.1:5555")
-                    .setServiceName(sessionId)
+                    .setServerAddress("tcp://127.0.0.1:5556")
+                    .setClientAddress("tcp://127.0.0.1:5556")
+                    .setSessionId(sessionId)
                     .setRequestType(Constants.REQUEST_CONNECT)
                     .setTCPon(true)
                     .setResponseListener(message -> {
