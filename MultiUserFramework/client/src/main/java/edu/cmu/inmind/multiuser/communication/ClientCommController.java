@@ -29,6 +29,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
     //it only communicates with Session for sending domain messages
     private ClientCommAPI sessionCommAPI;
     private String serviceName;
+    private String sessionId;
     private String sessionManagerService;
     private String serverAddress;
     private String clientAddress;
@@ -72,6 +73,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
     public ClientCommController( Builder builder){
         this.isTCPon = builder.isTCPon;
         this.serviceName = builder.serviceName;
+        this.sessionId = builder.sessionId;
         this.serverAddress = builder.serverAddress;
         this.clientAddress = builder.clientAddress;
         this.requestType = builder.requestType;
@@ -82,7 +84,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
         this.ctx = ResourceLocator.getContext( this );
         this.callbacks = new ArrayList<>();
         //  Bind to inproc: endpoint, then start upstream thread
-        this.inprocName += "-" + this.serviceName;
+        this.inprocName += "-" + sessionId + "-" + this.serviceName;
         this.clientSocket = ResourceLocator.createSocket(ctx, ZMQ.PAIR);
         this.clientSocket.bind(inprocName);
         this.timer = new ResponseTimer();
@@ -108,6 +110,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
     public static class Builder{
         private boolean isTCPon = true;
         private String serviceName = String.format("client-%s", Math.random() );
+        private String sessionId = "";
         private String serverAddress = "tcp://127.0.0.1:5555";
         private String clientAddress = "tcp://127.0.0.1:5555";
         private ZMsgWrapper msgTemplate;
@@ -172,6 +175,11 @@ public class ClientCommController implements ClientController, DestroyableCallba
             this.sessionManagerService = sessionManagerService;
             return this;
         }
+
+        public Builder setSessionId(String sessionId) {
+            this.sessionId = sessionId;
+            return this;
+        }
     }
 
 
@@ -217,7 +225,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
                 this.sessionMngrCommAPI = new ClientCommAPI(serverAddress);
                 closeableObjects.add( sessionMngrCommAPI );
                 SessionMessage sessionMessage = new SessionMessage();
-                sessionMessage.setSessionId(serviceName);
+                sessionMessage.setSessionId(sessionId);
                 sessionMessage.setRequestType(requestType);
                 sessionMessage.setUrl(clientAddress);
                 sessionMessage.setPayload(Arrays.toString(subscriptionMessages));
@@ -237,7 +245,11 @@ public class ClientCommController implements ClientController, DestroyableCallba
                                 throw new Exception(reply.getRequestType());
                             } else {
                                 if (reply.getRequestType().equals(Constants.SESSION_INITIATED)) {
-                                    this.sessionCommAPI = new ClientCommAPI(reply.getPayload());
+                                    if( reply.getPayload() != null && Utils.isURLvalid( reply.getPayload() )) {
+                                        this.sessionCommAPI = new ClientCommAPI(reply.getPayload());
+                                    }else{
+                                        this.sessionCommAPI = new ClientCommAPI( sessionMngrCommAPI.getBroker() );
+                                    }
                                     closeableObjects.add( sessionCommAPI );
                                 }
                                 if( responseListener == null ){

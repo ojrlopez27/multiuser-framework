@@ -177,4 +177,7 @@ public class ClientCommAPI implements DestroyableCallback {
         }
     }
 
+    public String getBroker() {
+        return broker;
+    }
 }

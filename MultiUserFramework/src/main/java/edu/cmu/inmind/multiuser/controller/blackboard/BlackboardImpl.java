@@ -32,7 +32,7 @@ public class BlackboardImpl implements Blackboard {
     private boolean loggerOn = true;
     private boolean keepModel = false;
     private boolean notifySubscribers = true;
-    private boolean shouldThrowException = false;
+    private boolean shouldThrowException = true;
 
     private BlackboardImpl(){
         this.subscribers = new ArrayList<>();
