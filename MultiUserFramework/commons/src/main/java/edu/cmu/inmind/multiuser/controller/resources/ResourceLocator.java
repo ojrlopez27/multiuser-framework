@@ -259,7 +259,7 @@ public class ResourceLocator {
     }
 
 
-    public static ServiceManager initServices(ServiceManager serviceManager, ProcessOrchestrator orchestrator,
+    public static ServiceManager initServices(ServiceManager serviceManager, final ProcessOrchestrator orchestrator,
                                               Set<Service> services ) throws Throwable{
 
         if( services != null && !services.isEmpty() && serviceManager == null ) {

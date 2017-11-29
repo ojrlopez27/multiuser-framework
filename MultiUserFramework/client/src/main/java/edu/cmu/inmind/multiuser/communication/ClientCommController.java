@@ -32,6 +32,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
     private String sessionId;
     private String sessionManagerService;
     private String serverAddress;
+    @Deprecated
     private String clientAddress;
     private String requestType;
     private String[] subscriptionMessages;
@@ -75,7 +76,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
         this.serviceName = builder.serviceName;
         this.sessionId = builder.sessionId;
         this.serverAddress = builder.serverAddress;
-        this.clientAddress = builder.clientAddress;
+        //this.clientAddress = builder.clientAddress;
         this.requestType = builder.requestType;
         this.subscriptionMessages = builder.subscriptionMessages;
         this.shouldProcessReply = builder.shouldProcessReply;
@@ -112,6 +113,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
         private String serviceName = String.format("client-%s", Math.random() );
         private String sessionId = "";
         private String serverAddress = "tcp://127.0.0.1:5555";
+        @Deprecated
         private String clientAddress = "tcp://127.0.0.1:5555";
         private ZMsgWrapper msgTemplate;
         private String requestType = Constants.REQUEST_CONNECT;
@@ -140,6 +142,10 @@ public class ClientCommController implements ClientController, DestroyableCallba
             return this;
         }
 
+        @Deprecated
+        /**
+         * Client address is not necessary anymore. Don't use it!
+         */
         public Builder setClientAddress(String clientAddress) {
             ExceptionHandler.checkIpAddress(clientAddress);
             this.clientAddress = clientAddress;
@@ -227,7 +233,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
                 SessionMessage sessionMessage = new SessionMessage();
                 sessionMessage.setSessionId(sessionId);
                 sessionMessage.setRequestType(requestType);
-                sessionMessage.setUrl(clientAddress);
+                //sessionMessage.setUrl(clientAddress);
                 sessionMessage.setPayload(Arrays.toString(subscriptionMessages));
                 timer.schedule(new ResponseCheck(), timeout);
                 Utils.setAtom( stop, !sendToBroker( sessionManagerService, Utils.toJson(sessionMessage)) );

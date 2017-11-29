@@ -8,7 +8,7 @@ version "$project.muf_version"
 apply plugin: 'java'
 apply plugin: 'com.github.johnrengelman.shadow'
 
-sourceCompatibility = 1.8
+sourceCompatibility = 1.7
 
 repositories {
     mavenCentral()
