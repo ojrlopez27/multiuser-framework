@@ -37,20 +37,22 @@ public class FileLogger implements MessageLog {
 
     @Override
     public void store() throws Throwable{
-        Utils.execute( () -> {
-            try {
-                if (turnedOn && !log.toString().isEmpty()) {
-                    File file = new File(path + id + "-" + Utils.getDateString() + ".log");
-                    PrintWriter printWriter = new PrintWriter(file);
-                    printWriter.write(log.toString());
-                    printWriter.flush();
-                    printWriter.close();
+        Utils.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (turnedOn && !log.toString().isEmpty()) {
+                        File file = new File(path + id + "-" + Utils.getDateString() + ".log");
+                        PrintWriter printWriter = new PrintWriter(file);
+                        printWriter.write(log.toString());
+                        printWriter.flush();
+                        printWriter.close();
+                    }
+                }catch (Throwable e){
+                    ExceptionHandler.handle( e );
                 }
-            }catch (Throwable e){
-                ExceptionHandler.handle( e );
             }
         });
-
     }
 
     @Override

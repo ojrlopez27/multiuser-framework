@@ -16,7 +16,22 @@ public class MultiuserException extends Exception {
     }
 
     public MultiuserException(StringBuffer errorCode, Object... params){
-        super( String.format( Arrays.asList(params).stream().reduce(errorCode, (str, toRem) -> str += " %s,").toString(),
-                params));
+        /** using Java 1.8 **/
+//        super( String.format( Arrays.asList(params).stream().reduce(errorCode, (str, toRem) -> str += " %s,").toString(),
+//                params));
+        super( convertToString(errorCode, params) );
+    }
+
+    /**
+     * Using Java 1.7
+     * @param errorCode
+     * @param params
+     * @return
+     */
+    static String convertToString(StringBuffer errorCode, Object... params){
+        for(Object str : params){
+            errorCode.append( str );
+        }
+        return errorCode.toString();
     }
 }
