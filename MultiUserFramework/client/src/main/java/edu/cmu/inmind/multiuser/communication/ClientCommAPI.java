@@ -25,7 +25,6 @@ public class ClientCommAPI implements DestroyableCallback {
     private AtomicBoolean isDestroyed = new AtomicBoolean(false);
     private DestroyableCallback callback;
     private AtomicBoolean canUseSocket = new AtomicBoolean( true );
-    private String whoPrevious;
     // constants:
     private final long  timeout = 10000; // 2,5 seconds
     private final int   highWaterMark = 10 * 1000; //amount of enqueued messages
@@ -43,7 +42,7 @@ public class ClientCommAPI implements DestroyableCallback {
      * Connect or reconnect to broker
      */
     void reconnectToBroker() throws Throwable{
-        checkAndSleep("reconnectToBroker");
+        checkAndSleep();
         if (clientSocket != null) {
             ctx.destroySocket(clientSocket);
         }
@@ -75,7 +74,7 @@ public class ClientCommAPI implements DestroyableCallback {
                     return null; // Interrupted or Context has been shut down
                 }
                 if (items.pollin(0)) {
-                    checkAndSleep("recv");
+                    checkAndSleep();
                     ZMsg msg = ZMsg.recvMsg(clientSocket, ZMQ.DONTWAIT);
                     canUseSocket.getAndSet(true);
 
@@ -126,7 +125,7 @@ public class ClientCommAPI implements DestroyableCallback {
             request.addFirst(service);
             request.addFirst(MDP.C_CLIENT.newFrame());
             request.addFirst("");
-            checkAndSleep("send");
+            checkAndSleep();
             boolean wentWell = request.send(clientSocket);
             canUseSocket.getAndSet(true);
             if (!wentWell) {
@@ -155,7 +154,7 @@ public class ClientCommAPI implements DestroyableCallback {
     @Override
     public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
         if( !isDestroyed.getAndSet(true) ) {
-            checkAndSleep("destroyInCascade");
+            checkAndSleep();
             ctx = null;
             ResourceLocator.setIamDone( this );
             Log4J.info(this, "Gracefully destroying...");
@@ -164,14 +163,13 @@ public class ClientCommAPI implements DestroyableCallback {
         canUseSocket.getAndSet(true);
     }
 
-    private void checkAndSleep(String who){
+    private void checkAndSleep(){
         try {
             int times = 0;
             while (!canUseSocket.get() && times++ < maxNumTries) { // 200 * 5 = 1000 milliseconds
                 Utils.sleep(delayCheckAndSleep);
             }
             canUseSocket.getAndSet(false);
-            whoPrevious = who;
         }catch (Exception e){
             e.printStackTrace();
         }
