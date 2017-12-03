@@ -20,8 +20,8 @@ public class MockClient {
             ClientCommController client = new ClientCommController.Builder()
 //                    .setServerAddress("tcp://34.203.160.208:5666") //5666
 //                    .setClientAddress("tcp://34.203.160.208:5666")
-                    .setServerAddress("tcp://127.0.0.1:5556")
-                    .setClientAddress("tcp://127.0.0.1:5556")
+                    .setServerAddress("tcp://127.0.0.1:5555")
+                    //.setClientAddress("tcp://127.0.0.1:5555")
                     .setSessionId(sessionId)
                     .setRequestType(Constants.REQUEST_CONNECT)
                     .setTCPon(true)
@@ -53,6 +53,13 @@ public class MockClient {
                     SessionMessage sessionMessage = new SessionMessage();
                     sessionMessage.setMessageId("MSG_ASR");
                     sessionMessage.setPayload("{\"utterance\": \"I like action movies\", \"confidence\": 1.0}");
+                    client.send(sessionId, sessionMessage);
+                }
+                else
+                {
+                    SessionMessage sessionMessage = new SessionMessage();
+                    sessionMessage.setMessageId("MSG_ASR");
+                    sessionMessage.setPayload("{\"utterance\": "+""+ "\""+input.toString()+"\", \"confidence\": 1.0}");
                     client.send(sessionId, sessionMessage);
                 }
             }
