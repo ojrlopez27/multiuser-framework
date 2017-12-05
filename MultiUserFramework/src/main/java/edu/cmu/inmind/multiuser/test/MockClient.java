@@ -17,10 +17,12 @@ public class MockClient {
     public static void main(String args[]) throws Exception {
         try {
             String sessionId = args[0];
+            String ipAddress = args[1];
             ClientCommController client = new ClientCommController.Builder()
 //                    .setServerAddress("tcp://34.203.160.208:5666") //5666
 //                    .setClientAddress("tcp://34.203.160.208:5666")
-                    .setServerAddress("tcp://127.0.0.1:5555")
+                    //.setServerAddress("tcp://127.0.0.1:5555")
+                    .setServerAddress("tcp://"+ipAddress+":5555")
                     //.setClientAddress("tcp://127.0.0.1:5555")
                     .setSessionId(sessionId)
                     .setRequestType(Constants.REQUEST_CONNECT)
