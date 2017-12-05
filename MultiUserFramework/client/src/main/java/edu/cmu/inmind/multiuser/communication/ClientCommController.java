@@ -516,8 +516,8 @@ public class ClientCommController implements ClientController, DestroyableCallba
                         } else if (responseListener != null) {
                             if (shouldProcessReply) {
                                 Log4J.track(this, "34:" + response);
+                                send(sessionId, new SessionMessage(Constants.ACK));
                                 responseListener.process(response);
-                                send(sessionId, new SessionMessage(Constants.ACK, ""));
                             } else {
                                 shouldProcessReply = true;
                             }
