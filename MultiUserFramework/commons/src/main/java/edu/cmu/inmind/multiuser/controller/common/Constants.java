@@ -37,6 +37,7 @@ public class Constants {
     public static final String SESSION_PAUSED = "SESSION_PAUSED";
     public static final String SESSION_RESUMED = "SESSION_RESUMED";
     public static final String SESSION_RECONNECTED = "SESSION_RECONNECTED";
+    public static final String ACK="ACK";
 
     //blackboard
     public static final String REMOVE_ALL = "REMOVE_ALL";

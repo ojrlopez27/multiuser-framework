@@ -5,10 +5,10 @@ group 'edu.cmu.inmind.multiuser.framework'
 
 //group 'edu.cmu.inmind.multiuser'
 
-project.ext.set("muf_version", '3.0-rc1')
+project.ext.set("muf_version", '3.0-rc1-test')
 
 ext {
-    mufVersion = '3.0-rc1'
+    mufVersion = '3.0-rc1-test'
 }
 version "$project.muf_version"
 

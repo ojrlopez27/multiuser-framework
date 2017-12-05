@@ -76,7 +76,6 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
         this.config = config;
     }
 
-    @Override
     public ProcessOrchestrator getOrchestrator() {
         return orchestrator;
     }
@@ -200,7 +199,14 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
                            status = Constants.SESSION_CLOSED;
                     } else {
                         if( orchestrator != null ) {
-                            orchestrator.process(message);
+                            if(!message.toString().contains("ACK")) {
+                                orchestrator.process(message);
+                                Log4J.info(this, message.toString());
+                            }
+                            else
+                            {
+                                Log4J.info(this, "ACK received"+message.toString());
+                            }
                         }else{
                             Log4J.error(this, "Orchestrator is null");
                         }
