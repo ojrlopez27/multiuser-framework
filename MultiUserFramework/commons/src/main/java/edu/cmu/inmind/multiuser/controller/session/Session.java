@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.session;
 
 import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
+import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 
 /**
@@ -11,4 +12,5 @@ public interface Session {
     Config getConfig();
     String getFullAddress();
     void setId(String id, ZMsgWrapper msg, String fullAddress);
+    ProcessOrchestrator getOrchestrator();
 }
