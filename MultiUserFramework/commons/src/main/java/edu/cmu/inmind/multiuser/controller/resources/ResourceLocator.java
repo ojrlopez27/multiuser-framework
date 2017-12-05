@@ -13,6 +13,7 @@ import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
 import edu.cmu.inmind.multiuser.controller.plugin.Pluggable;
 import edu.cmu.inmind.multiuser.controller.plugin.StateType;
+import edu.cmu.inmind.multiuser.controller.session.Session;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
@@ -36,7 +37,7 @@ public class ResourceLocator {
     private static ConcurrentHashMap<Pluggable, List<String>> statelessCompRegistry = new ConcurrentHashMap<>();
     /** This ServiceManager is only used for Stateless and Pool components */
     private static ServiceManager statelessServManager;
-
+    private static ConcurrentHashMap<String, Session> sessions = new ConcurrentHashMap<>();
 
     /**
      * This method registers remote or external services that can be looked up by other components
@@ -155,10 +156,10 @@ public class ResourceLocator {
             for( Pluggable component : components ) {
                 if( component.getClass().isAnnotationPresent(StateType.class) &&
                         component.getClass().getAnnotation(StateType.class).state().equals(Constants.STATEFULL) ) {
-                    statefullSessionIds = getSessionIds(statefullSessionIds, statefullCompRegistry, component, sessionId);
+                    statefullSessionIds = getSessionIds(statefullCompRegistry, component, sessionId);
                     statefullCompRegistry.put( component, statefullSessionIds );
                 }else{
-                    statelessSessionIds = getSessionIds(statelessSessionIds, statelessCompRegistry, component, sessionId);
+                    statelessSessionIds = getSessionIds(statelessCompRegistry, component, sessionId);
                     statelessCompRegistry.put( component, statelessSessionIds );
                 }
             }
@@ -170,9 +171,9 @@ public class ResourceLocator {
     }
 
 
-    private static List<String> getSessionIds(List<String> sessionIds, ConcurrentHashMap<Pluggable, List<String>> componentsRegistry,
+    private static List<String> getSessionIds(ConcurrentHashMap<Pluggable, List<String>> componentsRegistry,
                                        Pluggable component, String sessionId){
-        sessionIds = componentsRegistry.get( component );
+        List<String> sessionIds = componentsRegistry.get( component );
         if( sessionIds == null ){
             sessionIds = new ArrayList<>();
             sessionIds.add( sessionId );
@@ -384,5 +385,20 @@ public class ResourceLocator {
         }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
+    }
+
+    public static void addSession(Session session){
+        sessions.put( session.getId(), session );
+    }
+
+    public static Pluggable getComponent(String sessionId, Class componentClass){
+        Session session = sessions.get(sessionId);
+        List<Pluggable> components  = session.getOrchestrator().getComponents();
+        for( Pluggable pluggable : components ){
+            if( pluggable.getClass().getName().equals( componentClass.getName() ) ){
+                return pluggable;
+            }
+        }
+        return null;
     }
 }
