@@ -41,6 +41,8 @@ public class ClientCommController implements ClientController, DestroyableCallba
     private ResponseTimer timer;
     private CopyOnWriteArrayList<Object> closeableObjects;
     private ZContext ctx;
+    private boolean useAutomaticAck = Utils.getProperty("session.receive.automatic.ack", false);
+
 
     private AtomicBoolean isDestroyed = new AtomicBoolean(false);
     private AtomicBoolean isConnected = new AtomicBoolean(false);
@@ -526,7 +528,9 @@ public class ClientCommController implements ClientController, DestroyableCallba
                             if (shouldProcessReply) {
                                 Log4J.track(this, "34:" + response);
                                 responseListener.process(response);
-                                send(sessionId, new SessionMessage(Constants.ACK));
+                                if(useAutomaticAck) {
+                                    send(sessionId, new SessionMessage(Constants.ACK));
+                                }
                             } else {
                                 shouldProcessReply = true;
                             }
