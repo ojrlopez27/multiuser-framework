@@ -59,4 +59,9 @@ public class ErrorMessages {
             "process orchestrator's sendResponse method. You should send a non-empty string message.";
     public static final String MASTER_SLAVE_NOT_NULL = "Both Master and Slave MUF address cannot be null nor empty. " +
             "Current values are: %s and %s.";
+    public static final String CLIENT_NOT_CONNECTED = "The client is still connecting, you cannot send messages right now. " +
+            "If you are sending a message inside the ResponseListener.process method, then check you are not sending a " +
+            "message when you just receive a SESSION_INITIATED message. You can only send messages when the message received " +
+            "is different from SESSION_INITIATED (if sending from inside ResponseListener) or when you do it outside the " +
+            "ResponseListener.process().";
 }

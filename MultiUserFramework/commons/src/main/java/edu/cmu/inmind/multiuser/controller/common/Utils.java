@@ -377,19 +377,22 @@ public class Utils {
     private static Properties properties;
     private static InputStream input = null;
 
-    public static String getProperty(String key){
-        String value = "";
+    public static <T> T getProperty(String key, T defaultValue){
+        T value = null;
+        boolean openedFile = false;
         try {
             if( properties == null ) {
                 input = new FileInputStream("config.properties");
+                openedFile = true;
                 properties = new Properties();
                 properties.load(input);
             }
-            value = properties.getProperty( key );
+            value = cast(defaultValue, properties.getProperty( key ));
+            if( value == null ) value = defaultValue;
         } catch (Throwable ex) {
             ex.printStackTrace();
         } finally {
-            if (input != null) {
+            if (input != null && openedFile) {
                 try {
                     input.close();
                 } catch (IOException e) {
@@ -399,6 +402,22 @@ public class Utils {
         }
         return value;
     }
+
+    public static String getProperty(String key){
+        return getProperty(key, null );
+    }
+
+    public static <T> T cast(T type, String value){
+        if( type instanceof Boolean ) return (T)Boolean.valueOf(value);
+        if( type instanceof Integer ) return (T)Integer.valueOf(value);
+        if( type instanceof Short ) return (T)Short.valueOf(value);
+        if( type instanceof Long ) return (T)Long.valueOf(value);
+        if( type instanceof Double ) return (T)Double.valueOf(value);
+        return (T)value;
+    }
+
+
+
 
     public static Properties loadProperties(String pathName){
         Properties prop = null;

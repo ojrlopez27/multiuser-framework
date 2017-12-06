@@ -187,10 +187,10 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
             });
             ctx = null;
             isDestroyed.getAndSet(true);
-            ResourceLocator.setIamDone( this );
             Log4J.info(this, "Gracefully destroying...");
-            if(callback != null) callback.destroyInCascade(this);
         }
+        ResourceLocator.setIamDone(this);
+        if(callback != null) callback.destroyInCascade(this);
     }
 
     /**
