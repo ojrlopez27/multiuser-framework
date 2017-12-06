@@ -365,7 +365,7 @@ public class ResourceLocator {
                     allTerminated = true;
                     for (DestroyableCallback key : destroyables.keySet()) {
                         if (!destroyables.get(key)) {
-                            key.destroyInCascade(null);
+                            key.close(null);
                             allTerminated = false;
                             Utils.sleep(50);
                             break;

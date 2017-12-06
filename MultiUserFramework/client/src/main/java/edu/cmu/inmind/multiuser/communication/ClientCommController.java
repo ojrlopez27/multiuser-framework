@@ -40,9 +40,10 @@ public class ClientCommController implements ClientController, DestroyableCallba
     private ReceiverThread receiveThread;
     private ResponseTimer timer;
     private CopyOnWriteArrayList<Object> closeableObjects;
-
     private ZContext ctx;
+
     private AtomicBoolean isDestroyed = new AtomicBoolean(false);
+    private AtomicBoolean isConnected = new AtomicBoolean(false);
     /**
      * We use this socket to communicate with senderSocket, which is running on another
      * thread (SenderThread).
@@ -223,6 +224,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
         release.getAndSet( checkFSM( release, Constants.CONNECTION_NEW) );
         isSendThreadAlive.getAndSet(false);
         isReceiveThreadAlive.getAndSet(false);
+        isConnected.set(false);
     }
 
     private void connect() throws Throwable{
@@ -298,14 +300,17 @@ public class ClientCommController implements ClientController, DestroyableCallba
     public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
         stop.getAndSet(true);
         closeableObjects.remove(destroyedObj);
-        if( closeableObjects.isEmpty() && !isDestroyed.getAndSet(true) ) {
-            sessionMngrCommAPI = null;
-            sessionCommAPI = null;
-            ctx = null;
-            ResourceLocator.setIamDone( this );
-            Log4J.info(this, "Gracefully destroying...");
-            for (DestroyableCallback callback : callbacks) {
-                if(callback != null) callback.destroyInCascade(this);
+        if( !isDestroyed.get() ){
+            if (closeableObjects.isEmpty()) {
+                sessionMngrCommAPI = null;
+                sessionCommAPI = null;
+                ctx = null;
+                Log4J.info(this, "Gracefully destroying...");
+                isDestroyed.set(true);
+                ResourceLocator.setIamDone(this);
+                for (DestroyableCallback callback : callbacks) {
+                    if (callback != null) callback.destroyInCascade(this);
+                }
             }
         }
     }
@@ -316,6 +321,9 @@ public class ClientCommController implements ClientController, DestroyableCallba
     @Override
     public void send(String serviceId, Object message){
         try {
+            if( !isConnected.get() ){
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.CLIENT_NOT_CONNECTED));
+            }
             if( !isDestroyed.get() ) {
                 sendToInternalSocket(new Pair<>(serviceId, message));
             }else{
@@ -397,6 +405,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
                 senderSocket.send(String.valueOf(Constants.CONNECTION_STARTED), 0);
                 while( !stop.get() && !Thread.currentThread().isInterrupted() ) {
                     try{
+                        isConnected.set(true);
                         String strMsg = senderSocket.recvStr(); //ZMQ.DONTWAIT);
                         Log4J.track(this, "7:" + strMsg.split(TOKEN)[1]);
                         if( strMsg != null ) {
@@ -516,8 +525,8 @@ public class ClientCommController implements ClientController, DestroyableCallba
                         } else if (responseListener != null) {
                             if (shouldProcessReply) {
                                 Log4J.track(this, "34:" + response);
-                                //send(sessionId, new SessionMessage(Constants.ACK));
                                 responseListener.process(response);
+                                send(sessionId, new SessionMessage(Constants.ACK));
                             } else {
                                 shouldProcessReply = true;
                             }
