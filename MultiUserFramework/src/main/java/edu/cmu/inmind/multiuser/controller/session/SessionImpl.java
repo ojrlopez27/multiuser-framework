@@ -41,6 +41,7 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
     private DestroyableCallback callback;
     private CopyOnWriteArrayList closeableObjects;
     private boolean useSessionTimeout = false;
+    private boolean useAutomaticAck = Utils.getProperty("session.receive.automatic.ack", false);
     /** we use this controller to communicate back with the client who made a request **/
     private ServerCommController sessionCommController;
     /** we use this controller to communicate back with the client when TCP is off **/
@@ -200,7 +201,7 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
                            status = Constants.SESSION_CLOSED;
                     } else {
                         if( orchestrator != null ) {
-                            if( !message.contains(Constants.ACK) ) {
+                            if( useAutomaticAck || !message.contains(Constants.ACK) ) {
                                 orchestrator.process(message);
                                 Log4J.info(this, message.toString());
                             }
