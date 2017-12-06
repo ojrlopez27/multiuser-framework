@@ -200,10 +200,9 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
                            status = Constants.SESSION_CLOSED;
                     } else {
                         if( orchestrator != null ) {
-                            if( !message.contains(Constants.ACK) ) {
+                            //if( !message.contains(Constants.ACK) ) {
                                 orchestrator.process(message);
                                 Log4J.info(this, message.toString());
-                            }
                         }else{
                             Log4J.error(this, "Orchestrator is null");
                         }
