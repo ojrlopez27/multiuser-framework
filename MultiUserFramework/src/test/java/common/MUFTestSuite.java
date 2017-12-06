@@ -33,10 +33,11 @@ public class MUFTestSuite {
     private long delay = 3000;
     private String serverAddress = "tcp://127.0.0.1:"; //use IP instead of 'localhost'
     private String clientAddress = "tcp://127.0.0.1:";
-    private int[] ports = new int[]{5555, 5556, 5557, 5558};
-    private boolean checkAsyncCall = false;
+    private int[] ports = new int[]{5555, 5556, 5557, 5558, 5559, 5560};
+    protected static boolean checkAsyncCall = false;
     HashMap<String, ClientCommController> clientCommControllerHashMap = new HashMap<>();
     ClientCommController clientCommController ;
+    ProcessResponse processResponse = null;
 
     /**
      * It tests whether MUF starts and stops correctly. No sessions are created.
@@ -62,11 +63,11 @@ public class MUFTestSuite {
     public void testStartAndStopTwoMUFs() throws Throwable{
         MultiuserController muf1 = MUFLifetimeManager.startFramework(
                 TestUtils.getModules(TestOrchestrator.class ),
-                TestUtils.createConfig( serverAddress, ports[0] ) );
+                TestUtils.createConfig( serverAddress, ports[1] ) );
         assertNotNull(muf1);
         MultiuserController muf2 = MUFLifetimeManager.startFramework(
                 TestUtils.getModules(TestOrchestrator.class ),
-                TestUtils.createConfig( serverAddress, ports[1] ) );
+                TestUtils.createConfig( serverAddress, ports[2] ) );
         assertNotNull(muf2);
         assertNotSame( muf1, muf2 );
         Utils.sleep(delay); //give some time to initialize the MUF
@@ -96,15 +97,15 @@ public class MUFTestSuite {
      */
     @Test
     public void testOneClientWithTCP() throws Throwable{
-        runClient( true, "client-session-1" );
+        runClient( true, 3,"client-session-1" );
     }
 
     @Test
     public void testTwoClientsWithTCP() throws Throwable{
-        runClient( true, "client-session-1", "client-session-2");
+        runClient( true, 4, "client-session-1", "client-session-2");
     }
 
-    private void runClient(boolean isTCPon, String... sessionIds) throws Throwable{
+    private void runClient(boolean isTCPon, int i, String... sessionIds) throws Throwable{
         AtomicInteger countConnected = new AtomicInteger(0);
         AtomicBoolean allConnected = new AtomicBoolean(false);
         long timeout = 1000 * 10; // ten seconds
@@ -120,30 +121,35 @@ public class MUFTestSuite {
         // creates a MUF and set TCP to on or off
         MultiuserController muf = MUFLifetimeManager.startFramework(
                 TestUtils.getModules(TestOrchestrator.class ),
-                TestUtils.createConfig( serverAddress, ports[0] ).setTCPon( isTCPon ) );
+                TestUtils.createConfig( serverAddress, ports[i] ).setTCPon( isTCPon ) );
         assertNotNull(muf);
         Utils.sleep(delay); //give some time to initialize the MUF
         // let's create a client that sends messages to MUF
         for(String sessionId : sessionIds ) {
+            processResponse = new ProcessResponse(countConnected, allConnected, sessionIds.length, sessionId);
              clientCommController = new ClientCommController.Builder()
-                    .setServerAddress(serverAddress + ports[0])
+                    .setServerAddress(serverAddress + ports[i])
                     .setServiceName(sessionId)
-                    .setClientAddress(clientAddress + ports[0])
+                    .setClientAddress(clientAddress + ports[i])
                     .setRequestType(Constants.REQUEST_CONNECT)
                     .setTCPon(isTCPon)
-                    .setResponseListener( new ProcessResponse(countConnected, allConnected, sessionIds.length, sessionId) )
+                    .setResponseListener( processResponse )
                     .build();
              clientCommControllerHashMap.put(sessionId, clientCommController);
         }
+        if(sessionIds.length>1 && i<sessionIds.length )
+        {
+            i++;
+        }
 
-        await().atMost(timeout, TimeUnit.MILLISECONDS).until( () -> allConnected.get() );
+        await().atMost(timeout, TimeUnit.MILLISECONDS).until( () -> processResponse.allConnected.get() );
         for(String sessionId : sessionIds){
             SessionMessage message = new SessionMessage( messageId1, "Message from client : " + uniqueMsgId, sessionId );
             clientCommController.send( sessionId, message);
         }
         Utils.sleep( delay * 2 );
         MUFLifetimeManager.stopFramework( muf );
-        assertTrue( checkAsyncCall );
+        await().untilTrue( new AtomicBoolean(checkAsyncCall ));
     }
 
 
@@ -151,9 +157,9 @@ public class MUFTestSuite {
     public void testOnlyClient(){
         try {
             ClientCommController client = new ClientCommController.Builder()
-                    .setServerAddress(serverAddress + ports[0])
+                    .setServerAddress(serverAddress + ports[5])
                     .setServiceName("session-1")
-                    .setClientAddress(clientAddress + ports[0])
+                    .setClientAddress(clientAddress + ports[5])
                     .setRequestType(Constants.REQUEST_CONNECT)
                     .setTCPon(true)
                     .build();
@@ -175,7 +181,7 @@ public class MUFTestSuite {
 
     class ProcessResponse implements ResponseListener{
         private AtomicInteger countConnected;
-        private AtomicBoolean allConnected;
+        public AtomicBoolean allConnected;
         private int totalSessions;
         private String sessionId;
 
@@ -203,7 +209,7 @@ public class MUFTestSuite {
                 //client.send(sessionId, new SessionMessage(Constants.REQUEST_DISCONNECT, "" + uniqueMsgId, sessionId));
                 clientCommController.disconnect(sessionId);
                 Log4J.info(ResponseListener.class, "1. expected and received messages are the same");
-                MUFTestSuite.this.checkAsyncCall = true;
+                MUFTestSuite.checkAsyncCall = true;
             } catch (Throwable e) {
                 ExceptionHandler.handle(e);
             }

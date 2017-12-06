@@ -17,12 +17,14 @@ public class MockClient {
     public static void main(String args[]) throws Exception {
         try {
             String sessionId = args[0];
+            String ipAddress = args[1];
             ClientCommController client = new ClientCommController.Builder()
 //                    .setServerAddress("tcp://34.203.160.208:5666") //5666
 //                    .setClientAddress("tcp://34.203.160.208:5666")
-                    .setServerAddress("tcp://127.0.0.1:5555")
-                    .setClientAddress("tcp://127.0.0.1:5555")
-                    .setServiceName(sessionId)
+                    //.setServerAddress("tcp://127.0.0.1:5555")
+                    .setServerAddress("tcp://"+ipAddress+":5555")
+                    //.setClientAddress("tcp://127.0.0.1:5555")
+                    .setSessionId(sessionId)
                     .setRequestType(Constants.REQUEST_CONNECT)
                     .setTCPon(true)
                     .setResponseListener(message -> {
@@ -40,7 +42,9 @@ public class MockClient {
                     break;
                 } else if (input.equals("dm")) {
                     client.send(sessionId, new SessionMessage("MSG_START_DM", ""));
-                } else if (input.equals("start")) {
+                }
+                else if(input.equals("start"))
+                {
                     client.send(sessionId, new SessionMessage("MSG_START_SESSION", "RESET_NONE"));
                 }
                 else if (input.equals("sr")) {
@@ -51,6 +55,13 @@ public class MockClient {
                     SessionMessage sessionMessage = new SessionMessage();
                     sessionMessage.setMessageId("MSG_ASR");
                     sessionMessage.setPayload("{\"utterance\": \"I like action movies\", \"confidence\": 1.0}");
+                    client.send(sessionId, sessionMessage);
+                }
+                else
+                {
+                    SessionMessage sessionMessage = new SessionMessage();
+                    sessionMessage.setMessageId("MSG_ASR");
+                    sessionMessage.setPayload("{\"utterance\": "+""+ "\""+input.toString()+"\", \"confidence\": 1.0}");
                     client.send(sessionId, sessionMessage);
                 }
             }

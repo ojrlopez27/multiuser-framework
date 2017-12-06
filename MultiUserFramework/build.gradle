@@ -1,15 +1,8 @@
 import java.util.concurrent.TimeUnit
 
 group 'edu.cmu.inmind.multiuser.framework'
-//version '2.0.1'
+project.ext.set("muf_version", '3.0-rc1-test-oscar')
 
-//group 'edu.cmu.inmind.multiuser'
-
-project.ext.set("muf_version", '3.0-rc1')
-
-ext {
-    mufVersion = '3.0-rc1'
-}
 version "$project.muf_version"
 
 
@@ -58,7 +51,7 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     compile group: 'org.awaitility', name: 'awaitility', version: '3.0.0'
     compile project(':client')
-//    compile ("edu.cmu.inmind.framework.multiuser:client:$project.muf_version:all") { transitive= true}
+    //compile ("edu.cmu.inmind.framework.multiuser:client:$project.muf_version:all") { transitive= true}
     deployerJars 'org.apache.maven.wagon:wagon-ssh:2.9'
 }
 

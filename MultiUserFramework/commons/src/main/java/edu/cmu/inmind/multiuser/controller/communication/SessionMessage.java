@@ -12,9 +12,15 @@ public class SessionMessage {
     private String payload = "";
     private String messageId;
 
+    public SessionMessage(String requestType) {
+        this.requestType = requestType;
+        if( requestType.equals(Constants.SESSION_CLOSED) ){
+            messageId = requestType;
+        }
+    }
+
     public SessionMessage(String messageId, String payload, String sessionId) {
-        this.messageId = messageId;
-        this.payload = payload;
+        this(messageId, payload);
         this.sessionId = sessionId;
     }
 
@@ -32,13 +38,6 @@ public class SessionMessage {
 
     public void setMessageId(String messageId) {
         this.messageId = messageId;
-    }
-
-    public SessionMessage(String requestType) {
-        this.requestType = requestType;
-        if( requestType.equals(Constants.SESSION_CLOSED) ){
-            messageId = requestType;
-        }
     }
 
     public String getRequestType() {
