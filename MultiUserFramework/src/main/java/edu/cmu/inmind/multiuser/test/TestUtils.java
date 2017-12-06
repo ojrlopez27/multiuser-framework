@@ -44,7 +44,7 @@ public class TestUtils {
                 .setSessionManagerPort(port)
                 .setDefaultNumOfPoolInstances(10)
                 // or you can refer to values in your config.properties file:
-                .setPathLogs(Utils.getProperty("pathLogs"))
+                .setPathLogs(Utils.getProperty("pathLogs", "/logs"))
                 .setSessionTimeout(5, TimeUnit.MINUTES)
                 .setServerAddress(serverAddress)
 //                .setJsonServicesConfig("services.json")

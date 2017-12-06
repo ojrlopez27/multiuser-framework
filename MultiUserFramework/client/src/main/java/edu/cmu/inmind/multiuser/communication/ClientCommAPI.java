@@ -79,14 +79,23 @@ public class ClientCommAPI implements DestroyableCallback {
                     canUseSocket.getAndSet(true);
 
                     // Don't try to handle errors, just assert noisily
-                    assert (msg.size() >= 4);
+                    //assert (msg.size() >= 4)
+                    if(msg.size() < 4){
+                        return null;
+                    }
 
                     ZFrame empty = msg.pop();
-                    assert (empty.getData().length == 0);
+                    //assert (empty.getData().length == 0)
+                    if(empty.getData().length != 0){
+                        return null;
+                    }
                     empty.destroy();
 
                     ZFrame header = msg.pop();
-                    assert (MDP.C_CLIENT.toString().equals(header.toString())) : header.toString() + " vs. " + MDP.C_CLIENT;
+                    //assert (MDP.C_CLIENT.toString().equals(header.toString())) : header.toString() + " vs. " + MDP.C_CLIENT;
+                    if( !MDP.C_CLIENT.toString().equals(header.toString()) ){
+                        return null;
+                    }
                     header.destroy();
 
                     ZFrame replyService = msg.pop();
@@ -156,10 +165,10 @@ public class ClientCommAPI implements DestroyableCallback {
         if( !isDestroyed.getAndSet(true) ) {
             checkAndSleep();
             ctx = null;
-            ResourceLocator.setIamDone( this );
             Log4J.info(this, "Gracefully destroying...");
-            if(callback != null) callback.destroyInCascade( this );
         }
+        ResourceLocator.setIamDone(this);
+        if(callback != null) callback.destroyInCascade( this );
         canUseSocket.getAndSet(true);
     }
 
