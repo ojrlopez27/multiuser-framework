@@ -97,8 +97,12 @@ public class BlackboardImpl implements Blackboard {
     }
 
     @Override
-    public void post(BlackboardListener sender, String key, Object element) throws Throwable{
-        post( sender, key, element, true );
+    public void post(BlackboardListener sender, String key, Object element){
+        try {
+            post(sender, key, element, true);
+        }catch (Throwable e){
+            e.printStackTrace();
+        }
     }
 
     private void post(BlackboardListener sender, String key, Object element, boolean shouldClone) throws Throwable{
