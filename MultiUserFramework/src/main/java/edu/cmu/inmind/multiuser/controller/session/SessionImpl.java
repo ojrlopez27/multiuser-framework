@@ -189,7 +189,7 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
         try {
             initialize();
             while (!status.equals(Constants.SESSION_CLOSED) && !Thread.currentThread().isInterrupted()) {
-                if( sessionCommController != null ) { //sessionCommController is null when not using TCP
+                if (sessionCommController != null) { //sessionCommController is null when not using TCP
                     ZMsgWrapper request = sessionCommController.receive(replyMsg.getMsg());
                     if (request == null) {
                         break; //Interrupted
@@ -198,10 +198,10 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
                     String message = replyMsg.getMsg().peekLast().toString();
                     stopTimer();
                     if (message.contains(Constants.REQUEST_DISCONNECT)) {
-                           status = Constants.SESSION_CLOSED;
+                        status = Constants.SESSION_CLOSED;
                     } else {
-                        if( orchestrator != null ) {
-                            if( useAutomaticAck || !message.contains(Constants.ACK) ) {
+                        if (orchestrator != null) {
+                            if (useAutomaticAck || !message.contains(Constants.ACK)) {
                                 orchestrator.process(message);
                                 Log4J.info(this, message.toString());
                             }
@@ -210,9 +210,9 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
                         }
                     }
                 }
-            }
-            if( status.equals(Constants.SESSION_CLOSED )){
-                close( null );
+                if (status.equals(Constants.SESSION_CLOSED)) {
+                    close(null);
+                }
             }
         }catch (Throwable e){
             ExceptionHandler.handle(e);

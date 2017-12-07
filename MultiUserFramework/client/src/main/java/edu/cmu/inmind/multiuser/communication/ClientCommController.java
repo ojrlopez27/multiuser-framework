@@ -42,6 +42,8 @@ public class ClientCommController implements ClientController, DestroyableCallba
     private ResponseTimer timer;
     private CopyOnWriteArrayList<Object> closeableObjects;
     private ZContext ctx;
+    private boolean useAutomaticAck = Utils.getProperty("session.receive.automatic.ack", false);
+
 
     private AtomicBoolean isDestroyed = new AtomicBoolean(false);
     private AtomicBoolean isConnected = new AtomicBoolean(false);
