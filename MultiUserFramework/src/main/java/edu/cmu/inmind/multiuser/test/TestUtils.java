@@ -53,4 +53,21 @@ public class TestUtils {
                 .setNumOfSockets(1)
                 .build();
     }
+
+    public static Config createConfigWithServices(String serverAddress, int port) {
+        return new Config.Builder()
+                // you can add values directly like this:
+                .setSessionManagerPort(port)
+                .setDefaultNumOfPoolInstances(10)
+                // or you can refer to values in your config.properties file:
+                .setPathLogs(Utils.getProperty("pathLogs", "/logs"))
+                .setSessionTimeout(5, TimeUnit.MINUTES)
+                .setServerAddress(serverAddress)
+//                .setJsonServicesConfig("services.json")
+                .setExceptionTraceLevel(Constants.SHOW_ALL_EXCEPTIONS)
+                .setCorePoolSize(1000)
+                .setNumOfSockets(1)
+                .build()
+                .setJsonServicesConfig("services.json");
+    }
 }
