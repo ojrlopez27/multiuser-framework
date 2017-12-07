@@ -204,6 +204,7 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
                             if( useAutomaticAck || !message.contains(Constants.ACK) ) {
                                 orchestrator.process(message);
                                 Log4J.info(this, message.toString());
+                            }
                         }else{
                             Log4J.error(this, "Orchestrator is null");
                         }

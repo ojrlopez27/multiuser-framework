@@ -32,6 +32,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
     private String sessionId;
     private String sessionManagerService;
     private String serverAddress;
+    private final boolean sendAck;
     @Deprecated
     private String clientAddress;
     private String requestType;
@@ -83,6 +84,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
         this.shouldProcessReply = builder.shouldProcessReply;
         this.responseListener = builder.responseListener;
         this.sessionManagerService = builder.sessionManagerService;
+        this.sendAck = builder.sendAck;
         this.ctx = ResourceLocator.getContext( this );
         this.callbacks = new ArrayList<>();
         //  Bind to inproc: endpoint, then start upstream thread
@@ -122,6 +124,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
         private boolean shouldProcessReply = true;
         private ResponseListener responseListener;
         private String sessionManagerService = Constants.SESSION_MANAGER_SERVICE;
+        private boolean sendAck;
 
         public ClientCommController build(){
             return new ClientCommController( this);
@@ -185,6 +188,11 @@ public class ClientCommController implements ClientController, DestroyableCallba
 
         public Builder setSessionId(String sessionId) {
             this.sessionId = sessionId;
+            return this;
+        }
+
+        public Builder setSendAck(boolean sendAck) {
+            this.sendAck = sendAck;
             return this;
         }
     }
@@ -526,7 +534,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
                             if (shouldProcessReply) {
                                 Log4J.track(this, "34:" + response);
                                 responseListener.process(response);
-                                send(sessionId, new SessionMessage(Constants.ACK));
+                                if( sendAck ) send(sessionId, new SessionMessage(Constants.ACK));
                             } else {
                                 shouldProcessReply = true;
                             }
