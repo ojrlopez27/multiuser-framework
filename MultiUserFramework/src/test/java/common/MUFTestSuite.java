@@ -229,7 +229,7 @@ public class MUFTestSuite {
 
     @Test
     public void testOneClientsWithTCP_RemoteServiceReconection() throws Throwable{
-        runClientWithRemoteServiceComponent( true, 2, "client-session-1");
+        runClientWithRemoteServiceComponentReconnect( true, 2, "client-session-1");
     }
 
     private void runClientWithRemoteServiceComponentReconnect(boolean isTCPon, int i, String... sessionIds) throws Throwable{
