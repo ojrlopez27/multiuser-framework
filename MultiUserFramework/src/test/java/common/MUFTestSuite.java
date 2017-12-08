@@ -39,6 +39,7 @@ public class MUFTestSuite {
     HashMap<String, ProcessResponse> responseListenerHashMap = new HashMap<>();
     ClientCommController clientCommController ;
     ProcessResponse processResponse = null;
+    int j= 0;
 
     /**
      * It tests whether MUF starts and stops correctly. No sessions are created.
@@ -161,8 +162,14 @@ public class MUFTestSuite {
 
     @Test
     public void testTwoClientsWithTCP_RemoteService() throws Throwable{
-        runClientWithRemoteServiceComponent( true, 4, "client-session-1", "client-session-2");
+        runClientWithRemoteServiceComponent( true, 3, "client-session-1", "client-session-2");
     }
+
+    @Test
+    public void testOneClientsWithTCP_RemoteService() throws Throwable{
+        runClientWithRemoteServiceComponent( true, 2, "client-session-1");
+    }
+
     private void runClientWithRemoteServiceComponent(boolean isTCPon, int i, String... sessionIds) throws Throwable{
         AtomicInteger countConnected = new AtomicInteger(0);
         AtomicBoolean allConnected = new AtomicBoolean(false);
@@ -197,15 +204,113 @@ public class MUFTestSuite {
             responseListenerHashMap.put(sessionId, processResponse);
         }
 
+        int size = clientCommControllerHashMap.size();
 
-        await().atMost(timeout, TimeUnit.MILLISECONDS).until( () -> ((ProcessResponse)responseListenerHashMap.values().toArray()[0]).allConnected.get() );
-        await().atMost(timeout, TimeUnit.MILLISECONDS).until( () -> ((ProcessResponse)responseListenerHashMap.values().toArray()[1]).allConnected.get() );
+        for(j=0;j<size;j++) {
+            await().atMost(timeout, TimeUnit.MILLISECONDS).until(() -> ((ProcessResponse) responseListenerHashMap.values().toArray()[j]).allConnected.get());
+        }
 
         for(String sessionId : sessionIds){
             SessionMessage message = new SessionMessage( messageId1, "Message from client : " + uniqueMsgId, sessionId );
             clientCommControllerHashMap.get(sessionId).send(sessionId, message);
         }
         Utils.sleep( delay * 2 );
+        for(String sessionId : sessionIds){
+            SessionMessage message = new SessionMessage( messageId1, "Message from client : " + uniqueMsgId, sessionId );
+            clientCommControllerHashMap.get(sessionId).disconnect(sessionId);
+        }
+
+        Utils.sleep( delay * 2 );
+
+        await().untilTrue( new AtomicBoolean( checkAsyncCall));
+
+        MUFLifetimeManager.stopFramework( muf );
+    }
+
+    @Test
+    public void testOneClientsWithTCP_RemoteServiceReconection() throws Throwable{
+        runClientWithRemoteServiceComponent( true, 2, "client-session-1");
+    }
+
+    private void runClientWithRemoteServiceComponentReconnect(boolean isTCPon, int i, String... sessionIds) throws Throwable{
+        AtomicInteger countConnected = new AtomicInteger(0);
+        AtomicBoolean allConnected = new AtomicBoolean(false);
+        long timeout = 1000 * 10; // ten seconds
+        String messageId1 = "MSG_INITIAL_REQUEST", messageId2 = "MSG_COMPONENT_1",
+                messageId3 = "MSG_SEND_RESPONSE";
+        long uniqueMsgId = System.currentTimeMillis();
+        checkAsyncCall = false;
+        // let's add some dynamic subcriptions to the orchestrator
+        Utils.addOrChangeAnnotation(TestOrchestrator.class.getAnnotation(BlackboardSubscription.class), "messages",
+                new String[]{ messageId1, messageId3 });
+        Utils.addOrChangeAnnotation(TestPluggableComponent.class.getAnnotation(BlackboardSubscription.class), "messages",
+                new String[]{ messageId2 });
+        // creates a MUF and set TCP to on or off
+        MultiuserController muf = MUFLifetimeManager.startFramework(
+                TestUtils.getModules(TestOrchestrator.class ),
+                TestUtils.createConfigWithServices( serverAddress, ports[i] ).setTCPon( isTCPon ) );
+        assertNotNull(muf);
+        Utils.sleep(delay); //give some time to initialize the MUF
+        // let's create a client that sends messages to MUF
+        for(String sessionId : sessionIds ) {
+            processResponse = new ProcessResponse(countConnected, allConnected, sessionIds.length, sessionId);
+            clientCommController = new ClientCommController.Builder()
+                    .setServerAddress(serverAddress + ports[i])
+                    .setSessionId(sessionId)
+                    .setRequestType(Constants.REQUEST_CONNECT)
+                    .setTCPon(isTCPon)
+                    .setResponseListener( processResponse )
+                    .setShouldProcessReply(true)
+                    .build();
+            clientCommControllerHashMap.put(sessionId, clientCommController);
+            responseListenerHashMap.put(sessionId, processResponse);
+        }
+
+        int size = clientCommControllerHashMap.size();
+
+        for(j=0;j<size;j++) {
+            await().atMost(timeout, TimeUnit.MILLISECONDS).until(() -> ((ProcessResponse) responseListenerHashMap.values().toArray()[j]).allConnected.get());
+        }
+
+        for(String sessionId : sessionIds){
+            SessionMessage message = new SessionMessage( messageId1, "Message from client : " + uniqueMsgId, sessionId );
+            clientCommControllerHashMap.get(sessionId).send(sessionId, message);
+        }
+        Utils.sleep( delay * 2 );
+        for(String sessionId : sessionIds){
+            SessionMessage message = new SessionMessage( messageId1, "Message from client : " + uniqueMsgId, sessionId );
+            clientCommControllerHashMap.get(sessionId).disconnect(sessionId);
+        }
+        Utils.sleep( delay * 10 );
+
+        clientCommControllerHashMap.clear();
+        responseListenerHashMap.clear();
+        for(String sessionId : sessionIds ) {
+            processResponse = new ProcessResponse(countConnected, allConnected, sessionIds.length, sessionId);
+            clientCommController = new ClientCommController.Builder()
+                    .setServerAddress(serverAddress + ports[i])
+                    .setSessionId(sessionId)
+                    .setRequestType(Constants.REQUEST_CONNECT)
+                    .setTCPon(isTCPon)
+                    .setResponseListener( processResponse )
+                    .setShouldProcessReply(true)
+                    .build();
+            clientCommControllerHashMap.put(sessionId, clientCommController);
+            responseListenerHashMap.put(sessionId, processResponse);
+        }
+        size = clientCommControllerHashMap.size();
+
+        for(j=0;j<size;j++) {
+            await().atMost(timeout, TimeUnit.MILLISECONDS).until(() -> ((ProcessResponse) responseListenerHashMap.values().toArray()[j]).allConnected.get());
+        }
+        Utils.sleep( delay * 2 );
+
+        for(String sessionId : sessionIds){
+            SessionMessage message = new SessionMessage( messageId1, "Message from client : " + uniqueMsgId, sessionId );
+            clientCommControllerHashMap.get(sessionId).send(sessionId, message);
+        }
+        Utils.sleep( delay * 2 );
+
         await().untilTrue( new AtomicBoolean( checkAsyncCall));
 
         MUFLifetimeManager.stopFramework( muf );
@@ -266,7 +371,7 @@ public class MUFTestSuite {
                     //assertEquals("Response from MUF : " + uniqueMsgId, sessionMessage.getPayload());
                 }
                 //client.send(sessionId, new SessionMessage(Constants.REQUEST_DISCONNECT, "" + uniqueMsgId, sessionId));
-                clientCommController.disconnect(sessionId);
+
                 Log4J.info(ResponseListener.class, "1. expected and received messages are the same");
                 MUFTestSuite.checkAsyncCall = true;
             } catch (Throwable e) {
