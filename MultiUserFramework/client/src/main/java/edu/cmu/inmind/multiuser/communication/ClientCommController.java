@@ -42,8 +42,6 @@ public class ClientCommController implements ClientController, DestroyableCallba
     private ResponseTimer timer;
     private CopyOnWriteArrayList<Object> closeableObjects;
     private ZContext ctx;
-    private boolean useAutomaticAck = Utils.getProperty("session.receive.automatic.ack", false);
-
 
     private AtomicBoolean isDestroyed = new AtomicBoolean(false);
     private AtomicBoolean isConnected = new AtomicBoolean(false);
@@ -312,6 +310,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
         closeableObjects.remove(destroyedObj);
         if( !isDestroyed.get() ){
             if (closeableObjects.isEmpty()) {
+                ctx.destroySocket(clientSocket);
                 sessionMngrCommAPI = null;
                 sessionCommAPI = null;
                 ctx = null;
@@ -459,6 +458,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
             this.callback = callback;
             stop.getAndSet(true);
             senderSocket.setLinger(0);
+            context.destroySocket(senderSocket);
             Thread.currentThread().interrupt();
             destroyInCascade(this);
         }

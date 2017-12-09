@@ -167,7 +167,7 @@ public class MUFTestSuite {
 
     @Test
     public void testOneClientsWithTCP_RemoteService() throws Throwable{
-        runClientWithRemoteServiceComponent( true, 2, "client-session-1");
+        runClientWithRemoteServiceComponent( true, 2, "client-session-123");
     }
 
     private void runClientWithRemoteServiceComponent(boolean isTCPon, int i, String... sessionIds) throws Throwable{
@@ -202,6 +202,7 @@ public class MUFTestSuite {
                     .build();
             clientCommControllerHashMap.put(sessionId, clientCommController);
             responseListenerHashMap.put(sessionId, processResponse);
+            Utils.sleep(1000);
         }
 
         int size = clientCommControllerHashMap.size();
