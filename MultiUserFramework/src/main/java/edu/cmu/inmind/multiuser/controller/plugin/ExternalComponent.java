@@ -45,6 +45,16 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
     }
 
     @Override
+    public void startUp(){
+        super.startUp();
+        Log4J.info(this, "ExternalComponent: startup has finished for service.");
+    }
+
+    @Override
+    public void postCreate() {
+
+    }
+    @Override
     public void execute() {
     }
 
