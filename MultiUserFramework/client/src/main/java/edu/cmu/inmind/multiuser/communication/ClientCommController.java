@@ -245,16 +245,16 @@ public class ClientCommController implements ClientController, DestroyableCallba
                 sessionMessage.setRequestType(requestType);
                 //sessionMessage.setUrl(clientAddress);
                 sessionMessage.setPayload(Arrays.toString(subscriptionMessages));
-                timer.schedule(new ResponseCheck(), timeout);
                 Utils.setAtom( stop, !sendToBroker( sessionManagerService, Utils.toJson(sessionMessage)) );
                 if (!stop.get()) {
+                    timer.schedule(new ResponseCheck(), timeout);
                     String replyString = receive(sessionMngrCommAPI);
+                    timer.stopTimer();
                     if( replyString.equals(STOP_FLAG) ){
                         stop.getAndSet(true);
                     }else{
                         SessionMessage reply = Utils.fromJson(replyString, SessionMessage.class);
                         if (reply != null) {
-                            timer.stopTimer();
                             if (reply.getRequestType().equals(Constants.RESPONSE_ALREADY_CONNECTED)
                                     || reply.getRequestType().equals(Constants.RESPONSE_NOT_VALID_OPERATION)
                                     || reply.getRequestType().equals(Constants.RESPONSE_UNKNOWN_SESSION)) {

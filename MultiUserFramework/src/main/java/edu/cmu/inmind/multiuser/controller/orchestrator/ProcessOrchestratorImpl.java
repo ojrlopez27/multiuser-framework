@@ -81,8 +81,12 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
         return new ArrayList<>(components);
     }
 
-    public <T extends Pluggable> T get(Class<T> clazz){
+    @Override
+    public <T extends Pluggable> T get(Class<T> clazz) throws Exception{
         try {
+            if( components == null || components.isEmpty() ){
+                throw new MultiuserException(ErrorMessages.COMPONENTS_NULL, sessionId );
+            }
             String className = clazz.getName();
             for (Pluggable component : components) {
                 if (component.getClass().getName().contains(className)) {
@@ -94,6 +98,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
         }
         return null;
     }
+
 
     @Override
     public void addBlackboard(String sessionId, Blackboard blackboard){

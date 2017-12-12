@@ -391,14 +391,16 @@ public class ResourceLocator {
         sessions.put( session.getId(), session );
     }
 
-    public static Pluggable getComponent(String sessionId, Class componentClass){
+    public static Pluggable getComponent(String sessionId, Class<? extends Pluggable> componentClass) throws Exception{
         Session session = sessions.get(sessionId);
-        List<Pluggable> components  = session.getOrchestrator().getComponents();
-        for( Pluggable pluggable : components ){
-            if( pluggable.getClass().getName().equals( componentClass.getName() ) ){
-                return pluggable;
-            }
+        if( session == null ){
+            throw new MultiuserException(ErrorMessages.SESSION_NOT_EXIST, sessionId );
         }
-        return null;
+        Pluggable component = session.getOrchestrator().get(componentClass);
+        if( component != null ){
+            return component;
+        }else{
+            throw new MultiuserException(ErrorMessages.COMPONENT_NOT_IN_SESSION, componentClass, sessionId );
+        }
     }
 }

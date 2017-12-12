@@ -64,4 +64,6 @@ public class ErrorMessages {
             "message when you just receive a SESSION_INITIATED message. You can only send messages when the message received " +
             "is different from SESSION_INITIATED (if sending from inside ResponseListener) or when you do it outside the " +
             "ResponseListener.process().";
+    public static final String SESSION_NOT_EXIST = "The provided session id (%s) does not correspond to any existing session.";
+    public static final String COMPONENT_NOT_IN_SESSION = "There is no component of type: %s on session with id: %s.";
 }
