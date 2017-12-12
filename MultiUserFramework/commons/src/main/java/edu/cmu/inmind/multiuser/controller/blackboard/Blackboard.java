@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public interface Blackboard {
     SynchronizableEvent getSyncEvent(Pluggable component);
-    void post(BlackboardListener sender, String key, Object element) throws Throwable;
+    void post(BlackboardListener sender, String key, Object element);
     void setShouldThrowException(boolean shouldThrowException);
     void setComponents(Set<Pluggable> components, String sessionId) throws Throwable;
     void setKeepModel(boolean keepModel);

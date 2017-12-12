@@ -1,12 +1,25 @@
 {
   "services": [
-    {
+   // {
 //      "serviceName": "NLU_SERVICE",
 //      "slaveMUFAddress": "tcp://127.0.0.1:5580",
 //      "msgSubscriptions": [
 //        "MSG_ASR",
 //        "MSG_TR"
 //      ]
+   // },
+
+    {
+      "serviceName": "NLU_DM_SERVICE",
+      "__comment" : "set this address to where your python-dialogue manager lives.",
+      "masterMUFAddress": "tcp://34.203.160.208:5660",
+      "slaveMUFAddress": "tcp://34.203.160.208:5660",
+      "msgSubscriptions": [
+        "MSG_START_DM_PYTHON",
+        "MSG_USER_FRAME",
+        "MSG_ASR_DM",
+        "MSG_QUERY"
+      ]
     }
   ]
 }

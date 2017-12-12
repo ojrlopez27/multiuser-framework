@@ -12,7 +12,7 @@ import edu.cmu.inmind.multiuser.controller.plugin.StateType;
  * Created by oscarr on 6/27/17.
  */
 @BlackboardSubscription( messages = "" )
-@StateType( state = Constants.STATELESS )
+@StateType( state = Constants.STATEFULL )
 public class TestPluggableComponent  extends PluggableComponent {
 
     @Override
