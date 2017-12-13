@@ -294,6 +294,7 @@ public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionO
         String key = request.getSessionId();
         Log4J.info(this, "Creating session: " + key);
         SessionImpl session = DependencyManager.getInstance().getComponent(SessionImpl.class);
+        ResourceLocator.addSession(session);
         session.onClose(this);
         session.setConfig( config );
         session.setId(key, msgRequest, address);
