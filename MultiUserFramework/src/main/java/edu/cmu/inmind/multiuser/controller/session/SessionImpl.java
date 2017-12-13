@@ -104,9 +104,9 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
                 this.sessionCommController = new ServerCommController(fullAddress, id, msg);
                 closeableObjects.add( sessionCommController );
             }
-            Utils.execute(this);
         }
         this.id = id;
+        Utils.execute(this);
     }
 
     public List<Pluggable> getComponents(){
