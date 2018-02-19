@@ -1,13 +1,13 @@
 package edu.cmu.inmind.multiuser.dialogue;
 
-import edu.cmu.inmind.multiuser.common.Constants;
 import edu.cmu.inmind.multiuser.common.SaraCons;
-import edu.cmu.inmind.multiuser.common.Utils;
-import edu.cmu.inmind.multiuser.controller.MultiuserFramework;
-import edu.cmu.inmind.multiuser.controller.MultiuserFrameworkContainer;
+import edu.cmu.inmind.multiuser.controller.common.Constants;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ServiceInfo;
 import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
+import edu.cmu.inmind.multiuser.controller.muf.MUFLifetimeManager;
+import edu.cmu.inmind.multiuser.controller.muf.MultiuserController;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.dialogue.components.NLUComponent;
@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 public class MainClass {
     private static String saraServerAddress = Utils.getProperty("saraServerAddress");
     private static String dialogueAddress = Utils.getProperty("dialogueAddress");
-    private static MultiuserFramework muf;
+    private static MultiuserController muf;
     public static boolean isMasterMUFCallingMe = true;
     public static boolean usePythonDialogue = false;
 
@@ -30,13 +30,13 @@ public class MainClass {
      * This method controls the whole app. If shutdown is entered, it will completely stop the system.
      */
     public static void main(String args[]) throws Throwable{
-        muf = MultiuserFrameworkContainer.startFramework(createModules(), createConfig(),
+        muf = MUFLifetimeManager.startFramework(createModules(), createConfig(),
                 isMasterMUFCallingMe? null : createServiceInfo() );
 
         // just in case you force the system to close or an unexpected error happen.
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
-                MultiuserFrameworkContainer.stopFramework(muf);
+                MUFLifetimeManager.stopFramework(muf);
 
             }
         });
@@ -47,7 +47,7 @@ public class MainClass {
             Scanner scanner = new Scanner(System.in);
             command = scanner.nextLine();
             if( command.equals( SaraCons.SHUTDOWN ) ){
-                MultiuserFrameworkContainer.stopFramework(muf);
+                MUFLifetimeManager.stopFramework(muf);
             }
         }
     }
