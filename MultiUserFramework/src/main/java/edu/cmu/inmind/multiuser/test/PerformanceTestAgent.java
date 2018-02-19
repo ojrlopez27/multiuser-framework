@@ -55,7 +55,6 @@ public class PerformanceTestAgent implements Utils.NamedRunnable {
         ccc = new ClientCommController.Builder()
                 .setServerAddress(url + ":" + port)
                 .setServiceName( agentId )
-                .setClientAddress(url + ":" + port)
                 .setRequestType(Constants.REQUEST_CONNECT)
                 .setResponseListener(new AgentResponseListener())
                 .build();
