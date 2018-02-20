@@ -408,6 +408,7 @@ public class Utils {
     }
 
     public static <T> T cast(T type, String value){
+        if(value == null) return type;
         if( type instanceof Boolean ) return (T)Boolean.valueOf(value);
         if( type instanceof Integer ) return (T)Integer.valueOf(value);
         if( type instanceof Short ) return (T)Short.valueOf(value);
