@@ -292,12 +292,14 @@ public class ClientCommController implements ClientController, DestroyableCallba
         try {
             Log4J.info(ClientCommController.this, "Closing ClientCommController...");
             stop.getAndSet(true);
-            timer.cancel();
-            timer.purge();
-            sessionMngrCommAPI.close(this);
-            sessionCommAPI.close(this);
-            sendThread.close(this);
-            receiveThread.close(this);
+            if( timer != null ){
+                timer.cancel();
+                timer.purge();
+            }
+            if(sessionMngrCommAPI != null) sessionMngrCommAPI.close(this);
+            if(sessionCommAPI != null) sessionCommAPI.close(this);
+            if(sendThread != null) sendThread.close(this);
+            if(receiveThread != null) receiveThread.close(this);
         }catch (Throwable e) {
             ExceptionHandler.handle(e);
         }
