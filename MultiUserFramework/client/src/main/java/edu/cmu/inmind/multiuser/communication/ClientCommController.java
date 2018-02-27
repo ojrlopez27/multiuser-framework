@@ -261,7 +261,10 @@ public class ClientCommController implements ClientController, DestroyableCallba
                                 throw new Exception(reply.getRequestType());
                             } else {
                                 if (reply.getRequestType().equals(Constants.SESSION_INITIATED)) {
-                                    if( reply.getPayload() != null && Utils.isURLvalid( reply.getPayload() )) {
+
+                                    if(reply.getPayload() != null && Constants.NO_SESSION.equals(reply.getPayload()) ){
+                                        this.sessionCommAPI = sessionMngrCommAPI;
+                                    }else if( reply.getPayload() != null && Utils.isURLvalid( reply.getPayload() )) {
                                         this.sessionCommAPI = new ClientCommAPI(reply.getPayload());
                                     }else{
                                         this.sessionCommAPI = new ClientCommAPI( sessionMngrCommAPI.getBroker() );

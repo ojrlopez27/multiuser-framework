@@ -69,4 +69,5 @@ public class Constants {
      * pool of instances) **/
     public static final String POOL = "POOL";
 
+    public static final String NO_SESSION = "NO_SESSION";
 }
