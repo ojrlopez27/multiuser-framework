@@ -46,6 +46,7 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
     private ServerCommController sessionCommController;
     /** we use this controller to communicate back with the client when TCP is off **/
     private ClientController client;
+    private List<Object> postCreationList;
 
     public SessionImpl() {
         if(useSessionTimeout) this.timer = new InactivityTimer();
@@ -80,6 +81,15 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
     @Override
     public ProcessOrchestrator getOrchestrator() {
         return orchestrator;
+    }
+
+    @Override
+    public List<Object> getPostCreationList() {
+        return postCreationList;
+    }
+
+    public void setPostCreationList(List<Object> postCreationList) {
+        this.postCreationList = postCreationList;
     }
 
     public void setClient(ClientController client) {

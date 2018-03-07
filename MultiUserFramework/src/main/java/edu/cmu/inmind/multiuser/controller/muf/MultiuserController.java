@@ -150,4 +150,11 @@ public class MultiuserController implements DestroyableCallback {
         ResourceLocator.setIamDone( this );
         Log4J.info(this, "Gracefully destroying...");
     }
+
+
+    public void addPostCreate(Object postCreationObj){
+        if( sessionManager != null ){
+            sessionManager.addPostCreate(postCreationObj);
+        }
+    }
 }

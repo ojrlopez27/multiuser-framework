@@ -16,6 +16,8 @@ import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.zeromq.ZMsg;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -49,6 +51,7 @@ public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionO
     private String fullAddress;
     private AtomicBoolean stopped = new AtomicBoolean(false);
     private AtomicBoolean isDestroyed = new AtomicBoolean(false);
+    private List<Object> postCreationList;
 
 
     public SessionManager(PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws Throwable{
@@ -294,6 +297,7 @@ public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionO
         String key = request.getSessionId();
         Log4J.info(this, "Creating session: " + key);
         SessionImpl session = DependencyManager.getInstance().getComponent(SessionImpl.class);
+        session.setPostCreationList(postCreationList);
         session.onClose(this);
         session.setConfig( config );
         session.setId(key, msgRequest, address);
@@ -416,5 +420,12 @@ public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionO
             Log4J.info(this, "Gracefully destroying...");
             Log4J.info(this, "Session Manager stopped. Bye bye!");
         }
+    }
+
+    public void addPostCreate(Object postCreationObj) {
+        if( postCreationList == null ){
+            postCreationList = new ArrayList<>();
+        }
+        postCreationList.add(postCreationObj);
     }
 }

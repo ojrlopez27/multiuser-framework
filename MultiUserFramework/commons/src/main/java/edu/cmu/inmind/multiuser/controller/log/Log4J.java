@@ -13,16 +13,16 @@ import org.apache.logging.log4j.Logger;
  * Created by oscarr on 3/21/17.
  */
 public class Log4J{
-    private static boolean turnedOn = true;
+    protected static boolean turnedOn = true;
     /**
      * We use this custom level to log messages related to tracking/monitoring messages
      * that are sent from ClientCommController to a Session and back to it. The intValue
      * of 700 means that it is lower than TRACE level.
      */
-    private final static Level TRACK = Level.forName("TRACK", 700);
+    protected final static Level TRACK = Level.forName("TRACK", 700);
 
 
-    private static String getSessionId(Object caller){
+    protected static String getSessionId(Object caller){
         String sessionId = null;
         try {
             if (caller instanceof ProcessOrchestrator) {
@@ -36,7 +36,7 @@ public class Log4J{
         return sessionId;
     }
 
-    private static String getSessionAndMsg(String sessionId, String message){
+    protected static String getSessionAndMsg(String sessionId, String message){
         return String.format( "%s\t%s", sessionId, message );
     }
 
@@ -130,7 +130,7 @@ public class Log4J{
         if( turnedOn ) getLogger(caller).log( TRACK, getSessionAndMsg(sessionId, message ));
     }
 
-    private static Logger getLogger(Object caller) {
+    protected static Logger getLogger(Object caller) {
         try {
             String logName = "";
             org.apache.logging.log4j.Logger logger = null;

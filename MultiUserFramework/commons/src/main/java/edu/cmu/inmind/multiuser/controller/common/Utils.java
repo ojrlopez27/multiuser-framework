@@ -488,9 +488,13 @@ public class Utils {
                 if( segment.contains(":") ){
                     segment = segment.split(":")[0];
                 }
-                int seg = Integer.valueOf(segment);
-                if( seg < 0 || seg > 255 ){
-                    return false;
+                try {
+                    int seg = Integer.valueOf(segment);
+                    if (seg < 0 || seg > 255) {
+                        return false;
+                    }
+                }catch (Exception ne){
+                    //do nothing and continue
                 }
             }
             return true;

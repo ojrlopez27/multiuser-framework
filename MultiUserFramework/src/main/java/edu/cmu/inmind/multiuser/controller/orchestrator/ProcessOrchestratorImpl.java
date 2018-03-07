@@ -11,6 +11,7 @@ import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.FileLogger;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
+import edu.cmu.inmind.multiuser.controller.muf.AfterCreationHook;
 import edu.cmu.inmind.multiuser.controller.plugin.*;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
@@ -29,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Created by oscarr on 3/10/17.
  * 
  */
-public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, DestroyableCallback {
+public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, DestroyableCallback, AfterCreationHook {
 
     @Inject Set<PluggableComponent> componentsSet;
     protected Set<Pluggable> components;
@@ -46,6 +47,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
     private Config config;
     private String fullAddress;
     private DestroyableCallback callback;
+    private List<Object> postCreationList;
 
     public ProcessOrchestratorImpl(){
         if( logger == null ){
@@ -158,6 +160,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
         this.session = session;
         this.config = session.getConfig();
         this.fullAddress = session.getFullAddress();
+        this.postCreationList = session.getPostCreationList();
         sessionId = session.getId();
         Log4J.info(this, String.format("Creating Process Orchestrator for session: %s", sessionId));
         components.addAll(componentsSet);
@@ -176,7 +179,6 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
                 ((Pluggable) pair.fst).setClientCommController( new ClientCommController.Builder()
                         .setServerAddress( ((ServiceComponent)pair.snd).getServiceURL())
                         .setServiceName(sessionId)
-                        .setClientAddress( fullAddress )
                         .setMsgTemplate( ((ServiceComponent)pair.snd).getMsgTemplate() )
                         .setRequestType( Constants.REQUEST_CONNECT )
                         .build() );
@@ -194,6 +196,13 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
         blackboard.setLogger( logger );
         initServiceManager();
         initialized.getAndSet(true);
+        postCreate();
+    }
+
+    private void postCreate() {
+        for(Object process : postCreationList ){
+            processHook( process );
+        }
     }
 
     private void addOnlyStatefullToCloseable() throws Throwable{
@@ -480,6 +489,13 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
     @Override
     public String getSessionId() throws Throwable{
         return sessionId;
+    }
+
+
+
+    /** ============================== AfterCreationHook ============================ **/
+    public void processHook(Object hook){
+        //do some processing here in the extended class
     }
 
 }
