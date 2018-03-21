@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.common;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.rits.cloning.Cloner;
 import java.io.*;
 import java.lang.annotation.Annotation;
@@ -28,7 +29,6 @@ public class Utils {
 
     private static final int DEFAULT_TIME_SPAN = 1;  //1 year
     public static final String ISO_8601_24H_FULL_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
-    public static Gson gson = new Gson();
     public static String log = "";
     //public static final String ISO_8601_24H_FULL_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
 
@@ -175,6 +175,8 @@ public class Utils {
     /************************************** JSON **************************************************/
     /**********************************************************************************************/
 
+    public static Gson gson = new Gson();
+
     public static void toJson(Object object, String name){
         PrintWriter out = null;
         try {
@@ -192,6 +194,11 @@ public class Utils {
                 e.printStackTrace();
             }
         }
+    }
+
+    public static String toPrettyJson(Object object){
+        gson = new GsonBuilder().setPrettyPrinting().create();
+        return toJson(object);
     }
 
     public static String toJson(Object object){
@@ -224,6 +231,11 @@ public class Utils {
             trimmed = true;
         }
         return trimmed? stringRepresentation.replace("\\", "") : stringRepresentation;
+    }
+
+    public static void toPrettyJsonFile(Object obj, String directory, String fileName) {
+        gson = new GsonBuilder().setPrettyPrinting().create();
+        toJsonFile(obj, directory, fileName);
     }
 
     public static void toJsonFile(Object obj, String directory, String fileName) {
