@@ -197,8 +197,13 @@ public class Utils {
     }
 
     public static String toPrettyJson(Object object){
-        gson = new GsonBuilder().setPrettyPrinting().create();
-        return toJson(object);
+        try {
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            return gson.toJson(object);
+        }catch (Throwable e){
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static String toJson(Object object){
@@ -234,11 +239,12 @@ public class Utils {
     }
 
     public static void toPrettyJsonFile(Object obj, String directory, String fileName) {
-        gson = new GsonBuilder().setPrettyPrinting().create();
-        toJsonFile(obj, directory, fileName);
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        toJsonFile(gson, obj, directory, fileName);
     }
 
-    public static void toJsonFile(Object obj, String directory, String fileName) {
+
+    private static void toJsonFile(Gson gson, Object obj, String directory, String fileName) {
         PrintWriter writer = null;
         if( obj != null ) {
             try {
@@ -258,6 +264,11 @@ public class Utils {
                 }
             }
         }
+    }
+
+
+    public static void toJsonFile(Object obj, String directory, String fileName) {
+        toJsonFile(gson, obj, directory, fileName);
     }
 
     public static <T> T fromJsonFile(String fileName, Class<T> clazz) throws Exception{

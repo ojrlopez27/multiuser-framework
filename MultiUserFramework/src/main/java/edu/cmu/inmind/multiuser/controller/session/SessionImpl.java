@@ -101,8 +101,7 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
      * @param id
      * @param msg
      */
-    @Override
-    public void setId(String id, ZMsgWrapper msg, String fullAddress) {
+    public void setId(String id, ZMsgWrapper msg, String fullAddress, boolean shouldExecute) {
         if(  id == null || id.isEmpty() || msg == null || fullAddress == null || fullAddress.isEmpty()){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "id: " + id,
                     "msg: " + msg, "fullAddress: " + fullAddress) );
@@ -116,7 +115,12 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
             }
         }
         this.id = id;
-        Utils.execute(this);
+        if(shouldExecute) Utils.execute(this);
+    }
+
+    @Override
+    public void setId(String id, ZMsgWrapper msg, String fullAddress) {
+        setId(id, msg, fullAddress, true);
     }
 
     public List<Pluggable> getComponents(){
@@ -181,7 +185,7 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
      * this method creates a new orchestrator and injects a set of pre-defined components
      * @throws Throwable
      */
-    private void initialize() throws Throwable{
+    public void initialize() throws Throwable{
         Log4J.info(this, String.format("Initializing session: %s.", id));
         orchestrator = DependencyManager.getInstance().getOrchestrator();
         orchestrator.initialize(this);
@@ -212,8 +216,7 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
                     } else {
                         if (orchestrator != null) {
                             if (useAutomaticAck || !message.contains(Constants.ACK)) {
-                                orchestrator.process(message);
-                                Log4J.info(this, message.toString());
+                                process(message);
                             }
                         }else{
                             Log4J.error(this, "Orchestrator is null");
@@ -226,6 +229,20 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
             }
         }catch (Throwable e){
             ExceptionHandler.handle(e);
+        }
+    }
+
+    /**
+     * This method has been factorized so we can call it from outside SessionImpl,
+     * specially when we are simulating the interaction with sessions and components.
+     * @param message
+     */
+    public void process(String message){
+        try {
+            orchestrator.process(message);
+            Log4J.info(this, message.toString());
+        }catch (Throwable e){
+            e.printStackTrace();
         }
     }
 
