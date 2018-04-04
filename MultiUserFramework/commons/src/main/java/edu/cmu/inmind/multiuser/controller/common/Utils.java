@@ -244,7 +244,7 @@ public class Utils {
     }
 
 
-    private static void toJsonFile(Gson gson, Object obj, String directory, String fileName) {
+    public static void toJsonFile(Gson gson, Object obj, String directory, String fileName) {
         PrintWriter writer = null;
         if( obj != null ) {
             try {
