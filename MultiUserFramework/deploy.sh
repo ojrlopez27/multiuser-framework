@@ -1,3 +1,4 @@
+#!/bin/sh
 echo "uploading commons..."
 cd commons
 gradle clean build
