@@ -1,5 +1,7 @@
 ## PROJECT-SPECIFIC
 
+logs/
+
 # Package Files #
 *.jar
 
