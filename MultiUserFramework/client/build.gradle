@@ -52,7 +52,10 @@ uploadShadow {
         mavenDeployer {
             configuration = configurations.deployerJars
             repository(url: "scp://linux.gp.cs.cmu.edu:/afs/cs/project/inmind-cmu-yahoo/www/maven2/") {
-                //http://stackoverflow.com/questions/12749225/where-to-put-gradle-configuration-i-e-credentials-that-should-not-be-committe
+                // NOTE: The properties "mavenUser" and "mavenPassword" should be set in the file "gradle.properties" in one's local Gradle home directory,
+                // not in the root directory of this project:
+                // http://stackoverflow.com/questions/12749225/where-to-put-gradle-configuration-i-e-credentials-that-should-not-be-committe
+                // TODO: Use gradle-credentials-plugin to encrypt stored password instead of using plain text: https://github.com/etiennestuder/gradle-credentials-plugin
                 authentication(userName: mavenUser, password: mavenPassword)
             }
             //deploy locally
