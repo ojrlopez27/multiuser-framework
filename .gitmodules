@@ -1,3 +1,0 @@
-[submodule "MultiUserFramework/jeromq"]
-	path = MultiUserFramework/jeromq
-	url = https://github.com/zeromq/jeromq.git
