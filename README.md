@@ -56,7 +56,7 @@ repositories{
       }
 }
 dependencies{
-  compile 'edu.cmu.inmind.framework:multiuser:2.7'
+  compile 'edu.cmu.inmind.framework:multiuser:3.0.12-rc1'
 }
 ```
 
@@ -202,5 +202,5 @@ On SaraProject, you will find 15 examples that take you through the whole set of
   - 2. Client2 will be assigned PoolComponent2
   - 3. Client3 will be assigned PoolComponent1 (this time, PoolComponent1 is shared by clients 1 and 3)
 - [**Ex15_WholePipeline:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex15_WholePipeline.java) This example illustrates the whole pipeline: AndroidClient (ASR) -> DialogueSystem (NLU) -> TaskReasoner -> SocialReasoner -> NLG -> AndroidClient. Note: this time you will have to run DialogueSystem and uncomment the second block of method DialogueSystem.MainClass.createServiceInfo, that is, the block that uses setMsgSubscriptions.
-- [**EX16_MasterCallsSlaves:**] (Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/MasterCallsSlaves.java) This example is pretty similar to EX15_Wholepipeline, however, unlike Ex15_WholePipeline, in this example the master MUF (Sara MUF) initilizes its slaves MUF's (i.e., Dialogue MUF, etc.) rather than the slaves register to the master. In order to run this example, you have to define the connection information of your slaves MUF's into the file services.json.
+- [**EX16_MasterCallsSlaves:**] (Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex16_MasterCallsSlaves.java) This example is pretty similar to EX15_Wholepipeline, however, unlike Ex15_WholePipeline, in this example the master MUF (Sara MUF) initilizes its slaves MUF's (i.e., Dialogue MUF, etc.) rather than the slaves register to the master. In order to run this example, you have to define the connection information of your slaves MUF's into the file services.json.
 
