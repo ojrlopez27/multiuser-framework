@@ -15,6 +15,7 @@ import java.util.List;
  * Created by oscarr on 4/26/18.
  */
 public class Test {
+    private static Device bobPhone, bobTablet, alicePhone, server;
 
 
     public static void main(String args[]) throws Exception{
@@ -22,28 +23,19 @@ public class Test {
         HashMap<String, Behavior> serviceMap = network.map();
 
         List<Device> devices = new ArrayList<>();
-        Device bobPhone = new PhoneDevice( "bob-phone", network ).setGPSturnedOn(false);
-        Device bobTablet = new TabletDevice( "bob-tablet",  network ).setBatteryLevel(6);
-        Device alicePhone = new PhoneDevice( "alice-phone",  network );
-        Device server = new ServerDevice("server", network);
+        bobPhone = new PhoneDevice( "bob-phone", network ).setGPSturnedOn(false);
+        bobTablet = new TabletDevice( "bob-tablet",  network ).setBatteryLevel(6);
+        alicePhone = new PhoneDevice( "alice-phone",  network );
+        server = new ServerDevice("server", network);
         devices.add( bobPhone );
         devices.add( bobTablet );
         devices.add( alicePhone );
 
-        network.setState( Arrays.asList("shopping-not-done")); //6_SND
-        network.setGoals( Arrays.asList("shopping-done")); //6_SD
+        network.setState( Arrays.asList("shopping-not-done"));
+        network.setGoals( Arrays.asList("shopping-done"));
+//        network.setGoals(Arrays.asList("bob-weather-provided"));
 
-        HashMap<Behavior, Device> deviceServiceMap = new HashMap<>();
-        for(String serviceName : serviceMap.keySet() ){
-            if(serviceName.startsWith("bob-phone"))
-                deviceServiceMap.put(serviceMap.get(serviceName), bobPhone);
-            else if(serviceName.startsWith("bob-tablet"))
-                deviceServiceMap.put(serviceMap.get(serviceName), bobTablet);
-            else if(serviceName.startsWith("alice-phone"))
-                deviceServiceMap.put(serviceMap.get(serviceName), alicePhone);
-            else if(serviceName.startsWith("server"))
-                deviceServiceMap.put(serviceMap.get(serviceName), server);
-        }
+        HashMap<Behavior, Device> deviceServiceMap = generateMap(serviceMap);
         network.endMeansAnalysis();
 
         while( !network.getGoals().isEmpty() ) {
@@ -57,5 +49,20 @@ public class Test {
             }
         }
         System.exit(0);
+    }
+
+    private static HashMap<Behavior, Device> generateMap(HashMap<String, Behavior> serviceMap) {
+        HashMap<Behavior, Device> deviceServiceMap = new HashMap<>();
+        for(String serviceName : serviceMap.keySet() ){
+            if(serviceName.startsWith("bob-phone"))
+                deviceServiceMap.put(serviceMap.get(serviceName), bobPhone);
+            else if(serviceName.startsWith("bob-tablet"))
+                deviceServiceMap.put(serviceMap.get(serviceName), bobTablet);
+            else if(serviceName.startsWith("alice-phone"))
+                deviceServiceMap.put(serviceMap.get(serviceName), alicePhone);
+            else if(serviceName.startsWith("server"))
+                deviceServiceMap.put(serviceMap.get(serviceName), server);
+        }
+        return deviceServiceMap;
     }
 }

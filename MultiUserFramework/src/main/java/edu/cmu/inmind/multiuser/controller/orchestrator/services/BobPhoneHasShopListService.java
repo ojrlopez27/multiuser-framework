@@ -9,7 +9,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Created by oscarr on 4/30/18.
  */
 public class BobPhoneHasShopListService extends Service {
-    private boolean hasShoppingList = false;
+    private boolean hasShoppingList = true;
 
     public BobPhoneHasShopListService(Behavior behavior, CopyOnWriteArrayList<String> state){
         super(behavior, state);
