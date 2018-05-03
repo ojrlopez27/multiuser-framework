@@ -1,5 +1,8 @@
 ## PROJECT-SPECIFIC
 
+.idea/
+.idea/*
+
 logs/
 
 # Package Files #

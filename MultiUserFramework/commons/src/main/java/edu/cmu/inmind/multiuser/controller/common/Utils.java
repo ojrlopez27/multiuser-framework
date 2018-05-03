@@ -11,6 +11,7 @@ import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;
@@ -649,4 +650,26 @@ public class Utils {
         if( !flag.get() && newValue )
             flag.getAndSet( true );
     }
+
+    /**********************************************************************************************/
+    /************************************** Strings ***********************************************/
+    /**********************************************************************************************/
+
+    public static String padRight(Object string, int numPositions) {
+        return String.format("%1$-" + numPositions + "s", truncDecimal(string));
+    }
+
+    public static String padLeft(Object string, int numPositions) {
+        return String.format("%1$" + numPositions + "s", truncDecimal(string));
+    }
+
+    public static Object truncDecimal(Object value){
+        if(value instanceof Float || value instanceof Double){
+            DecimalFormat df = new DecimalFormat();
+            df.setMaximumFractionDigits(3);
+            return df.format(value);
+        }
+        return value;
+    }
+
 }
