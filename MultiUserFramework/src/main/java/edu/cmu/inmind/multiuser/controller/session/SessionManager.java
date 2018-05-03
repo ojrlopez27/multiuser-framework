@@ -54,7 +54,7 @@ public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionO
     private List<Object> postCreationList;
 
 
-    public SessionManager(PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws Throwable{
+    public SessionManager(PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws MultiuserException{
         closeableObjects = new CopyOnWriteArrayList<>();
         if( modules == null || modules.length <= 0 || config == null ){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "modules: " + modules,

@@ -35,7 +35,7 @@ public class MultiuserController implements DestroyableCallback {
     private ClientCommController client;
     private List<ShutdownHook> hooks;
 
-    MultiuserController(String id, PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws Throwable{
+    MultiuserController(String id, PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws MultiuserException{
         ClassLoader.getSystemClassLoader().setPackageAssertionStatus("zmq",false);
         Utils.initThreadExecutor( config.getCorePoolSize() );
         this.id = id;

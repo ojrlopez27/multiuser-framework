@@ -27,7 +27,7 @@ public class MUFLifetimeManager {
      *                    is a slave, then provide connection information about it.
      */
     public static MultiuserController startFramework(PluginModule[] modules, Config config, ServiceInfo serviceInfo )
-            throws Throwable{
+            throws MultiuserException{
         String id = config.getServerAddress() + config.getSessionManagerPort();
         if( null != mufs.get( id ) ){
             throw new MultiuserException(ErrorMessages.FRAMEWORK_ALREADY_EXIST, id );
@@ -43,7 +43,7 @@ public class MUFLifetimeManager {
      * @param modules
      * @param config
      */
-    public static MultiuserController startFramework(PluginModule[] modules, Config config ) throws Throwable{
+    public static MultiuserController startFramework(PluginModule[] modules, Config config ) throws MultiuserException{
        return startFramework( modules, config, null);
     }
 
@@ -52,7 +52,7 @@ public class MUFLifetimeManager {
         muf.stop();
     }
 
-    public static void stopFrameworks() throws Throwable{
+    public static void stopFrameworks(){
         for (String key : mufs.keySet()) {
             mufs.remove(key).stop();
         }
