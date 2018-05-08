@@ -2,13 +2,13 @@
 
 echo "uploading commons..."
 cd commons
-gradle clean build
+gradle clean build -x test
 gradle uploadShadow
 cd ..
 
 echo "uploading client..."
 cd client
-gradle clean build
+gradle clean build -x test
 gradle uploadShadow
 cd ..
 

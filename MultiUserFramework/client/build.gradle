@@ -33,6 +33,7 @@ dependencies {
     compile project(':commons')
     //compile ("edu.cmu.inmind.framework.multiuser:commons:$project.muf_version:all") {transitive=true }
     deployerJars 'org.apache.maven.wagon:wagon-ssh:2.9'
+    compile group: 'org.awaitility', name: 'awaitility', version: '3.0.0'
 }
 
 task sourceJar(type: Jar) {
