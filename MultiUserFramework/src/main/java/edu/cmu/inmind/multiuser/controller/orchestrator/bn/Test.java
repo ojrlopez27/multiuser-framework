@@ -31,7 +31,7 @@ public class Test {
         devices.add( bobTablet );
         devices.add( alicePhone );
 
-        network.setState( Arrays.asList("shopping-not-done"));
+        network.setState( Arrays.asList("shopping-not-done", "bob-weather-required" ));
         network.setGoals( Arrays.asList("shopping-done"));
 //        network.setGoals(Arrays.asList("bob-weather-provided"));
 

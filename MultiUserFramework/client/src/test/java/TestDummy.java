@@ -22,9 +22,9 @@ public class TestDummy {
      */
     @Test
     public void testBasicSend(){
-        DummyClient dummy = new DummyClient();
-        dummy.test();
-        dummy.disconnect();
+//        DummyClient dummy = new DummyClient();
+//        dummy.test();
+//        dummy.disconnect();
     }
 
     /**
