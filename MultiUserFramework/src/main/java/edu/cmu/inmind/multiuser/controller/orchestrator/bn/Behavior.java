@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
  * @author oromero
  *
  */
-public class Behavior implements Comparable<Behavior>{ // implements BehaviorInterface{
+public class Behavior implements Comparable<Behavior>{
 	private String name;
     private String id;
 	private List<List<Premise>> preconditions = new Vector <>();
@@ -34,7 +34,6 @@ public class Behavior implements Comparable<Behavior>{ // implements BehaviorInt
 	private transient boolean verbose = false;
     private transient int numMatches;
 	private transient String stateMatches;
-	private transient int numPreconditions = -1;
     private transient double utility;
     private transient BehaviorNetwork network;
 
