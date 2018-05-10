@@ -8,6 +8,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
+import java.net.InetAddress;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -497,7 +499,7 @@ public class Utils {
 
 
     /**********************************************************************************************/
-    /************************************** VALIDATIONS *******************************************/
+    /************************************** URL         *******************************************/
     /**********************************************************************************************/
 
 
@@ -524,6 +526,30 @@ public class Utils {
             return true;
         }
         return false;
+    }
+
+
+    public static String getPublicIP(){
+        try {
+            // Returns the instance of InetAddress containing
+            // local host name and address
+            InetAddress localhost = InetAddress.getLocalHost();
+
+            // Find public IP address
+            String systemipaddress;
+            try {
+                URL url_name = new URL("http://bot.whatismyipaddress.com");
+                BufferedReader sc = new BufferedReader(new InputStreamReader(url_name.openStream()));
+                // reads system IPAddress
+                systemipaddress = sc.readLine().trim();
+            } catch (Exception e) {
+                systemipaddress = "Cannot Execute Properly";
+            }
+            return systemipaddress;
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return "";
     }
 
     /**********************************************************************************************/

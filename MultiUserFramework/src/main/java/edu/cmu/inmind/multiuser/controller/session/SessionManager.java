@@ -305,7 +305,8 @@ public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionO
         sessions.put( key, session );
         closeableObjects.add(session);
         SessionMessage sm = new SessionMessage( Constants.SESSION_INITIATED);
-        sm.setPayload(address);
+        //sm.setPayload(address);
+        sm.setPayload( String.format("tcp://%s:%s", Utils.getPublicIP(), port) );
         send( msgRequest, sm );
     }
 
