@@ -1,18 +1,13 @@
 package org.zeromq;
 
+import org.zeromq.ZMQ.Poller;
+import org.zeromq.ZMQ.Socket;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import org.zeromq.ZMQ.Poller;
-import org.zeromq.ZMQ.Socket;
+import java.util.*;
 
 /**
  * Rewritten poller for 0MQ.

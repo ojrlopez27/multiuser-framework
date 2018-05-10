@@ -1,14 +1,5 @@
 package zmq;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SocketChannel;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
-
 import zmq.io.IOThread;
 import zmq.io.SessionBase;
 import zmq.io.net.Address;
@@ -24,6 +15,15 @@ import zmq.socket.Sockets;
 import zmq.util.Blob;
 import zmq.util.Clock;
 import zmq.util.MultiMap;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SocketChannel;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeEvents
 {

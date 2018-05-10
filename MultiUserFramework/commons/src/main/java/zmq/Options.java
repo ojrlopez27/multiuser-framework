@@ -1,9 +1,5 @@
 package zmq;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import zmq.io.coder.IDecoder;
 import zmq.io.coder.IEncoder;
 import zmq.io.mechanism.Mechanisms;
@@ -15,6 +11,10 @@ import zmq.msg.MsgAllocatorThreshold;
 import zmq.util.Errno;
 import zmq.util.ValueReference;
 import zmq.util.Z85;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class Options
 {

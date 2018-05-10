@@ -1,13 +1,13 @@
 package zmq.io.mechanism.plain;
 
-import static zmq.io.Metadata.IDENTITY;
-import static zmq.io.Metadata.SOCKET_TYPE;
-
 import zmq.Msg;
 import zmq.Options;
 import zmq.ZError;
 import zmq.ZMQ;
 import zmq.io.mechanism.Mechanism;
+
+import static zmq.io.Metadata.IDENTITY;
+import static zmq.io.Metadata.SOCKET_TYPE;
 
 public class PlainClientMechanism extends Mechanism
 {

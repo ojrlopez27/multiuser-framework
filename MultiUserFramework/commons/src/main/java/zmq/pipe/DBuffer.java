@@ -1,9 +1,9 @@
 package zmq.pipe;
 
+import zmq.Msg;
+
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import zmq.Msg;
 
 class DBuffer<T extends Msg>
 {

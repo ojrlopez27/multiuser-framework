@@ -1,15 +1,15 @@
 package zmq.io;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.nio.channels.SelectableChannel;
-
 import zmq.Command;
 import zmq.Ctx;
 import zmq.Mailbox;
 import zmq.ZObject;
 import zmq.poll.IPollEvents;
 import zmq.poll.Poller;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.nio.channels.SelectableChannel;
 
 public class IOThread extends ZObject implements IPollEvents, Closeable
 {

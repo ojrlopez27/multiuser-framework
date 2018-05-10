@@ -1,12 +1,12 @@
 package org.zeromq;
 
+import org.zeromq.ZMQ.Socket;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-
-import org.zeromq.ZMQ.Socket;
 
 /**
  * The ZMonitor actor provides an API for obtaining socket events such as

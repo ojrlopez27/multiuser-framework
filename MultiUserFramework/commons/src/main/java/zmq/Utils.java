@@ -1,13 +1,13 @@
 package zmq;
 
+import zmq.io.net.Address;
+import zmq.io.net.tcp.TcpUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
-
-import zmq.io.net.Address;
-import zmq.io.net.tcp.TcpUtils;
 
 @Deprecated
 public class Utils

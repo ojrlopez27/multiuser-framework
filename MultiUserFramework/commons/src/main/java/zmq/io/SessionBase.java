@@ -1,16 +1,6 @@
 package zmq.io;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import zmq.Ctx;
-import zmq.Msg;
-import zmq.Options;
-import zmq.Own;
-import zmq.SocketBase;
-import zmq.ZError;
-import zmq.ZMQ;
-import zmq.ZObject;
+import zmq.*;
 import zmq.io.StreamEngine.ErrorReason;
 import zmq.io.mechanism.Mechanisms;
 import zmq.io.net.Address;
@@ -24,6 +14,9 @@ import zmq.io.net.tcp.TcpConnecter;
 import zmq.io.net.tipc.TipcConnecter;
 import zmq.pipe.Pipe;
 import zmq.poll.IPollEvents;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
 {

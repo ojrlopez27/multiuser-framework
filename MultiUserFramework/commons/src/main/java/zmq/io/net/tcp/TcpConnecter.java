@@ -1,9 +1,5 @@
 package zmq.io.net.tcp;
 
-import java.io.IOException;
-import java.net.SocketAddress;
-import java.nio.channels.SocketChannel;
-
 import zmq.Options;
 import zmq.Own;
 import zmq.SocketBase;
@@ -17,6 +13,10 @@ import zmq.io.net.StandardProtocolFamily;
 import zmq.poll.IPollEvents;
 import zmq.poll.Poller;
 import zmq.util.Utils;
+
+import java.io.IOException;
+import java.net.SocketAddress;
+import java.nio.channels.SocketChannel;
 
 //  If 'delay' is true connecter first waits for a while, then starts
 //  connection process.
@@ -53,7 +53,7 @@ public class TcpConnecter extends Own implements IPollEvents
     private final SocketBase socket;
 
     public TcpConnecter(IOThread ioThread, SessionBase session, final Options options, final Address addr,
-            boolean delayedStart)
+                        boolean delayedStart)
     {
         super(ioThread, options);
         ioObject = new IOObject(ioThread, this);

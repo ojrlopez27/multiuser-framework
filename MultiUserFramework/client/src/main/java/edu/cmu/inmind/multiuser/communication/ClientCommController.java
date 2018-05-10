@@ -494,7 +494,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
             }else{
                 return STOP_FLAG;
             }
-        }catch (java.lang.AssertionError e) {
+        }catch (AssertionError e) {
             reconnect();
         }catch (Throwable e){
             try {

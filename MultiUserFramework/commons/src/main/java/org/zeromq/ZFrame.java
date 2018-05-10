@@ -1,10 +1,10 @@
 package org.zeromq;
 
-import java.nio.charset.Charset;
-import java.util.Arrays;
-
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.util.ZData;
+
+import java.nio.charset.Charset;
+import java.util.Arrays;
 
 /**
  * ZFrame

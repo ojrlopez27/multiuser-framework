@@ -4,7 +4,6 @@ import com.google.common.util.concurrent.ServiceManager;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardListener;
 import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
-import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
 import edu.cmu.inmind.multiuser.controller.plugin.Pluggable;
 import edu.cmu.inmind.multiuser.controller.session.Session;
@@ -27,7 +26,7 @@ public interface ProcessOrchestrator extends BlackboardListener{
     void unsubscribe(OrchestratorListener listener);
     Pluggable processMsg(SessionMessage message);
     List<Pluggable> getComponents();
-    void initialize( Session session ) throws Throwable;
+    void initialize(Session session) throws Throwable;
     void execute(Pluggable component);
     void setStatus(String status);
     void setStatefullServManager(ServiceManager statefullServManager);

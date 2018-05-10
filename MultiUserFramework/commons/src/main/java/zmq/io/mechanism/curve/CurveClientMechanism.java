@@ -1,10 +1,5 @@
 package zmq.io.mechanism.curve;
 
-import static zmq.io.Metadata.IDENTITY;
-import static zmq.io.Metadata.SOCKET_TYPE;
-
-import java.nio.ByteBuffer;
-
 import zmq.Msg;
 import zmq.Options;
 import zmq.ZError;
@@ -12,6 +7,11 @@ import zmq.ZMQ;
 import zmq.io.mechanism.Mechanism;
 import zmq.util.Errno;
 import zmq.util.Wire;
+
+import java.nio.ByteBuffer;
+
+import static zmq.io.Metadata.IDENTITY;
+import static zmq.io.Metadata.SOCKET_TYPE;
 
 public class CurveClientMechanism extends Mechanism
 {

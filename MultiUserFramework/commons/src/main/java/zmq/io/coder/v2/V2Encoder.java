@@ -1,10 +1,10 @@
 package zmq.io.coder.v2;
 
-import java.nio.ByteBuffer;
-
 import zmq.io.coder.Encoder;
 import zmq.util.Errno;
 import zmq.util.Wire;
+
+import java.nio.ByteBuffer;
 
 // Encoder for 0MQ framing protocol. Converts messages into data stream.
 public class V2Encoder extends Encoder

@@ -133,7 +133,7 @@ public class Log4J{
     protected static Logger getLogger(Object caller) {
         try {
             String logName = "";
-            org.apache.logging.log4j.Logger logger = null;
+            Logger logger = null;
             Class clazz = null;
             if( caller instanceof String ){
                 logName = (String)caller;

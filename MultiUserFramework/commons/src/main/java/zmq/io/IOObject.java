@@ -1,18 +1,18 @@
 package zmq.io;
 
-import java.nio.channels.SelectableChannel;
-
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import zmq.poll.IPollEvents;
 import zmq.poll.Poller;
 import zmq.poll.Poller.Handle;
+
+import java.nio.channels.SelectableChannel;
 
 //  Simple base class for objects that live in I/O threads.
 //  It makes communication with the poller object easier and
 //  makes defining unneeded event handlers unnecessary.
 public class IOObject implements IPollEvents
 {
-    private final Poller      poller;
+    private final Poller poller;
     private final IPollEvents handler;
 
     private boolean alive;

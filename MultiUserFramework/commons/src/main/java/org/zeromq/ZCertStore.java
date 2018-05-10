@@ -1,19 +1,10 @@
 package org.zeromq;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.zeromq.util.ZDigest;
 import org.zeromq.util.ZMetadata;
+
+import java.io.*;
+import java.util.*;
 
 /**
  *

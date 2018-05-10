@@ -1,10 +1,6 @@
 package zmq.socket.pubsub;
 
-import zmq.Ctx;
-import zmq.Msg;
-import zmq.Options;
-import zmq.ZError;
-import zmq.ZMQ;
+import zmq.*;
 
 public class Sub extends XSub
 {

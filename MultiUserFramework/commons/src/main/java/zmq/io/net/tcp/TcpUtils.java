@@ -1,5 +1,8 @@
 package zmq.io.net.tcp;
 
+import zmq.ZError;
+import zmq.io.net.Address;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -9,9 +12,6 @@ import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-
-import zmq.ZError;
-import zmq.io.net.Address;
 
 public class TcpUtils
 {

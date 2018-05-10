@@ -1,8 +1,8 @@
 package zmq.util;
 
-import java.util.Arrays;
-
 import zmq.Msg;
+
+import java.util.Arrays;
 
 public class Blob
 {

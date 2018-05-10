@@ -1,12 +1,5 @@
 package zmq.io.mechanism;
 
-import static zmq.io.Metadata.IDENTITY;
-import static zmq.io.Metadata.SOCKET_TYPE;
-
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-
 import zmq.Msg;
 import zmq.Options;
 import zmq.ZError;
@@ -18,6 +11,13 @@ import zmq.io.net.Address;
 import zmq.socket.Sockets;
 import zmq.util.Blob;
 import zmq.util.Wire;
+
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+
+import static zmq.io.Metadata.IDENTITY;
+import static zmq.io.Metadata.SOCKET_TYPE;
 
 // Abstract class representing security mechanism.
 // Different mechanism extends this class.
@@ -42,7 +42,7 @@ public abstract class Mechanism
     public final Metadata zmtpProperties = new Metadata();
 
     protected final SessionBase session;
-    private final Address       peerAddress;
+    private final Address peerAddress;
 
     protected String statusCode;
 

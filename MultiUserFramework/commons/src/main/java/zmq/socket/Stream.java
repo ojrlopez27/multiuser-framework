@@ -1,20 +1,16 @@
 package zmq.socket;
 
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
-
-import zmq.Ctx;
-import zmq.Msg;
-import zmq.SocketBase;
-import zmq.ZError;
-import zmq.ZMQ;
+import zmq.*;
 import zmq.io.Metadata;
 import zmq.pipe.Pipe;
 import zmq.util.Blob;
 import zmq.util.Utils;
 import zmq.util.ValueReference;
 import zmq.util.Wire;
+
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Stream extends SocketBase
 {
@@ -36,7 +32,7 @@ public class Stream extends SocketBase
 
     private class Outpipe
     {
-        private Pipe    pipe;
+        private Pipe pipe;
         private boolean active;
 
         public Outpipe(Pipe pipe, boolean active)

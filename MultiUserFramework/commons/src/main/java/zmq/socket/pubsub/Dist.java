@@ -1,11 +1,11 @@
 package zmq.socket.pubsub;
 
+import zmq.Msg;
+import zmq.pipe.Pipe;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import zmq.Msg;
-import zmq.pipe.Pipe;
 
 class Dist
 {

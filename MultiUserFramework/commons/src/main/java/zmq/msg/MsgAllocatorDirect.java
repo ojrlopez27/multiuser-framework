@@ -1,8 +1,8 @@
 package zmq.msg;
 
-import java.nio.ByteBuffer;
-
 import zmq.Msg;
+
+import java.nio.ByteBuffer;
 
 public class MsgAllocatorDirect implements MsgAllocator
 {

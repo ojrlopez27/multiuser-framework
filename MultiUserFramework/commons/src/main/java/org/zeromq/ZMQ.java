@@ -1,15 +1,5 @@
 package org.zeromq;
 
-import java.io.Closeable;
-import java.nio.ByteBuffer;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.Selector;
-import java.nio.charset.Charset;
-import java.util.LinkedList;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import zmq.Ctx;
 import zmq.SocketBase;
 import zmq.ZError;
@@ -19,6 +9,16 @@ import zmq.io.coder.IEncoder;
 import zmq.io.mechanism.Mechanisms;
 import zmq.msg.MsgAllocator;
 import zmq.util.Z85;
+
+import java.io.Closeable;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.Selector;
+import java.nio.charset.Charset;
+import java.util.LinkedList;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ZMQ
 {
@@ -260,7 +260,7 @@ public class ZMQ
     public static class Context implements Closeable
     {
         private final AtomicBoolean closed = new AtomicBoolean(false);
-        private final Ctx           ctx;
+        private final Ctx ctx;
 
         /**
          * Class constructor.
@@ -434,8 +434,8 @@ public class ZMQ
         private static final int DYNFROM = 0xc000;
         private static final int DYNTO   = 0xffff;
 
-        private final Ctx           ctx;
-        private final SocketBase    base;
+        private final Ctx ctx;
+        private final SocketBase base;
         private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
         /**

@@ -1,10 +1,10 @@
 package zmq.socket.pubsub;
 
-import java.nio.ByteBuffer;
-
 import zmq.Msg;
 import zmq.pipe.Pipe;
 import zmq.util.Utils;
+
+import java.nio.ByteBuffer;
 
 class Trie
 {

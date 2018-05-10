@@ -1,13 +1,12 @@
 package org.zeromq;
 
-import java.io.File;
-import java.io.IOException;
-
 import org.zeromq.ZMQ.Curve.KeyPair;
 import org.zeromq.util.ZMetadata;
-
 import zmq.Options;
 import zmq.util.Z85;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  *

@@ -1,14 +1,14 @@
 package zmq.poll;
 
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-
 import zmq.SocketBase;
 import zmq.ZMQ;
 
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+
 public class PollItem
 {
-    private final SocketBase        socket;
+    private final SocketBase socket;
     private final SelectableChannel channel;
     private final int               zinterest;
     private final int               interest;

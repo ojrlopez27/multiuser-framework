@@ -1,14 +1,14 @@
 package org.zeromq;
 
+import org.zeromq.ZMQ.Socket;
+import org.zeromq.ZPoller.EventsHandler;
+
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-
-import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZPoller.EventsHandler;
 
 /**
  * First implementation of a background actor remotely controlled for 0MQ.

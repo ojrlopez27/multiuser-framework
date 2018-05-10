@@ -1,21 +1,11 @@
 package org.zeromq;
 
-import java.io.BufferedReader;
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
-
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMQ.Socket.Mechanism;
 import org.zeromq.util.ZMetadata;
+
+import java.io.*;
+import java.util.*;
 
 /**
  * A ZAuth actor takes over authentication for all incoming connections in

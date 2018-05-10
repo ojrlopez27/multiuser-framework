@@ -1,13 +1,13 @@
 package zmq;
 
+import zmq.pipe.YPipe;
+import zmq.util.Errno;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import zmq.pipe.YPipe;
-import zmq.util.Errno;
 
 public final class Mailbox implements Closeable
 {

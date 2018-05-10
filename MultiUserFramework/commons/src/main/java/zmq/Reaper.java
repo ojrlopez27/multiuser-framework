@@ -1,12 +1,12 @@
 package zmq;
 
+import zmq.poll.IPollEvents;
+import zmq.poll.Poller;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import zmq.poll.IPollEvents;
-import zmq.poll.Poller;
 
 final class Reaper extends ZObject implements IPollEvents, Closeable
 {

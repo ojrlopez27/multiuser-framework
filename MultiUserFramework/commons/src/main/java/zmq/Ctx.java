@@ -1,24 +1,18 @@
 package zmq;
 
+import zmq.io.IOThread;
+import zmq.pipe.Pipe;
+import zmq.socket.Sockets;
+import zmq.util.Errno;
+
 import java.io.IOException;
 import java.nio.channels.Selector;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import zmq.io.IOThread;
-import zmq.pipe.Pipe;
-import zmq.socket.Sockets;
-import zmq.util.Errno;
 
 //Context object encapsulates all the global state associated with
 //  the library.

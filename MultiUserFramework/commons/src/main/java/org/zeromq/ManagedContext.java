@@ -1,13 +1,13 @@
 package org.zeromq;
 
+import zmq.Ctx;
+import zmq.SocketBase;
+import zmq.ZMQ;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import zmq.Ctx;
-import zmq.SocketBase;
-import zmq.ZMQ;
 
 // This is to avoid people trying to initialize a Context
 class ManagedContext
@@ -25,7 +25,7 @@ class ManagedContext
     }
 
     private final Lock            lock;
-    private final Ctx             ctx;
+    private final Ctx ctx;
     private final Set<SocketBase> sockets;
 
     private ManagedContext()

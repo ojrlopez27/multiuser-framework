@@ -1,8 +1,5 @@
 package zmq.io.mechanism.plain;
 
-import static zmq.io.Metadata.IDENTITY;
-import static zmq.io.Metadata.SOCKET_TYPE;
-
 import zmq.Msg;
 import zmq.Options;
 import zmq.ZError;
@@ -11,6 +8,9 @@ import zmq.io.SessionBase;
 import zmq.io.mechanism.Mechanism;
 import zmq.io.mechanism.Mechanisms;
 import zmq.io.net.Address;
+
+import static zmq.io.Metadata.IDENTITY;
+import static zmq.io.Metadata.SOCKET_TYPE;
 
 public class PlainServerMechanism extends Mechanism
 {

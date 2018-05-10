@@ -1,15 +1,14 @@
 package org.zeromq.util;
 
+import org.zeromq.ZConfig;
+import org.zeromq.ZMQ;
+import zmq.io.Metadata;
+
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import org.zeromq.ZConfig;
-import org.zeromq.ZMQ;
-
-import zmq.io.Metadata;
 
 public class ZMetadata
 {

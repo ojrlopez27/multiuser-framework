@@ -1,18 +1,13 @@
 package zmq;
 
+import zmq.util.Errno;
+import zmq.util.Utils;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.ClosedSelectorException;
-import java.nio.channels.Pipe;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
+import java.nio.channels.*;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import zmq.util.Errno;
-import zmq.util.Utils;
 
 //  This is a cross-platform equivalent to signal_fd. However, as opposed
 //  to signal_fd there can be at most one signal in the signaler at any
@@ -33,7 +28,7 @@ final class Signaler implements Closeable
 
     private final Errno errno;
     private final int   pid;
-    private final Ctx   ctx;
+    private final Ctx ctx;
 
     Signaler(Ctx ctx, int pid, Errno errno)
     {

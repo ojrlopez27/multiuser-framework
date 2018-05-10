@@ -1,12 +1,12 @@
 package zmq;
 
+import zmq.io.Metadata;
+import zmq.util.Wire;
+
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.SocketChannel;
-
-import zmq.io.Metadata;
-import zmq.util.Wire;
 
 public class Msg
 {

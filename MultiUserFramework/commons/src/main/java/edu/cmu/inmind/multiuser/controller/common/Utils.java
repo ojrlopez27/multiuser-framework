@@ -3,6 +3,7 @@ package edu.cmu.inmind.multiuser.controller.common;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.rits.cloning.Cloner;
+
 import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -575,7 +576,7 @@ public class Utils {
         public ManagableThreadPool(int corePoolSize, int maximumPoolSize, long keepAliveTime,
                                    TimeUnit unit, BlockingQueue<Runnable> workQueue) {
             super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue,
-                    new ThreadPoolExecutor.DiscardPolicy());
+                    new DiscardPolicy());
         }
 
         @Override

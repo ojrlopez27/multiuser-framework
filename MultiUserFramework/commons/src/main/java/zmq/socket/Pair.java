@@ -1,10 +1,6 @@
 package zmq.socket;
 
-import zmq.Ctx;
-import zmq.Msg;
-import zmq.SocketBase;
-import zmq.ZError;
-import zmq.ZMQ;
+import zmq.*;
 import zmq.pipe.Pipe;
 import zmq.util.Blob;
 

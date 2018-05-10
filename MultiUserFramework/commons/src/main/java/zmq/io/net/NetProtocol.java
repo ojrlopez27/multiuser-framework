@@ -1,9 +1,9 @@
 package zmq.io.net;
 
+import zmq.socket.Sockets;
+
 import java.util.Arrays;
 import java.util.List;
-
-import zmq.socket.Sockets;
 
 public enum NetProtocol
 {

@@ -1,11 +1,11 @@
 package zmq;
 
+import zmq.io.IOThread;
+import zmq.util.Errno;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-
-import zmq.io.IOThread;
-import zmq.util.Errno;
 
 //  Base class for objects forming a part of ownership hierarchy.
 //  It handles initialization and destruction of such objects.

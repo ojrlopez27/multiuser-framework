@@ -1,9 +1,9 @@
 package org.zeromq.util;
 
+import org.zeromq.ZMQ;
+
 import java.io.PrintStream;
 import java.util.Arrays;
-
-import org.zeromq.ZMQ;
 
 public class ZData
 {

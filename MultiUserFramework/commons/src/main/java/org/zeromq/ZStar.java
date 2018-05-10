@@ -1,5 +1,8 @@
 package org.zeromq;
 
+import org.zeromq.ZMQ.Socket;
+import org.zeromq.ZThread.IAttachedRunnable;
+
 import java.io.IOException;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
@@ -9,9 +12,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
-
-import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZThread.IAttachedRunnable;
 
 /**
  * First implementation for the base of a remotely controlled background service for 0MQ.

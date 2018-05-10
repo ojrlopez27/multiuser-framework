@@ -1,15 +1,15 @@
 package zmq.socket;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import zmq.Msg;
 import zmq.ZError;
 import zmq.pipe.Pipe;
 import zmq.util.Blob;
 import zmq.util.Errno;
 import zmq.util.ValueReference;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 //  Class manages a set of inbound pipes. On receive it performs fair
 //  queuing so that senders gone berserk won't cause denial of

@@ -1,6 +1,9 @@
 package zmq;
 
-import java.io.IOException;
+import zmq.io.Metadata;
+import zmq.poll.PollItem;
+import zmq.util.Clock;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.ClosedChannelException;
@@ -11,10 +14,6 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
-
-import zmq.io.Metadata;
-import zmq.poll.PollItem;
-import zmq.util.Clock;
 
 public class ZMQ
 {

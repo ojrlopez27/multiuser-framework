@@ -33,5 +33,5 @@ public interface Blackboard {
     boolean isModelKept();
     boolean areSubscribersNotified();
     ConcurrentHashMap<String, List<BlackboardListener>> getSubscriptions();
-    List<BlackboardListener> getSubscription (String key) throws Throwable;
+    List<BlackboardListener> getSubscription(String key) throws Throwable;
 }

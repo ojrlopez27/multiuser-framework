@@ -1,14 +1,14 @@
+import edu.cmu.inmind.multiuser.client.DummyClient;
 import edu.cmu.inmind.multiuser.controller.common.Constants;
 import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
-import edu.cmu.inmind.multiuser.client.DummyClient;
 import org.junit.Test;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.awaitility.Awaitility.*;
+import static org.awaitility.Awaitility.await;
 
 /**
  * Created by oscarr on 5/8/18.

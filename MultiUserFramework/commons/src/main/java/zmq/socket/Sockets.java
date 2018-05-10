@@ -1,8 +1,5 @@
 package zmq.socket;
 
-import java.util.Arrays;
-import java.util.List;
-
 import zmq.Ctx;
 import zmq.Options;
 import zmq.SocketBase;
@@ -19,6 +16,9 @@ import zmq.socket.reqrep.Dealer;
 import zmq.socket.reqrep.Rep;
 import zmq.socket.reqrep.Req;
 import zmq.socket.reqrep.Router;
+
+import java.util.Arrays;
+import java.util.List;
 
 public enum Sockets
 {

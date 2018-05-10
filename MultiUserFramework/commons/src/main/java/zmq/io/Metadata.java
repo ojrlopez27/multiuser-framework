@@ -1,5 +1,10 @@
 package zmq.io;
 
+import zmq.Msg;
+import zmq.ZError;
+import zmq.ZMQ;
+import zmq.util.Wire;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -7,11 +12,6 @@ import java.nio.ByteBuffer;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-
-import zmq.Msg;
-import zmq.ZError;
-import zmq.ZMQ;
-import zmq.util.Wire;
 
 public class Metadata
 {

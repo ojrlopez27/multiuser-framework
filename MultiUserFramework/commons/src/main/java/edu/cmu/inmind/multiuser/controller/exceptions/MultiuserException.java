@@ -1,8 +1,6 @@
 package edu.cmu.inmind.multiuser.controller.exceptions;
 
 
-import java.util.Arrays;
-
 /**
  * Created by oscarr on 3/16/17.
  */

@@ -1,14 +1,14 @@
 package zmq.socket;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import zmq.Msg;
 import zmq.ZError;
 import zmq.pipe.Pipe;
 import zmq.util.Errno;
 import zmq.util.ValueReference;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class LB
 {

@@ -1,10 +1,10 @@
 package org.zeromq;
 
+import org.zeromq.ZMQ.Socket;
+
 import java.io.IOException;
 import java.nio.channels.Selector;
 import java.util.Arrays;
-
-import org.zeromq.ZMQ.Socket;
 
 /**
  * First implementation of an agent for a remotely controlled background service for 0MQ.

@@ -1,13 +1,13 @@
 package zmq.io.coder.v1;
 
-import java.nio.ByteBuffer;
-
 import zmq.Msg;
 import zmq.ZError;
 import zmq.io.coder.Decoder;
 import zmq.msg.MsgAllocator;
 import zmq.util.Errno;
 import zmq.util.Wire;
+
+import java.nio.ByteBuffer;
 
 public class V1Decoder extends Decoder
 {

@@ -1,12 +1,11 @@
 package zmq.io.mechanism.curve;
 
-import java.nio.ByteBuffer;
-
 import com.neilalexander.jnacl.crypto.curve25519xsalsa20poly1305;
 import com.neilalexander.jnacl.crypto.xsalsa20poly1305;
-
 import zmq.util.Utils;
 import zmq.util.Z85;
+
+import java.nio.ByteBuffer;
 
 // wrapper around the wrapper of libsodium (ahem), for shorter names.
 public class Curve

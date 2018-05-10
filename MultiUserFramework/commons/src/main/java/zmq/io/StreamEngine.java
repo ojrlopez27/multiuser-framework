@@ -1,15 +1,6 @@
 package zmq.io;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
-
-import zmq.Config;
-import zmq.Msg;
-import zmq.Options;
-import zmq.SocketBase;
-import zmq.ZError;
-import zmq.ZMQ;
+import zmq.*;
 import zmq.io.coder.IDecoder;
 import zmq.io.coder.IDecoder.Step;
 import zmq.io.coder.IEncoder;
@@ -24,11 +15,12 @@ import zmq.io.mechanism.Mechanisms;
 import zmq.io.net.Address;
 import zmq.poll.IPollEvents;
 import zmq.poll.Poller;
-import zmq.util.Blob;
-import zmq.util.Errno;
+import zmq.util.*;
 import zmq.util.Utils;
-import zmq.util.ValueReference;
-import zmq.util.Wire;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 
 // This engine handles any socket with SOCK_STREAM semantics,
 // e.g. TCP socket or an UNIX domain socket.

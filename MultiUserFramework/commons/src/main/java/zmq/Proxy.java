@@ -1,9 +1,9 @@
 package zmq;
 
+import zmq.poll.PollItem;
+
 import java.nio.channels.Selector;
 import java.util.Arrays;
-
-import zmq.poll.PollItem;
 
 class Proxy
 {

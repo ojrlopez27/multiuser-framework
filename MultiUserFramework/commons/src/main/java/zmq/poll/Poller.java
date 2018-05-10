@@ -1,21 +1,16 @@
 package zmq.poll;
 
+import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
+import zmq.Ctx;
+import zmq.ZError;
+
 import java.io.IOException;
-import java.nio.channels.CancelledKeyException;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.ClosedSelectorException;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
+import java.nio.channels.*;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
-import zmq.Ctx;
-import zmq.ZError;
 
 public final class Poller extends PollerBase implements Runnable
 {

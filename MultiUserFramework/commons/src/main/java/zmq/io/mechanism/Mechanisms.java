@@ -1,8 +1,5 @@
 package zmq.io.mechanism;
 
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-
 import zmq.Options;
 import zmq.ZMQ;
 import zmq.io.SessionBase;
@@ -13,6 +10,9 @@ import zmq.io.mechanism.gssapi.GssapiServerMechanism;
 import zmq.io.mechanism.plain.PlainClientMechanism;
 import zmq.io.mechanism.plain.PlainServerMechanism;
 import zmq.io.net.Address;
+
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public enum Mechanisms
 {

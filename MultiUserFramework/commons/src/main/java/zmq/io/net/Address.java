@@ -1,10 +1,10 @@
 package zmq.io.net;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-
 import zmq.io.net.ipc.IpcAddress;
 import zmq.io.net.tcp.TcpAddress;
+
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 public class Address
 {

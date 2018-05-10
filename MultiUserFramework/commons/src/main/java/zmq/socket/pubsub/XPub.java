@@ -1,17 +1,12 @@
 package zmq.socket.pubsub;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-
-import zmq.Ctx;
-import zmq.Msg;
-import zmq.Options;
-import zmq.SocketBase;
-import zmq.ZError;
-import zmq.ZMQ;
+import zmq.*;
 import zmq.pipe.Pipe;
 import zmq.socket.pubsub.Mtrie.IMtrieHandler;
 import zmq.util.Blob;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 public class XPub extends SocketBase
 {

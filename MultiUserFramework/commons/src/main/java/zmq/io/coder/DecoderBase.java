@@ -1,10 +1,10 @@
 package zmq.io.coder;
 
-import java.nio.ByteBuffer;
-
 import zmq.Msg;
 import zmq.util.Errno;
 import zmq.util.ValueReference;
+
+import java.nio.ByteBuffer;
 
 //  Helper base class for decoders that know the amount of data to read
 //  in advance at any moment. Knowing the amount in advance is a property

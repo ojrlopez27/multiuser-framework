@@ -1,5 +1,8 @@
 package zmq.util;
 
+import zmq.io.net.Address;
+import zmq.io.net.tcp.TcpUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -9,9 +12,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 import java.security.SecureRandom;
-
-import zmq.io.net.Address;
-import zmq.io.net.tcp.TcpUtils;
 
 public class Utils
 {

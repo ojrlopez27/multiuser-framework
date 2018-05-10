@@ -1,11 +1,6 @@
 package zmq.socket.reqrep;
 
-import zmq.Ctx;
-import zmq.Msg;
-import zmq.Options;
-import zmq.SocketBase;
-import zmq.ZError;
-import zmq.ZMQ;
+import zmq.*;
 import zmq.io.IOThread;
 import zmq.io.SessionBase;
 import zmq.io.net.Address;
@@ -246,7 +241,7 @@ public class Req extends Dealer
         private State state;
 
         public ReqSession(IOThread ioThread, boolean connect, SocketBase socket, final Options options,
-                final Address addr)
+                          final Address addr)
         {
             super(ioThread, connect, socket, options, addr);
 

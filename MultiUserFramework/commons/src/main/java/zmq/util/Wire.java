@@ -1,8 +1,8 @@
 package zmq.util;
 
-import java.nio.ByteBuffer;
-
 import zmq.Msg;
+
+import java.nio.ByteBuffer;
 
 // Helper functions to convert different integer
 // types to/from network byte order.

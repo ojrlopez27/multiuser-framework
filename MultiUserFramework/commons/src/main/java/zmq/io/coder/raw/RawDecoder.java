@@ -1,10 +1,10 @@
 package zmq.io.coder.raw;
 
-import java.nio.ByteBuffer;
-
 import zmq.Msg;
 import zmq.io.coder.IDecoder;
 import zmq.util.ValueReference;
+
+import java.nio.ByteBuffer;
 
 public class RawDecoder implements IDecoder
 {

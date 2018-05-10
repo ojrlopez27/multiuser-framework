@@ -1,13 +1,13 @@
 package org.zeromq;
 
+import org.zeromq.ZMQ.Context;
+import org.zeromq.ZMQ.Poller;
+import org.zeromq.ZMQ.Socket;
+
 import java.io.Closeable;
 import java.nio.channels.Selector;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import org.zeromq.ZMQ.Context;
-import org.zeromq.ZMQ.Poller;
-import org.zeromq.ZMQ.Socket;
 
 /**
  * ZContext provides a high-level ZeroMQ context management class

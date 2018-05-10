@@ -1,12 +1,12 @@
 package zmq.socket.pubsub;
 
-import java.nio.ByteBuffer;
-import java.util.HashSet;
-import java.util.Set;
-
 import zmq.Msg;
 import zmq.pipe.Pipe;
 import zmq.util.Utils;
+
+import java.nio.ByteBuffer;
+import java.util.HashSet;
+import java.util.Set;
 
 //Multi-trie. Each node in the trie is a set of pointers to pipes.
 class Mtrie

@@ -1,23 +1,18 @@
 package zmq.socket.reqrep;
 
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import zmq.Ctx;
-import zmq.Msg;
-import zmq.Options;
-import zmq.SocketBase;
-import zmq.ZError;
-import zmq.ZMQ;
+import zmq.*;
 import zmq.pipe.Pipe;
 import zmq.socket.FQ;
 import zmq.util.Blob;
 import zmq.util.Utils;
 import zmq.util.ValueReference;
 import zmq.util.Wire;
+
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 //TODO: This class uses O(n) scheduling. Rewrite it to use O(1) algorithm.
 public class Router extends SocketBase
@@ -43,7 +38,7 @@ public class Router extends SocketBase
 
     class Outpipe
     {
-        private Pipe    pipe;
+        private Pipe pipe;
         private boolean active;
 
         public Outpipe(Pipe pipe, boolean active)

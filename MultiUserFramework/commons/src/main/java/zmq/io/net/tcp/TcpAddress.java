@@ -1,14 +1,10 @@
 package zmq.io.net.tcp;
 
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.net.UnknownHostException;
-
 import zmq.io.net.Address;
 import zmq.io.net.ProtocolFamily;
 import zmq.io.net.StandardProtocolFamily;
+
+import java.net.*;
 
 public class TcpAddress implements Address.IZAddress
 {

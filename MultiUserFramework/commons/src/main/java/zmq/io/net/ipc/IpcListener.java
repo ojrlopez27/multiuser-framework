@@ -1,11 +1,11 @@
 package zmq.io.net.ipc;
 
-import java.net.InetSocketAddress;
-
 import zmq.Options;
 import zmq.SocketBase;
 import zmq.io.IOThread;
 import zmq.io.net.tcp.TcpListener;
+
+import java.net.InetSocketAddress;
 
 // fake Unix domain socket
 public class IpcListener extends TcpListener

@@ -1,9 +1,5 @@
 package zmq.io.net.tcp;
 
-import java.io.IOException;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-
 import zmq.Options;
 import zmq.Own;
 import zmq.SocketBase;
@@ -16,6 +12,10 @@ import zmq.io.net.StandardProtocolFamily;
 import zmq.poll.IPollEvents;
 import zmq.poll.Poller;
 import zmq.socket.Sockets;
+
+import java.io.IOException;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 
 public class TcpListener extends Own implements IPollEvents
 {

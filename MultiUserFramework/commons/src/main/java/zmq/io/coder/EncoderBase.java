@@ -1,10 +1,10 @@
 package zmq.io.coder;
 
-import java.nio.ByteBuffer;
-
 import zmq.Msg;
 import zmq.util.Errno;
 import zmq.util.ValueReference;
+
+import java.nio.ByteBuffer;
 
 public abstract class EncoderBase implements IEncoder
 {

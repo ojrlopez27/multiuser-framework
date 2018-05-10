@@ -1,14 +1,14 @@
 package zmq.io.mechanism;
 
-import static zmq.io.Metadata.IDENTITY;
-import static zmq.io.Metadata.SOCKET_TYPE;
-
 import zmq.Msg;
 import zmq.Options;
 import zmq.ZError;
 import zmq.ZMQ;
 import zmq.io.SessionBase;
 import zmq.io.net.Address;
+
+import static zmq.io.Metadata.IDENTITY;
+import static zmq.io.Metadata.SOCKET_TYPE;
 
 class NullMechanism extends Mechanism
 {
