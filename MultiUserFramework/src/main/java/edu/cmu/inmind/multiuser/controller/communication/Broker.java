@@ -177,14 +177,13 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
     @Override
     public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable {
         if ( !isDestroyed.get() ) {
-            ArrayList<Worker> wrkrs = new ArrayList(workers.values());
-            wrkrs.forEach(worker -> {
+            for(Worker worker : workers.values() ){
                 try {
                     deleteWorker(worker, true);
                 } catch (Throwable throwable) {
                     throwable.printStackTrace();
                 }
-            });
+            }
             ctx = null;
             isDestroyed.getAndSet(true);
             Log4J.info(this, "Gracefully destroying...");

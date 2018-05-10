@@ -315,9 +315,9 @@ public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionO
      * master MUF.
      * @param serviceInfo
      */
-    private void createFrameworkAsService(ServiceInfo serviceInfo) {
+    private void createFrameworkAsService(final ServiceInfo serviceInfo) {
         try {
-            ClientCommController clientCommController = new ClientCommController.Builder()
+            final ClientCommController clientCommController = new ClientCommController.Builder()
                     .setServerAddress(serviceInfo.getMasterMUFAddress())
                     .setServiceName(serviceInfo.getServiceName())
                     .setClientAddress(serviceInfo.getSlaveMUFAddress())
@@ -328,19 +328,22 @@ public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionO
             Log4J.info(this, "Creating new service as a framework: " + serviceInfo.getServiceName());
 
             // let's process the response
-            clientCommController.setResponseListener(message -> {
-                try {
-                    SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
-                    String messageId = sessionMessage.getMessageId();
-                    sessionMessage.setMessageId("");
-                    serviceInfo.getResponseListener().process(Utils.toJson(sessionMessage));
-                    if (sessionMessage.getRequestType().equals(Constants.REQUEST_SHUTDOWN_SYSTEM)
-                            && messageId.equals(Constants.SESSION_MANAGER_SERVICE)) {
-                        clientCommController.close(this);
-                        //MultiuserFramework.stop();
+            clientCommController.setResponseListener(new ResponseListener() {
+                @Override
+                public void process(String message) {
+                    try {
+                        SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
+                        String messageId = sessionMessage.getMessageId();
+                        sessionMessage.setMessageId("");
+                        serviceInfo.getResponseListener().process(Utils.toJson(sessionMessage));
+                        if (sessionMessage.getRequestType().equals(Constants.REQUEST_SHUTDOWN_SYSTEM)
+                                && messageId.equals(Constants.SESSION_MANAGER_SERVICE)) {
+                            clientCommController.close(SessionManager.this);
+                            //MultiuserFramework.stop();
+                        }
+                    }catch (Throwable e){
+                        ExceptionHandler.handle(e);
                     }
-                }catch (Throwable e){
-                    ExceptionHandler.handle(e);
                 }
             });
         }catch (Throwable e){

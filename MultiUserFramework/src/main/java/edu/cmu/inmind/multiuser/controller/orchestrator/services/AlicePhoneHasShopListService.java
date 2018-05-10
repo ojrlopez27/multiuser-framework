@@ -2,6 +2,7 @@ package edu.cmu.inmind.multiuser.controller.orchestrator.services;
 
 import edu.cmu.inmind.multiuser.controller.orchestrator.bn.Behavior;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -20,7 +21,7 @@ public class AlicePhoneHasShopListService extends Service {
         if( hasShoppingList ) {
             network.triggerPostconditions(behavior, Arrays.asList("shopping-list-provided" ), Arrays.asList("shopping-list-required" ) );
         }else {
-            network.triggerPostconditions(behavior, Arrays.asList("shopping-list-required" ), Arrays.asList() );
+            network.triggerPostconditions(behavior, Arrays.asList("shopping-list-required" ), new ArrayList<String>());
         }
     }
 }

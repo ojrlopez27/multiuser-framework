@@ -28,9 +28,12 @@ public class MockClient {
                     .setRequestType(Constants.REQUEST_CONNECT)
                     .setTCPon(true)
                     .setShouldProcessReply(true)
-                    .setResponseListener(message -> {
-                        SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
-                        Log4J.info(ResponseListener.class, "Received message: " + message);
+                    .setResponseListener(new ResponseListener() {
+                        @Override
+                        public void process(String message) {
+                            SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
+                            Log4J.info(ResponseListener.class, "Received message: " + message);
+                        }
                     })
                     .build();
 

@@ -140,7 +140,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
      */
     protected void sendResponse(Object output){
         try {
-            orchestratorListeners.forEach(listener -> {
+            for(OrchestratorListener listener : orchestratorListeners){
                 try {
                     Log4J.track("ProcessOrchestratorImpl", "25:" + output);
                     // we need a delay in order to avoid consecutive messages to block the sender socket
@@ -149,7 +149,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
                 } catch (Throwable throwable) {
                     ExceptionHandler.handle(throwable);
                 }
-            });
+            }
         }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
@@ -263,7 +263,9 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
             if( statefullServManager != null ) {
                 statefullServManager.stopAsync().awaitStopped(20, TimeUnit.SECONDS);
             }
-            orchestratorListeners.forEach(this::unsubscribe);
+            for(OrchestratorListener listener : orchestratorListeners ){
+                unsubscribe(listener);
+            }
             if (blackboard != null) {
                 blackboard.remove(this, Constants.REMOVE_ALL);
                 blackboard.reset();
@@ -337,13 +339,16 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
 
     public void executeAsync(List<Pluggable> components) {
         try{
-            for (Pluggable component : components) {
+            for (final Pluggable component : components) {
                 component.setActiveSession( session );
-                Utils.execute(() -> {
-                    try{
-                        execute(component);
-                    }catch (Throwable e){
-                        ExceptionHandler.handle( e );
+                Utils.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try{
+                            execute(component);
+                        }catch (Throwable e){
+                            ExceptionHandler.handle( e );
+                        }
                     }
                 });
             }
@@ -390,31 +395,37 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
         }
     }
 
-    private void addAsyncEvents( String id, Blackboard blackboard ) throws Throwable{
-        Queue<CompSyncEvent> queue = ResourceLocator.getSyncMap( id );
+    private void addAsyncEvents( final String id, final Blackboard blackboard ) throws Throwable{
+        final Queue<CompSyncEvent> queue = ResourceLocator.getSyncMap( id );
         if( !queue.isEmpty() ){
             if( queue.peek().event != null ){
-                blackboard.post(this,id, (SynchronizableEvent) () -> {
-                    try {
-                        addAsyncEvents(id, blackboard);
-                        if (!queue.isEmpty()) {
-                            CompSyncEvent compSyncEvent = queue.poll();
-                            compSyncEvent.component.execute();
-                            compSyncEvent.event.notifyNext();
+                blackboard.post(this, id, new SynchronizableEvent() {
+                    @Override
+                    public void notifyNext() {
+                        try {
+                            addAsyncEvents(id, blackboard);
+                            if (!queue.isEmpty()) {
+                                CompSyncEvent compSyncEvent = queue.poll();
+                                compSyncEvent.component.execute();
+                                compSyncEvent.event.notifyNext();
+                            }
+                        }catch (Throwable e){
+                            ExceptionHandler.handle(e);
                         }
-                    }catch (Throwable e){
-                        ExceptionHandler.handle(e);
                     }
                 });
             }else {
-                blackboard.post(this,id, (SynchronizableEvent) () -> {
-                    try {
-                        addAsyncEvents(id, blackboard);
-                        if (!queue.isEmpty()) {
-                            queue.poll().component.execute();
+                blackboard.post(this, id, new SynchronizableEvent() {
+                    @Override
+                    public void notifyNext() {
+                        try {
+                            addAsyncEvents(id, blackboard);
+                            if (!queue.isEmpty()) {
+                                queue.poll().component.execute();
+                            }
+                        }catch (Throwable e){
+                            ExceptionHandler.handle(e);
                         }
-                    }catch (Throwable e){
-                        ExceptionHandler.handle(e);
                     }
                 });
             }
