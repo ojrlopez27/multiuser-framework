@@ -1,5 +1,6 @@
 import edu.cmu.inmind.multiuser.client.DummyClient;
 import edu.cmu.inmind.multiuser.controller.common.Constants;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import org.junit.Test;
@@ -22,9 +23,9 @@ public class TestDummy {
      */
     @Test
     public void testBasicSend(){
-//        DummyClient dummy = new DummyClient();
-//        dummy.test();
-//        dummy.disconnect();
+        DummyClient dummy = new DummyClient();
+        dummy.test();
+        dummy.disconnect();
     }
 
     /**
@@ -33,30 +34,30 @@ public class TestDummy {
     @Test
     public void testCustomSend(){
         final AtomicBoolean canDisconnect = new AtomicBoolean(false);
-        final AtomicBoolean isConnected = new AtomicBoolean(false);
-        long timeout = 3000;
+        long timeout = 10000;
 
-        DummyClient dummy = new DummyClient("tcp://127.0.0.1:5555", "my-test",
+        final DummyClient dummy = new DummyClient("tcp://127.0.0.1:5555", "my-test",
                 new ResponseListener() {
             @Override
             public void process(String message) {
+                System.out.println("This is the response from server: " + message);
                 Log4J.debug("Test", "This is the response from server: " + message);
                 // if we receive a message after the session has been initiated, then we are done and we can disconnect
-                if( message.contains(Constants.SESSION_INITIATED) ){
-                    isConnected.set(true);
-                }else{
+                if( !message.contains(Constants.SESSION_INITIATED) ){
                     canDisconnect.set(true);
                 }
             }
         });
 
-        // let's wait for the client to connect
+
         await().atMost(timeout, TimeUnit.MILLISECONDS).until(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                return isConnected.get();
+                return dummy.getIsConnected();
             }
         });
+
+        // let's send a message
         dummy.send("message from client");
 
         // let's wait for server to reply, then disconnect

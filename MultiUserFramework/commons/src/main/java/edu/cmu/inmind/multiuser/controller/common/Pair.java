@@ -8,14 +8,18 @@ import java.util.Objects;
  * Created by oscarr on 4/12/17.
  */
 public class Pair<A, B> {
-    public final A fst;
-    public final B snd;
+    public A fst;
+    public B snd;
 
-    public Pair(A var1, B var2) throws Throwable{
-        this.fst = var1;
-        this.snd = var2;
-        if( var1 == null || var2 == null ){
-            throw new MultiuserException( ErrorMessages.PAIR_VALUE_NULL, var1, var2);
+    public Pair(A var1, B var2){
+        try {
+            this.fst = var1;
+            this.snd = var2;
+            if (var1 == null || var2 == null) {
+                throw new MultiuserException(ErrorMessages.PAIR_VALUE_NULL, var1, var2);
+            }
+        }catch (MultiuserException e){
+            e.printStackTrace();
         }
     }
 

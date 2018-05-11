@@ -29,8 +29,13 @@ public class PerformanceTests {
         ptm.runAgents();
 
         //awaitility
-        await().atMost(timeout, TimeUnit.MILLISECONDS).until( () -> ptm.getReceivedMsgs() == ptm.getTotalMessages());
-
+        await().atMost(timeout, TimeUnit.MILLISECONDS)
+                .until(new Callable<Boolean>() {
+                             @Override
+                             public Boolean call() throws Exception {
+                                 return ptm.getReceivedMsgs() == ptm.getTotalMessages();
+                             }
+                         });
         ptm.getTimesAndRelease(doMultipleExperiments, printWriter);
 
         if(doMultipleExperiments) {

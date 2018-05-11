@@ -15,9 +15,11 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by oscarr on 3/29/17.
@@ -33,8 +35,6 @@ public class ClientCommController implements ClientController, DestroyableCallba
     private String sessionManagerService;
     private String serverAddress;
     private final boolean sendAck;
-    @Deprecated
-    private String clientAddress;
     private String requestType;
     private String[] subscriptionMessages;
     private SenderThread sendThread;
@@ -45,6 +45,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
 
     private AtomicBoolean isDestroyed = new AtomicBoolean(false);
     private AtomicBoolean isConnected = new AtomicBoolean(false);
+
     /**
      * We use this socket to communicate with senderSocket, which is running on another
      * thread (SenderThread).
@@ -67,10 +68,12 @@ public class ClientCommController implements ClientController, DestroyableCallba
     private AtomicInteger receiveState = new AtomicInteger(Constants.CONNECTION_NEW);
     private AtomicBoolean isSendThreadAlive = new AtomicBoolean(false);
     private AtomicBoolean isReceiveThreadAlive = new AtomicBoolean(false);
+    private AtomicLong lastMessage = new AtomicLong( System.currentTimeMillis() );
     private ResponseListener responseListener;
     private boolean shouldProcessReply;
     private boolean isTCPon;
     private List<DestroyableCallback> callbacks;
+    private ConcurrentLinkedQueue<Pair<String, Object>> sendMsgQueue = new ConcurrentLinkedQueue<>();
 
 
     public ClientCommController( Builder builder){
@@ -109,6 +112,10 @@ public class ClientCommController implements ClientController, DestroyableCallba
         sessionMessage.setSessionId(sessionId);
         setShouldProcessReply(true);
         send(sessionId, sessionMessage);
+    }
+
+    public AtomicBoolean getIsConnected() {
+        return isConnected;
     }
 
     public static class Builder{
@@ -223,7 +230,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
         }
     }
 
-    private void reset() throws Throwable{
+    private void reset(){
         stop.getAndSet(false);
         sentMessages.getAndSet( 0 );
         receivedMessages.getAndAdd(0);
@@ -235,7 +242,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
         isConnected.set(false);
     }
 
-    private void connect() throws Throwable{
+    private void connect(){
         try {
             if( isTCPon ) {
                 this.sessionMngrCommAPI = new ClientCommAPI(serverAddress);
@@ -334,26 +341,36 @@ public class ClientCommController implements ClientController, DestroyableCallba
 
     @Override
     public void send(String serviceId, Object message){
-        try {
-            if( !isConnected.get() ){
-                ExceptionHandler.handle( new MultiuserException(ErrorMessages.CLIENT_NOT_CONNECTED));
+        long delay = 10 - (System.currentTimeMillis() - lastMessage.get() );
+        Utils.sleep( delay );
+        if( !isConnected.get() ){
+            sendMsgQueue.offer( new Pair(serviceId, message) );
+            System.out.println("message: "  + message + "  is not connected");
+        }else {
+            System.out.println("message: "  + message + "  is connected");
+            try {
+                if (!isConnected.get()) {
+                    ExceptionHandler.handle(new MultiuserException(ErrorMessages.CLIENT_NOT_CONNECTED));
+                }
+                if (!isDestroyed.get()) {
+                    lastMessage.set( System.currentTimeMillis() );
+                    sendToInternalSocket(new Pair<>(serviceId, message));
+                } else {
+                    reconnect();
+                }
+            } catch (Throwable e) {
+                ExceptionHandler.handle(e);
             }
-            if( !isDestroyed.get() ) {
-                sendToInternalSocket(new Pair<>(serviceId, message));
-            }else{
-                reconnect();
-            }
-        }catch (Throwable e){
-            ExceptionHandler.handle(e   );
         }
     }
 
-    public void sendToInternalSocket(Pair<String, Object> message) throws Throwable{
+    public void sendToInternalSocket(Pair<String, Object> message){
         try {
             Log4J.track(this, "4:" + message.snd);
             clientSocket.send(message.fst + TOKEN + (message.snd instanceof String? (String) message.snd
                     : Utils.toJson(message.snd) ));
             String response = clientSocket.recvStr();
+            System.out.println("sendToInternalSocket. response: " + response);
             Log4J.track(this, "5:" + message.snd);
             if (response.equals( String.valueOf( Constants.CONNECTION_STARTED )) ){
                 Log4J.track(this, "5.1:" + message.snd);
@@ -382,7 +399,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
         }
     }
 
-    private void sendThread() throws Throwable{
+    private void sendThread(){
         //https://github.com/zeromq/jeromq/wiki/Sharing-ZContext-between-thread
         if( !stop.get() ) {
             sendThread = new SenderThread();
@@ -420,7 +437,9 @@ public class ClientCommController implements ClientController, DestroyableCallba
                 while( !stop.get() && !Thread.currentThread().isInterrupted() ) {
                     try{
                         isConnected.set(true);
+                        processMsgQueue();
                         String strMsg = senderSocket.recvStr(); //ZMQ.DONTWAIT);
+                        System.out.println("Sending: " + strMsg);
                         Log4J.track(this, "7:" + strMsg.split(TOKEN)[1]);
                         if( strMsg != null ) {
                             String[] msg = strMsg.split(TOKEN);
@@ -475,11 +494,27 @@ public class ClientCommController implements ClientController, DestroyableCallba
         }
     }
 
+    /**
+     * Let's process the messages in the queue
+     */
+    private void processMsgQueue() {
+        while (!sendMsgQueue.isEmpty()) {
+            new Thread() {
+                public void run() {
+                    Pair<String, Object> msg = sendMsgQueue.poll();
+                    System.out.println("inside processMsgQueue. Message: " + msg.snd);
+                    send(msg.fst, msg.snd);
+                }
+            }.start();
+            Utils.sleep(1000); // for some reason, less than 1000ms doesnt' work
+        }
+    }
+
     /********************************* RECEIVE THREAD **************************************/
     /************************************************************************************/
 
 
-    private String receive(ClientCommAPI clientCommAPI) throws Throwable{
+    private String receive(ClientCommAPI clientCommAPI){
         try {
             //TODO: why clientAPI is null?
             if( clientCommAPI != null ) {
@@ -599,14 +634,14 @@ public class ClientCommController implements ClientController, DestroyableCallba
     /********************************* RECONNECT THREAD **************************************/
     /*****************************************************************************************/
 
-    private void checkReconnect() throws Throwable{
+    private void checkReconnect(){
         if ( stop.get() && sendState.get() == Constants.CONNECTION_FINISHED
                 && receiveState.get() == Constants.CONNECTION_FINISHED){
             reconnect();
         }
     }
 
-    private void reconnect() throws Throwable{
+    private void reconnect(){
         release.getAndSet(checkFSM(release, Constants.CONNECTION_STARTED) );
         Utils.execute(new Utils.NamedRunnable() {
             @Override

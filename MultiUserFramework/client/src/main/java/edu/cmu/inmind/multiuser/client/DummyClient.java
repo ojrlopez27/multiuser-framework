@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class DummyClient {
     private ClientCommController commController;
-    private AtomicBoolean ready = null;
     private String serverAddress = "tcp://127.0.0.1:5555";
     private String sessionId = "my-session-id";
     private ResponseListener responseListener;
@@ -37,12 +36,9 @@ public class DummyClient {
 
     public DummyClient(){
         this(null, null, null);
-        ready = new AtomicBoolean(false);
     }
 
     public void test() {
-        // just for sync purposes
-        Utils.sleep(100);
         send("test");
         Utils.sleep(3000);
         System.out.println("Done!");
@@ -50,9 +46,6 @@ public class DummyClient {
 
     public void send(Object message){
         try {
-            while( ready != null && !ready.get() ){
-                Utils.sleep(10);
-            }
             SessionMessage sessionMessage = new SessionMessage();
             sessionMessage.setPayload(message.toString());
             sessionMessage.setSessionId(sessionId);
@@ -66,11 +59,14 @@ public class DummyClient {
         commController.disconnect(sessionId);
     }
 
+    public Boolean getIsConnected() {
+        return commController.getIsConnected().get();
+    }
+
     class MyResponseListener implements ResponseListener {
         @Override
         public void process(String message) {
             Log4J.debug(this, "Response from server: " + message);
-            ready.set(true);
         }
     }
 }
