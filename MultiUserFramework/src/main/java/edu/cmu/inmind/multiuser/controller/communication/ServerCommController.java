@@ -7,6 +7,7 @@ import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
+import edu.cmu.inmind.multiuser.controller.plugin.Const;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
@@ -39,6 +40,7 @@ public class ServerCommController implements DestroyableCallback {
 
     // Return address, if any
     private ZFrame replyTo;
+    private ZFrame replyToBackup;
     private AtomicBoolean isDestroyed = new AtomicBoolean(false);
     private AtomicBoolean stop = new AtomicBoolean(false);
     private DestroyableCallback callback;
@@ -120,11 +122,13 @@ public class ServerCommController implements DestroyableCallback {
                             // We should pop and save as many addresses as there are
                             // up to a null part, but for now, just save one
                             replyTo = msg.unwrap();
+                            if( replyToBackup == null ) replyToBackup = replyTo.duplicate();
                             command.destroy();
                             return new ZMsgWrapper(msg, replyTo); // We have a request to process
                         } else if (MDP.S_HEARTBEAT.frameEquals(command)) {
                             // Do nothing for heartbeats
                         } else if (MDP.S_DISCONNECT.frameEquals(command)) {
+                            Log4J.info(this, "**** reconnectToBroker");
                             reconnectToBroker();
                         } else {
                             Log4J.error(this, "Invalid input message: " + command.toString());
@@ -183,14 +187,23 @@ public class ServerCommController implements DestroyableCallback {
         msg.destroy();
     }
 
+
     public void send(ZMsgWrapper reply, Object message) throws Throwable{
+        send(MDP.S_REPLY, reply, message);
+    }
+
+    private void send(MDP command, ZMsgWrapper reply, Object message) throws Throwable{
         try {
             if (reply != null && message != null) {
                 if (replyTo == null || replyTo.toString().isEmpty() ) {
                     if (reply.getReplyTo() != null && !reply.getReplyTo().toString().isEmpty() ) {
                         replyTo = reply.getReplyTo();
                     } else {
-                        ExceptionHandler.checkAssert(replyTo != null);
+                        if( replyToBackup != null && replyToBackup.hasData() ){
+                            replyTo = replyToBackup.duplicate();
+                        }else {
+                            ExceptionHandler.checkAssert(replyTo != null);
+                        }
                     }
                 }
                 if( message.equals("") ){
@@ -202,7 +215,7 @@ public class ServerCommController implements DestroyableCallback {
                 } else {
                     reply.getMsg().addLast(Utils.toJson(message));
                 }
-                sendToBroker(MDP.S_REPLY, null, reply.getMsg());
+                sendToBroker(command, null, reply.getMsg());
                 reply.destroy();
             }else{
                 ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
@@ -217,11 +230,18 @@ public class ServerCommController implements DestroyableCallback {
         }
     }
 
+
     public void send(Object message) throws Throwable{
+        send(MDP.S_REPLY, message);
+    }
+
+    private void send(MDP command, Object message) throws Throwable{
         if( msgTemplate == null ){
-            ExceptionHandler.handle( new MultiuserException( ErrorMessages.OBJECT_NULL, "msgTemplate" ) );
+            if( service.equals(Constants.SESSION_MANAGER_SERVICE) )
+                return;
+            ExceptionHandler.handle(new MultiuserException(ErrorMessages.OBJECT_NULL, "msgTemplate"));
         }
-        send(msgTemplate.duplicate(), message);
+        send(command, msgTemplate.duplicate(), message);
     }
 
     /**
@@ -241,6 +261,9 @@ public class ServerCommController implements DestroyableCallback {
                 msg.addFirst(command.newFrame());
                 msg.addFirst(MDP.S_ORCHESTRATOR.newFrame());
                 msg.addFirst(new ZFrame(new byte[0]));
+                if(MDP.S_SHUTDOWN.equals(command)){
+                    msg.addLast(new ZFrame(Constants.SERVICE_NAME + service));
+                }
                 msg.send(workerSocket);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -253,11 +276,16 @@ public class ServerCommController implements DestroyableCallback {
     /*******************************************************************************************/
 
     public void close(DestroyableCallback callback) throws Throwable{
+        sendShutdown();
         this.callback = callback;
         stop.getAndSet(true);
         items.close();
         Log4J.info(this, "Closing ServerCommController... Callback: " + callback);
         destroyInCascade(this);
+    }
+
+    private void sendShutdown() throws Throwable{
+        send(MDP.S_SHUTDOWN, Constants.SHUTDOW_SERVER);
     }
 
     @Override

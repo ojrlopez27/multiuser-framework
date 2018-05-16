@@ -36,7 +36,7 @@ public class TestDummy {
         final AtomicBoolean canDisconnect = new AtomicBoolean(false);
         long timeout = 10000;
 
-        final DummyClient dummy = new DummyClient("tcp://127.0.0.1:5555", "my-test",
+        final DummyClient dummy = new DummyClient("tcp://128.237.99.154:5555", "my-test",
                 new ResponseListener() {
             @Override
             public void process(String message) {
