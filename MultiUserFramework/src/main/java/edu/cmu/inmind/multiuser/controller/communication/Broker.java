@@ -4,6 +4,7 @@ package edu.cmu.inmind.multiuser.controller.communication;
  * Created by oscarr on 3/28/17.
  */
 
+import edu.cmu.inmind.multiuser.controller.common.Constants;
 import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
@@ -253,17 +254,17 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
                 workerWaiting(worker);
                 serviceFrame.destroy();
             }
+        } else if(MDP.S_SHUTDOWN.frameEquals(command)) {
+            String serviceName = worker.service == null? null : worker.service.name;
+            if( serviceName == null && msg.getLast().toString().startsWith(Constants.SERVICE_NAME) ){
+                serviceName =  msg.pollLast().toString().substring( Constants.SERVICE_NAME.length() );
+            }
+            sendToClient(msg, serviceName);
         } else if (MDP.S_REPLY.frameEquals(command)) {
             if (workerReady) {
                 // Remove & save client return envelope and insert the
                 // protocol header and service name, then rewrap envelope.
-                ZFrame client = msg.unwrap();
-                if( !MDP.S_READY.frameEquals(msg.peekLast(), "\"")) {
-                    msg.addFirst(worker.service.name);
-                    msg.addFirst(MDP.C_CLIENT.newFrame());
-                    msg.wrap(client);
-                    msg.send(socket);
-                }
+                sendToClient(msg, worker.service.name);
                 statusResponseMsgs.put( worker.service, true );
                 workerWaiting(worker);
             } else {
@@ -282,6 +283,16 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
             Log4J.error(this, "invalid message: " + command.toString());
         }
         msg.destroy();
+    }
+
+    private void sendToClient(ZMsg msg, String serviceName) {
+        ZFrame client = msg.unwrap();
+        if( !MDP.S_READY.frameEquals(msg.peekLast(), "\"")) {
+            msg.addFirst(serviceName);
+            msg.addFirst(MDP.C_CLIENT.newFrame());
+            msg.wrap(client);
+            msg.send(socket);
+        }
     }
 
     private void renewExpiration(Worker worker){

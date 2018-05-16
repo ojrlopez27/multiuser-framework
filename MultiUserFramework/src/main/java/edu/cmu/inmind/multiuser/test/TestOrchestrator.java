@@ -17,7 +17,8 @@ public class TestOrchestrator extends ProcessOrchestratorImpl {
     public void process(String input) throws Throwable{
         SessionMessage sessionMessage = Utils.fromJson( input, SessionMessage.class );
         logger.turnOn( false );
-        blackboard.post(this, "MSG_COMPONENT_1", sessionMessage.getPayload() );
+        //blackboard.post(this, "MSG_COMPONENT_1", sessionMessage.getPayload() );
+        sendResponse("this is the output from server: " + input);
     }
 
     @Override

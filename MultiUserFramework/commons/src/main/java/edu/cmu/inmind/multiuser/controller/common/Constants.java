@@ -13,6 +13,7 @@ public class Constants {
     public static final String UNREGISTER_REMOTE_SERVICE = "UNREGISTER_REMOTE_SERVICE";
     public static final String RESPONSE_REMOTE_UNREGISTERED = "RESPONSE_REMOTE_UNREGISTERED";
     public static final String RESPONSE_PUBLISHED = "RESPONSE_PUBLISHED";
+    public static final String SHUTDOW_SERVER = "SHUTDOW_SERVER";
 
     //lifecycle
     public static final String REQUEST_PAUSE = "REQUEST_PAUSE";
@@ -70,4 +71,5 @@ public class Constants {
     public static final String POOL = "POOL";
 
     public static final String NO_SESSION = "NO_SESSION";
+    public static final String SERVICE_NAME = "service-name:";
 }

@@ -175,10 +175,6 @@ public abstract class PluggableComponent extends AbstractIdleService
     @Override
     public void setClientCommController(ClientController clientController) {
         this.clientCommController = clientController;
-        if(this.clientCommController!=null)
-            System.out.println("SetClientCommController completed ");
-        else
-            System.out.println("ExternalComponent ClientCommController = null");
     }
 
 

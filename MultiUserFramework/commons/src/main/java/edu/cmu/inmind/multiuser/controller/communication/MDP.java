@@ -29,7 +29,8 @@ public enum MDP {
     S_REQUEST(2),
     S_REPLY(3),
     S_HEARTBEAT(4),
-    S_DISCONNECT(5);
+    S_DISCONNECT(5),
+    S_SHUTDOWN(6);
 
     private final byte[] data;
 

@@ -9,6 +9,7 @@ import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
+import edu.cmu.inmind.multiuser.controller.plugin.Const;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
@@ -345,9 +346,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
         Utils.sleep( delay );
         if( !isConnected.get() ){
             sendMsgQueue.offer( new Pair(serviceId, message) );
-            System.out.println("message: "  + message + "  is not connected");
         }else {
-            System.out.println("message: "  + message + "  is connected");
             try {
                 if (!isConnected.get()) {
                     ExceptionHandler.handle(new MultiuserException(ErrorMessages.CLIENT_NOT_CONNECTED));
@@ -370,7 +369,6 @@ public class ClientCommController implements ClientController, DestroyableCallba
             clientSocket.send(message.fst + TOKEN + (message.snd instanceof String? (String) message.snd
                     : Utils.toJson(message.snd) ));
             String response = clientSocket.recvStr();
-            System.out.println("sendToInternalSocket. response: " + response);
             Log4J.track(this, "5:" + message.snd);
             if (response.equals( String.valueOf( Constants.CONNECTION_STARTED )) ){
                 Log4J.track(this, "5.1:" + message.snd);
@@ -439,7 +437,6 @@ public class ClientCommController implements ClientController, DestroyableCallba
                         isConnected.set(true);
                         processMsgQueue();
                         String strMsg = senderSocket.recvStr(); //ZMQ.DONTWAIT);
-                        System.out.println("Sending: " + strMsg);
                         Log4J.track(this, "7:" + strMsg.split(TOKEN)[1]);
                         if( strMsg != null ) {
                             String[] msg = strMsg.split(TOKEN);
@@ -502,7 +499,6 @@ public class ClientCommController implements ClientController, DestroyableCallba
             new Thread() {
                 public void run() {
                     Pair<String, Object> msg = sendMsgQueue.poll();
-                    System.out.println("inside processMsgQueue. Message: " + msg.snd);
                     send(msg.fst, msg.snd);
                 }
             }.start();
@@ -577,6 +573,10 @@ public class ClientCommController implements ClientController, DestroyableCallba
                                 Log4J.track(this, "34:" + response);
                                 responseListener.process(response);
                                 if( sendAck ) send(sessionId, new SessionMessage(Constants.ACK));
+                                if( response.contains(Constants.SHUTDOW_SERVER) ){
+                                    stop.set(true);
+                                    ClientCommController.this.close(this);
+                                }
                             } else {
                                 shouldProcessReply = true;
                             }
@@ -619,7 +619,9 @@ public class ClientCommController implements ClientController, DestroyableCallba
             if( stop.get() ) receiveState.getAndSet( checkFSM(receiveState, Constants.CONNECTION_STOPPED) );
             isReceiveThreadAlive.getAndSet(false);
             checkReconnect();
-            if(callback != null) callback.destroyInCascade(this);
+            if(callback != null){
+                callback.destroyInCascade(this);
+            }
         }
     }
 
