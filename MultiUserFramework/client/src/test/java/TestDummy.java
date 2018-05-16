@@ -5,6 +5,7 @@ import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import org.junit.Test;
 
+import java.util.Scanner;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,7 +26,14 @@ public class TestDummy {
     public void testBasicSend(){
         DummyClient dummy = new DummyClient();
         dummy.test();
-        dummy.disconnect();
+        Scanner scanner = new Scanner(System.in);
+        while(true){
+            System.out.println("Enter something: ");
+            String command = scanner.nextLine();
+            if(command.equals("stop"))
+                dummy.disconnect();
+            Utils.sleep(10);
+        }
     }
 
     /**
