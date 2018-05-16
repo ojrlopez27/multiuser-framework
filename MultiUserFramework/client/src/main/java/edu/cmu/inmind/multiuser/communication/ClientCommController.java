@@ -342,7 +342,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
 
     @Override
     public void send(String serviceId, Object message){
-        long delay = 10 - (System.currentTimeMillis() - lastMessage.get() );
+        long delay = 15 - (System.currentTimeMillis() - lastMessage.get() );
         Utils.sleep( delay );
         if( !isConnected.get() ){
             sendMsgQueue.offer( new Pair(serviceId, message) );
