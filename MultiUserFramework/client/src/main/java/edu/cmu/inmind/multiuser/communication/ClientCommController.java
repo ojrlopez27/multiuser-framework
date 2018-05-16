@@ -46,7 +46,6 @@ public class ClientCommController implements ClientController, DestroyableCallba
 
     private AtomicBoolean isDestroyed = new AtomicBoolean(false);
     private AtomicBoolean isConnected = new AtomicBoolean(false);
-    private AtomicBoolean isShutDown = new AtomicBoolean(false);
 
     /**
      * We use this socket to communicate with senderSocket, which is running on another
@@ -221,7 +220,6 @@ public class ClientCommController implements ClientController, DestroyableCallba
     /************************************************************************************/
 
     private void execute() {
-        isShutDown.set(false);
         if( release.get() == Constants.CONNECTION_FINISHED){
             try {
                 reset();
@@ -366,11 +364,11 @@ public class ClientCommController implements ClientController, DestroyableCallba
     public void send(String serviceId, Object message){
         long delay = 15 - (System.currentTimeMillis() - lastMessage.get() );
         Utils.sleep( delay );
-        if( !isConnected.get() && !isShutDown.get() ){
+        if( !isConnected.get() ){
             sendMsgQueue.offer( new Pair(serviceId, message) );
         }else {
             try {
-                if (!isConnected.get() && isShutDown.get()) {
+                if (!isConnected.get() ){
                     ExceptionHandler.handle(new MultiuserException(ErrorMessages.CLIENT_NOT_CONNECTED));
                 }
                 if (!isDestroyed.get()) {
@@ -597,7 +595,6 @@ public class ClientCommController implements ClientController, DestroyableCallba
                                 if( sendAck ) send(sessionId, new SessionMessage(Constants.ACK));
                                 if( response.contains(Constants.SHUTDOW_SERVER) ){
                                     stop.set(true);
-                                    isShutDown.set(true);
                                     ClientCommController.this.close(this);
                                 }
                             } else {
