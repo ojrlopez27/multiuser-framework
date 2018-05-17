@@ -15,6 +15,7 @@ public class TestOrchestrator extends ProcessOrchestratorImpl {
 
     @Override
     public void process(String input) throws Throwable{
+        System.out.println("Orchestrator receives: " + input);
         SessionMessage sessionMessage = Utils.fromJson( input, SessionMessage.class );
         logger.turnOn( false );
         //blackboard.post(this, "MSG_COMPONENT_1", sessionMessage.getPayload() );

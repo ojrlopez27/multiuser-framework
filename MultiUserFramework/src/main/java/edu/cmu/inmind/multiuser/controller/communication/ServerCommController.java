@@ -195,17 +195,20 @@ public class ServerCommController implements DestroyableCallback {
     private void send(MDP command, ZMsgWrapper reply, Object message) throws Throwable{
         try {
             if (reply != null && message != null) {
-                if (replyTo == null || replyTo.toString().isEmpty() ) {
-                    if (reply.getReplyTo() != null && !reply.getReplyTo().toString().isEmpty() ) {
-                        replyTo = reply.getReplyTo();
-                    } else {
-                        if( replyToBackup != null && replyToBackup.hasData() ){
-                            replyTo = replyToBackup.duplicate();
-                        }else {
-                            ExceptionHandler.checkAssert(replyTo != null);
-                        }
-                    }
-                }
+                replyTo = replyToBackup.duplicate();
+                //FIXME: for some reason, msgTemplate does not keep the correct replyTo, so we replaced it with replyToBackup
+//                if (replyTo == null || replyTo.toString().isEmpty() ) {
+//                    if (reply.getReplyTo() != null && !reply.getReplyTo().toString().isEmpty() ) {
+//                        replyTo = reply.getReplyTo();
+//                    } else {
+//                        if( replyToBackup != null && replyToBackup.hasData() ){
+//                            replyTo = replyToBackup.duplicate();
+//                            System.out.println("*** replyTo 3: " + replyTo);
+//                        }else {
+//                            ExceptionHandler.checkAssert(replyTo != null);
+//                        }
+//                    }
+//                }
                 if( message.equals("") ){
                     ExceptionHandler.handle( new MultiuserException(ErrorMessages.SESSION_MESSAGE_IS_EMPTY ));
                 }

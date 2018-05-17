@@ -320,8 +320,6 @@ public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionO
             final ClientCommController clientCommController = new ClientCommController.Builder()
                     .setServerAddress(serviceInfo.getMasterMUFAddress())
                     .setServiceName(serviceInfo.getServiceName())
-                    .setClientAddress(serviceInfo.getSlaveMUFAddress())
-                    .setMsgTemplate(serviceInfo.getMsgWrapper())
                     .setSubscriptionMessages(serviceInfo.getMsgSubscriptions())
                     .setRequestType(Constants.REGISTER_REMOTE_SERVICE)
                     .build();

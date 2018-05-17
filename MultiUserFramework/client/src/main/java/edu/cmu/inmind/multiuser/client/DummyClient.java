@@ -55,6 +55,10 @@ public class DummyClient {
         }
     }
 
+    public void sendSMsg(SessionMessage sessionMessage){
+        commController.send(sessionMessage.getSessionId(), sessionMessage);
+    }
+
     public void disconnect() {
         commController.disconnect(sessionId);
     }

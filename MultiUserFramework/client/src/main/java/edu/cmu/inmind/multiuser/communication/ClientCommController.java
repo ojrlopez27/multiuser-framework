@@ -75,6 +75,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
     private boolean shouldProcessReply;
     private boolean isTCPon;
     private List<DestroyableCallback> callbacks;
+    private long elapsedTime = 15; //milliseconds to wait between sending messages
 
 
     public ClientCommController( Builder builder){
@@ -124,15 +125,12 @@ public class ClientCommController implements ClientController, DestroyableCallba
         private String serviceName = String.format("client-%s", Math.random() );
         private String sessionId = "";
         private String serverAddress = "tcp://127.0.0.1:5555";
-        @Deprecated
-        private String clientAddress = "tcp://127.0.0.1:5555";
-        private ZMsgWrapper msgTemplate;
         private String requestType = Constants.REQUEST_CONNECT;
         private String [] subscriptionMessages;
         private boolean shouldProcessReply = true;
         private ResponseListener responseListener;
         private String sessionManagerService = Constants.SESSION_MANAGER_SERVICE;
-        private boolean sendAck;
+        private boolean sendAck = false;
 
         public ClientCommController build(){
             return new ClientCommController( this);
@@ -151,21 +149,6 @@ public class ClientCommController implements ClientController, DestroyableCallba
         public Builder setServerAddress(String serverAddress) {
             ExceptionHandler.checkIpAddress(serverAddress);
             this.serverAddress = serverAddress;
-            return this;
-        }
-
-        @Deprecated
-        /**
-         * Client address is not necessary anymore. Don't use it!
-         */
-        public Builder setClientAddress(String clientAddress) {
-            ExceptionHandler.checkIpAddress(clientAddress);
-            this.clientAddress = clientAddress;
-            return this;
-        }
-
-        public Builder setMsgTemplate(ZMsgWrapper msgTemplate) {
-            this.msgTemplate = msgTemplate;
             return this;
         }
 
@@ -363,8 +346,6 @@ public class ClientCommController implements ClientController, DestroyableCallba
 
     @Override
     public void send(String serviceId, Object message){
-        long delay = 15 - (System.currentTimeMillis() - lastMessage.get() );
-        Utils.sleep( delay );
         if( !isConnected.get() && !isDestroyed.get() ){
             sendMsgQueue.offer( new Pair(serviceId, message) );
         }else {
@@ -387,6 +368,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
 
     public void sendToInternalSocket(Pair<String, Object> message){
         try {
+            checkFrequency();
             Log4J.track(this, "4:" + message.snd);
             clientSocket.send(message.fst + TOKEN + (message.snd instanceof String? (String) message.snd
                     : Utils.toJson(message.snd) ));
@@ -407,6 +389,11 @@ public class ClientCommController implements ClientController, DestroyableCallba
         }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
+    }
+
+    private void checkFrequency() {
+        long delay = elapsedTime - (System.currentTimeMillis() - lastMessage.get() );
+        Utils.sleep( delay );
     }
 
     private boolean sendToBroker(String id, String message) throws Throwable{
