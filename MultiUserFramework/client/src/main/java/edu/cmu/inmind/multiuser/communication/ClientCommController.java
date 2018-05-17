@@ -61,20 +61,20 @@ public class ClientCommController implements ClientController, DestroyableCallba
     private static final String STOP_FLAG = "STOP_FLAG";
 
     // control
-    private AtomicInteger sentMessages = new AtomicInteger(0); // we need to keep the state in case of failure and reconnection
-    private AtomicInteger receivedMessages = new AtomicInteger(0);
-    private AtomicBoolean stop = new AtomicBoolean(false);
+    private AtomicInteger sentMessages; // we need to keep the state in case of failure and reconnection
+    private AtomicInteger receivedMessages;
+    private AtomicBoolean stop;
+    private AtomicInteger sendState;
+    private AtomicInteger receiveState;
+    private AtomicBoolean isSendThreadAlive;
+    private AtomicBoolean isReceiveThreadAlive;
+    private AtomicLong lastMessage;
     private AtomicInteger release = new AtomicInteger(Constants.CONNECTION_FINISHED);
-    private AtomicInteger sendState = new AtomicInteger(Constants.CONNECTION_NEW);
-    private AtomicInteger receiveState = new AtomicInteger(Constants.CONNECTION_NEW);
-    private AtomicBoolean isSendThreadAlive = new AtomicBoolean(false);
-    private AtomicBoolean isReceiveThreadAlive = new AtomicBoolean(false);
-    private AtomicLong lastMessage = new AtomicLong( System.currentTimeMillis() );
+    private ConcurrentLinkedQueue<Pair<String, Object>> sendMsgQueue = new ConcurrentLinkedQueue<>();
     private ResponseListener responseListener;
     private boolean shouldProcessReply;
     private boolean isTCPon;
     private List<DestroyableCallback> callbacks;
-    private ConcurrentLinkedQueue<Pair<String, Object>> sendMsgQueue = new ConcurrentLinkedQueue<>();
 
 
     public ClientCommController( Builder builder){
@@ -232,15 +232,16 @@ public class ClientCommController implements ClientController, DestroyableCallba
     }
 
     private void reset(){
-        stop.getAndSet(false);
-        sentMessages.getAndSet( 0 );
-        receivedMessages.getAndAdd(0);
-        sendState.getAndSet( checkFSM(sendState, Constants.CONNECTION_NEW) );
-        receiveState.getAndSet( checkFSM(receiveState, Constants.CONNECTION_NEW) );
+        stop = new AtomicBoolean(false);
+        sentMessages = new AtomicInteger(0);
+        receivedMessages = new AtomicInteger(0);
+        sendState = new AtomicInteger(Constants.CONNECTION_NEW);
+        receiveState = new AtomicInteger(Constants.CONNECTION_NEW);
+        isSendThreadAlive = new AtomicBoolean(false);
+        isReceiveThreadAlive = new AtomicBoolean(false);
+        isConnected = new AtomicBoolean(false);
+        lastMessage = new AtomicLong( System.currentTimeMillis() );
         release.getAndSet( checkFSM( release, Constants.CONNECTION_NEW) );
-        isSendThreadAlive.getAndSet(false);
-        isReceiveThreadAlive.getAndSet(false);
-        isConnected.set(false);
     }
 
     private void connect(){
@@ -334,7 +335,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
                     if (callback != null) callback.destroyInCascade(this);
                 }
                 reset();
-                release();
+                //release();
             }
         }
     }
@@ -364,18 +365,19 @@ public class ClientCommController implements ClientController, DestroyableCallba
     public void send(String serviceId, Object message){
         long delay = 15 - (System.currentTimeMillis() - lastMessage.get() );
         Utils.sleep( delay );
-        if( !isConnected.get() ){
+        if( !isConnected.get() && !isDestroyed.get() ){
             sendMsgQueue.offer( new Pair(serviceId, message) );
         }else {
             try {
                 if (!isConnected.get() ){
                     ExceptionHandler.handle(new MultiuserException(ErrorMessages.CLIENT_NOT_CONNECTED));
-                }
-                if (!isDestroyed.get()) {
-                    lastMessage.set( System.currentTimeMillis() );
-                    sendToInternalSocket(new Pair<>(serviceId, message));
-                } else {
-                    reconnect();
+                }else {
+                    if (!isDestroyed.get()) {
+                        lastMessage.set(System.currentTimeMillis());
+                        sendToInternalSocket(new Pair<>(serviceId, message));
+                    } else {
+                        reconnect();
+                    }
                 }
             } catch (Throwable e) {
                 ExceptionHandler.handle(e);
@@ -670,6 +672,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
             public void run() {
                 try {
                     release.getAndSet( checkFSM(release, Constants.CONNECTION_FINISHED) );
+                    isDestroyed.set(false);
                     execute();
                 } catch (Throwable e) {
                     ExceptionHandler.handle(e);

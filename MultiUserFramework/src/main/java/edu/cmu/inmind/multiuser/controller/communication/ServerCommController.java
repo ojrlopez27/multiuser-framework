@@ -122,7 +122,7 @@ public class ServerCommController implements DestroyableCallback {
                             // We should pop and save as many addresses as there are
                             // up to a null part, but for now, just save one
                             replyTo = msg.unwrap();
-                            if( replyToBackup == null ) replyToBackup = replyTo.duplicate();
+                            if( replyTo != null && !replyTo.toString().isEmpty() ) replyToBackup = replyTo.duplicate();
                             command.destroy();
                             return new ZMsgWrapper(msg, replyTo); // We have a request to process
                         } else if (MDP.S_HEARTBEAT.frameEquals(command)) {
