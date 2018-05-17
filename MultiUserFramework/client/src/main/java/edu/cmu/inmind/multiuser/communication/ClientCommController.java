@@ -362,6 +362,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
 
     @Override
     public void send(String serviceId, Object message){
+        System.out.println(String.valueOf((System.currentTimeMillis() - lastMessage.get() )));
         long delay = 15 - (System.currentTimeMillis() - lastMessage.get() );
         Utils.sleep( delay );
         if( !isConnected.get() ){
@@ -621,6 +622,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
                 }
             }
         }
+
 
         @Override
         public void close(DestroyableCallback callback) throws Throwable {

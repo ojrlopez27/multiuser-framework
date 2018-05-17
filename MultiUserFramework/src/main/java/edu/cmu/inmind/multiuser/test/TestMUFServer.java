@@ -15,8 +15,9 @@ public class TestMUFServer {
              muf = MUFLifetimeManager.startFramework(
                     TestUtils.getModules(TestOrchestrator.class ),
                     TestUtils.createConfig( "tcp://"+
-                                    InetAddress.getLocalHost().getHostAddress(),
+                            InetAddress.getLocalHost().getHostAddress(),
                             5555 ).setTCPon( true ) );
+             System.out.println(InetAddress.getLocalHost().getHostAddress());
             String command ="";
             try (Scanner scanner = new Scanner(System.in)) {
                 while (!command.equals("shutdown")) {
