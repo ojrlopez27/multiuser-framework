@@ -333,8 +333,28 @@ public class ClientCommController implements ClientController, DestroyableCallba
                 for (DestroyableCallback callback : callbacks) {
                     if (callback != null) callback.destroyInCascade(this);
                 }
+                reset();
+                release();
             }
         }
+    }
+
+    public void release() throws Throwable{
+        serviceName = null;
+        sessionId = null;
+        serverAddress = null;
+        requestType = null;
+        sendThread.destroyInCascade(null);
+        sendThread = null;
+        receiveThread.destroyInCascade(null);
+        receiveThread = null;
+        timer.cancel();
+        timer = null;
+        inprocName = "inproc://sender-thread";
+        sentMessages = null;
+        receivedMessages = null;
+        responseListener = null;
+        callbacks = null;
     }
 
     /********************************* SEND THREAD **************************************/
@@ -342,13 +362,13 @@ public class ClientCommController implements ClientController, DestroyableCallba
 
     @Override
     public void send(String serviceId, Object message){
-        long delay = 10 - (System.currentTimeMillis() - lastMessage.get() );
+        long delay = 15 - (System.currentTimeMillis() - lastMessage.get() );
         Utils.sleep( delay );
         if( !isConnected.get() ){
             sendMsgQueue.offer( new Pair(serviceId, message) );
         }else {
             try {
-                if (!isConnected.get()) {
+                if (!isConnected.get() ){
                     ExceptionHandler.handle(new MultiuserException(ErrorMessages.CLIENT_NOT_CONNECTED));
                 }
                 if (!isDestroyed.get()) {

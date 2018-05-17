@@ -5,6 +5,7 @@ import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import org.junit.Test;
 
+import java.util.Scanner;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,7 +26,14 @@ public class TestDummy {
     public void testBasicSend(){
         DummyClient dummy = new DummyClient();
         dummy.test();
-        dummy.disconnect();
+        Scanner scanner = new Scanner(System.in);
+        while(true){
+            System.out.println("Enter something: ");
+            String command = scanner.nextLine();
+            if(command.equals("stop"))
+                dummy.disconnect();
+            Utils.sleep(10);
+        }
     }
 
     /**
@@ -34,16 +42,17 @@ public class TestDummy {
     @Test
     public void testCustomSend(){
         final AtomicBoolean canDisconnect = new AtomicBoolean(false);
+        final String PLEASE_STOP = "PLEASE_STOP";
         long timeout = 10000;
 
-        final DummyClient dummy = new DummyClient("tcp://128.237.99.154:5555", "my-test",
+        final DummyClient dummy = new DummyClient("tcp://127.0.0.1:5555", "my-test",
                 new ResponseListener() {
             @Override
             public void process(String message) {
                 System.out.println("This is the response from server: " + message);
                 Log4J.debug("Test", "This is the response from server: " + message);
                 // if we receive a message after the session has been initiated, then we are done and we can disconnect
-                if( !message.contains(Constants.SESSION_INITIATED) ){
+                if( !message.contains(PLEASE_STOP) ){
                     canDisconnect.set(true);
                 }
             }
@@ -59,6 +68,8 @@ public class TestDummy {
 
         // let's send a message
         dummy.send("message from client");
+        dummy.send("message from client 2");
+        dummy.send(PLEASE_STOP);
 
         // let's wait for server to reply, then disconnect
         await().atMost(timeout, TimeUnit.MILLISECONDS).until(new Callable<Boolean>() {
