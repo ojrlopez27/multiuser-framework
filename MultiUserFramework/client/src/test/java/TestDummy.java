@@ -2,6 +2,7 @@ import edu.cmu.inmind.multiuser.client.DummyClient;
 import edu.cmu.inmind.multiuser.controller.common.Constants;
 import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
+import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import org.junit.Test;
 
@@ -26,14 +27,7 @@ public class TestDummy {
     public void testBasicSend(){
         DummyClient dummy = new DummyClient();
         dummy.test();
-        Scanner scanner = new Scanner(System.in);
-        while(true){
-            System.out.println("Enter something: ");
-            String command = scanner.nextLine();
-            if(command.equals("stop"))
-                dummy.disconnect();
-            Utils.sleep(10);
-        }
+        dummy.disconnect();
     }
 
     /**
@@ -43,16 +37,16 @@ public class TestDummy {
     public void testCustomSend(){
         final AtomicBoolean canDisconnect = new AtomicBoolean(false);
         final String PLEASE_STOP = "PLEASE_STOP";
-        long timeout = 10000;
+        long timeout = 30000;
+        final String sessionId = "my-test";
 
-        final DummyClient dummy = new DummyClient("tcp://127.0.0.1:5555", "my-test",
+        final DummyClient dummy = new DummyClient("tcp://127.0.0.1:5555", sessionId,
                 new ResponseListener() {
             @Override
             public void process(String message) {
-                System.out.println("This is the response from server: " + message);
                 Log4J.debug("Test", "This is the response from server: " + message);
                 // if we receive a message after the session has been initiated, then we are done and we can disconnect
-                if( !message.contains(PLEASE_STOP) ){
+                if( message.contains(PLEASE_STOP) ){
                     canDisconnect.set(true);
                 }
             }
@@ -65,6 +59,7 @@ public class TestDummy {
                 return dummy.getIsConnected();
             }
         });
+
 
         // let's send a message
         dummy.send("message from client");

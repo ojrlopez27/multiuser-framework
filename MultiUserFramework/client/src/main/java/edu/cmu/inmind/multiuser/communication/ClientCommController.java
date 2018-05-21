@@ -61,20 +61,21 @@ public class ClientCommController implements ClientController, DestroyableCallba
     private static final String STOP_FLAG = "STOP_FLAG";
 
     // control
-    private AtomicInteger sentMessages = new AtomicInteger(0); // we need to keep the state in case of failure and reconnection
-    private AtomicInteger receivedMessages = new AtomicInteger(0);
-    private AtomicBoolean stop = new AtomicBoolean(false);
+    private AtomicInteger sentMessages; // we need to keep the state in case of failure and reconnection
+    private AtomicInteger receivedMessages;
+    private AtomicBoolean stop;
+    private AtomicInteger sendState;
+    private AtomicInteger receiveState;
+    private AtomicBoolean isSendThreadAlive;
+    private AtomicBoolean isReceiveThreadAlive;
+    private AtomicLong lastMessage;
     private AtomicInteger release = new AtomicInteger(Constants.CONNECTION_FINISHED);
-    private AtomicInteger sendState = new AtomicInteger(Constants.CONNECTION_NEW);
-    private AtomicInteger receiveState = new AtomicInteger(Constants.CONNECTION_NEW);
-    private AtomicBoolean isSendThreadAlive = new AtomicBoolean(false);
-    private AtomicBoolean isReceiveThreadAlive = new AtomicBoolean(false);
-    private AtomicLong lastMessage = new AtomicLong( System.currentTimeMillis() );
+    private ConcurrentLinkedQueue<Pair<String, Object>> sendMsgQueue = new ConcurrentLinkedQueue<>();
     private ResponseListener responseListener;
     private boolean shouldProcessReply;
     private boolean isTCPon;
     private List<DestroyableCallback> callbacks;
-    private ConcurrentLinkedQueue<Pair<String, Object>> sendMsgQueue = new ConcurrentLinkedQueue<>();
+    private long elapsedTime = 15; //milliseconds to wait between sending messages
 
 
     public ClientCommController( Builder builder){
@@ -124,15 +125,12 @@ public class ClientCommController implements ClientController, DestroyableCallba
         private String serviceName = String.format("client-%s", Math.random() );
         private String sessionId = "";
         private String serverAddress = "tcp://127.0.0.1:5555";
-        @Deprecated
-        private String clientAddress = "tcp://127.0.0.1:5555";
-        private ZMsgWrapper msgTemplate;
         private String requestType = Constants.REQUEST_CONNECT;
         private String [] subscriptionMessages;
         private boolean shouldProcessReply = true;
         private ResponseListener responseListener;
         private String sessionManagerService = Constants.SESSION_MANAGER_SERVICE;
-        private boolean sendAck;
+        private boolean sendAck = false;
 
         public ClientCommController build(){
             return new ClientCommController( this);
@@ -151,21 +149,6 @@ public class ClientCommController implements ClientController, DestroyableCallba
         public Builder setServerAddress(String serverAddress) {
             ExceptionHandler.checkIpAddress(serverAddress);
             this.serverAddress = serverAddress;
-            return this;
-        }
-
-        @Deprecated
-        /**
-         * Client address is not necessary anymore. Don't use it!
-         */
-        public Builder setClientAddress(String clientAddress) {
-            ExceptionHandler.checkIpAddress(clientAddress);
-            this.clientAddress = clientAddress;
-            return this;
-        }
-
-        public Builder setMsgTemplate(ZMsgWrapper msgTemplate) {
-            this.msgTemplate = msgTemplate;
             return this;
         }
 
@@ -232,15 +215,16 @@ public class ClientCommController implements ClientController, DestroyableCallba
     }
 
     private void reset(){
-        stop.getAndSet(false);
-        sentMessages.getAndSet( 0 );
-        receivedMessages.getAndAdd(0);
-        sendState.getAndSet( checkFSM(sendState, Constants.CONNECTION_NEW) );
-        receiveState.getAndSet( checkFSM(receiveState, Constants.CONNECTION_NEW) );
+        stop = new AtomicBoolean(false);
+        sentMessages = new AtomicInteger(0);
+        receivedMessages = new AtomicInteger(0);
+        sendState = new AtomicInteger(Constants.CONNECTION_NEW);
+        receiveState = new AtomicInteger(Constants.CONNECTION_NEW);
+        isSendThreadAlive = new AtomicBoolean(false);
+        isReceiveThreadAlive = new AtomicBoolean(false);
+        isConnected = new AtomicBoolean(false);
+        lastMessage = new AtomicLong( System.currentTimeMillis() );
         release.getAndSet( checkFSM( release, Constants.CONNECTION_NEW) );
-        isSendThreadAlive.getAndSet(false);
-        isReceiveThreadAlive.getAndSet(false);
-        isConnected.set(false);
     }
 
     private void connect(){
@@ -334,7 +318,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
                     if (callback != null) callback.destroyInCascade(this);
                 }
                 reset();
-                release();
+                //release();
             }
         }
     }
@@ -362,21 +346,19 @@ public class ClientCommController implements ClientController, DestroyableCallba
 
     @Override
     public void send(String serviceId, Object message){
-        System.out.println(String.valueOf((System.currentTimeMillis() - lastMessage.get() )));
-        long delay = 15 - (System.currentTimeMillis() - lastMessage.get() );
-        Utils.sleep( delay );
-        if( !isConnected.get() ){
+        if( !isConnected.get() && !isDestroyed.get() ){
             sendMsgQueue.offer( new Pair(serviceId, message) );
         }else {
             try {
                 if (!isConnected.get() ){
                     ExceptionHandler.handle(new MultiuserException(ErrorMessages.CLIENT_NOT_CONNECTED));
-                }
-                if (!isDestroyed.get()) {
-                    lastMessage.set( System.currentTimeMillis() );
-                    sendToInternalSocket(new Pair<>(serviceId, message));
-                } else {
-                    reconnect();
+                }else {
+                    if (!isDestroyed.get()) {
+                        lastMessage.set(System.currentTimeMillis());
+                        sendToInternalSocket(new Pair<>(serviceId, message));
+                    } else {
+                        reconnect();
+                    }
                 }
             } catch (Throwable e) {
                 ExceptionHandler.handle(e);
@@ -386,6 +368,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
 
     public void sendToInternalSocket(Pair<String, Object> message){
         try {
+            checkFrequency();
             Log4J.track(this, "4:" + message.snd);
             clientSocket.send(message.fst + TOKEN + (message.snd instanceof String? (String) message.snd
                     : Utils.toJson(message.snd) ));
@@ -406,6 +389,11 @@ public class ClientCommController implements ClientController, DestroyableCallba
         }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
+    }
+
+    private void checkFrequency() {
+        long delay = elapsedTime - (System.currentTimeMillis() - lastMessage.get() );
+        Utils.sleep( delay );
     }
 
     private boolean sendToBroker(String id, String message) throws Throwable{
@@ -672,6 +660,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
             public void run() {
                 try {
                     release.getAndSet( checkFSM(release, Constants.CONNECTION_FINISHED) );
+                    isDestroyed.set(false);
                     execute();
                 } catch (Throwable e) {
                     ExceptionHandler.handle(e);

@@ -16,11 +16,12 @@ public class TestOrchestrator extends ProcessOrchestratorImpl {
 
     @Override
     public void process(String input) throws Throwable{
+        System.out.println("Orchestrator receives: " + input);
         SessionMessage sessionMessage = Utils.fromJson( input, SessionMessage.class );
         logger.turnOn( false );
         Log4J.info(this, " input "+input);
         blackboard.post(this, "MSG_COMPONENT_1", sessionMessage.getPayload() );
-        sendResponse("this is the output from server: " + input);
+        sendResponse( input);
     }
 
     @Override

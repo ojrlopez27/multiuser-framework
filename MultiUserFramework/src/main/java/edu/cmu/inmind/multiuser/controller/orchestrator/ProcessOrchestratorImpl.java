@@ -179,7 +179,6 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
                 ((Pluggable) pair.fst).setClientCommController( new ClientCommController.Builder()
                         .setServerAddress( ((ServiceComponent)pair.snd).getServiceURL())
                         .setServiceName(sessionId)
-                        .setMsgTemplate( ((ServiceComponent)pair.snd).getMsgTemplate() )
                         .setRequestType( Constants.REQUEST_CONNECT )
                         .build() );
             }

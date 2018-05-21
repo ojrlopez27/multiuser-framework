@@ -122,7 +122,7 @@ public class ServerCommController implements DestroyableCallback {
                             // We should pop and save as many addresses as there are
                             // up to a null part, but for now, just save one
                             replyTo = msg.unwrap();
-                            if( replyToBackup == null ) replyToBackup = replyTo.duplicate();
+                            if( replyTo != null && !replyTo.toString().isEmpty() ) replyToBackup = replyTo.duplicate();
                             command.destroy();
                             return new ZMsgWrapper(msg, replyTo); // We have a request to process
                         } else if (MDP.S_HEARTBEAT.frameEquals(command)) {
@@ -195,17 +195,20 @@ public class ServerCommController implements DestroyableCallback {
     private void send(MDP command, ZMsgWrapper reply, Object message) throws Throwable{
         try {
             if (reply != null && message != null) {
-                if (replyTo == null || replyTo.toString().isEmpty() ) {
-                    if (reply.getReplyTo() != null && !reply.getReplyTo().toString().isEmpty() ) {
-                        replyTo = reply.getReplyTo();
-                    } else {
-                        if( replyToBackup != null && replyToBackup.hasData() ){
-                            replyTo = replyToBackup.duplicate();
-                        }else {
-                            ExceptionHandler.checkAssert(replyTo != null);
-                        }
-                    }
-                }
+                replyTo = replyToBackup.duplicate();
+                //FIXME: for some reason, msgTemplate does not keep the correct replyTo, so we replaced it with replyToBackup
+//                if (replyTo == null || replyTo.toString().isEmpty() ) {
+//                    if (reply.getReplyTo() != null && !reply.getReplyTo().toString().isEmpty() ) {
+//                        replyTo = reply.getReplyTo();
+//                    } else {
+//                        if( replyToBackup != null && replyToBackup.hasData() ){
+//                            replyTo = replyToBackup.duplicate();
+//                            System.out.println("*** replyTo 3: " + replyTo);
+//                        }else {
+//                            ExceptionHandler.checkAssert(replyTo != null);
+//                        }
+//                    }
+//                }
                 if( message.equals("") ){
                     ExceptionHandler.handle( new MultiuserException(ErrorMessages.SESSION_MESSAGE_IS_EMPTY ));
                 }
@@ -285,7 +288,7 @@ public class ServerCommController implements DestroyableCallback {
     }
 
     private void sendShutdown() throws Throwable{
-        send(MDP.S_SHUTDOWN, Constants.SHUTDOW_SERVER);
+        send(MDP.S_SHUTDOWN, new SessionMessage(Constants.SHUTDOW_SERVER));
     }
 
     @Override

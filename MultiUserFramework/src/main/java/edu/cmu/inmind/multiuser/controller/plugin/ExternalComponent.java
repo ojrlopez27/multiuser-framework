@@ -33,7 +33,6 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
                 .setServerAddress(serviceInfo.getSlaveMUFAddress())
                 .setServiceName(serviceInfo.getServiceName())
                 .setSessionId(sessionId)
-                .setMsgTemplate( zMsgWrapper )
                 .setSubscriptionMessages( messages )
                 .setRequestType( Constants.REQUEST_CONNECT )
                 .setResponseListener(this)

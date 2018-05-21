@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by oscarr on 5/16/18.
  */
-public class SimpleTest {
+public class SimpleServer {
     public static void main(String args[]){
         try {
             MultiuserController multiuserController = MUFLifetimeManager.startFramework(
