@@ -2,25 +2,23 @@ package edu.cmu.inmind.multiuser.controller.orchestrator.bn;
 
 import edu.cmu.inmind.multiuser.controller.common.Utils;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
 /**
- * A competence module i can be described by a tuple (ci ai di zi). Where: 
+ * A behavior i can be described by a tuple (ci ai di zi). Where: 
  * ci is a list of preconditions which have to be full-filled before the 
- * competence module can become active. ai and di represent the expected 
- * effects of the competence module's action in terms of an add-list and a 
- * delete-list. In addition, each competence module has a level of activation zi
+ * behavior can become active. ai and di represent the expected 
+ * effects of the behavior's action in terms of an add-list and a 
+ * delete-list. In addition, each behavior has a level of activation zi
  *
  * @author oromero
  *
  */
 public class Behavior implements Comparable<Behavior>{
-	private String name;
+    public static final String TOKEN = "TOKEN";
+    private String name;
     private String id;
 	private List<List<Premise>> preconditions = new Vector <>();
 	private List<String> addList = new Vector <>();
@@ -33,7 +31,7 @@ public class Behavior implements Comparable<Behavior>{
 	private transient boolean executable = false, activated = false;
 	private transient boolean verbose = false;
     private transient int numMatches;
-	private transient String stateMatches;
+	private transient List<Premise> stateMatches;
     private transient double utility;
     private transient BehaviorNetwork network;
 
@@ -205,7 +203,7 @@ public class Behavior implements Comparable<Behavior>{
 	}
 
 	/**
-	 * the input of activation to module x from the state at time t is
+	 * the input of activation to behavior x from the state at time t is
 	 * @param states
 	 * @param matchedStates
 	 * @param phi
@@ -231,16 +229,18 @@ public class Behavior implements Comparable<Behavior>{
 
 	private int findPremise(List<String> states, String condition){
 		for( int i = 0; i < states.size(); i++ ){
-			if( Pattern.compile(condition.replace("*", "[a-zA-Z0-9_]*"))
+			if( condition.contains("*") && Pattern.compile(condition.replace("*", "[a-zA-Z0-9_]*"))
 					.matcher(states.get(i)).matches() ){
 				return i;
-			}
+			}else if(condition.equals(states.get(i))){
+			    return i;
+            }
 		}
 		return -1;
 	}
 
 	/**
-	 * The input of activation to competence module x from the goals at time t is
+	 * The input of activation to behavior x from the goals at time t is
 	 * @param goals
 	 * @param achievedPropositions
 	 * @param gamma
@@ -263,7 +263,7 @@ public class Behavior implements Comparable<Behavior>{
 	}
 
 	/**
-	 * The removal of activation from competence module x by the goals that are protected
+	 * The removal of activation from behavior x by the goals that are protected
 	 * at time t is.
 	 * @param goalsR
 	 * @param undoPropositions
@@ -287,8 +287,8 @@ public class Behavior implements Comparable<Behavior>{
 	}
 
 	/**
-	 * A function executable(i t), which returns 1 (true) if competence module i is executable
-	 * at time t (i.e., if all of the preconditions of competence module i are members
+	 * A function executable(i t), which returns 1 (true) if behavior i is executable
+	 * at time t (i.e., if all of the preconditions of behavior i are members
 	 * of S (t)), and 0 (false) otherwise.
      * Note: modified with weights.
 	 */
@@ -352,14 +352,16 @@ public class Behavior implements Comparable<Behavior>{
 
     @Override
     public int compareTo(Behavior other) {
-		double thisUtility = this.computeUtility();
-		double otherUtility = other.computeUtility();
-        return Double.compare( thisUtility, otherUtility);
+        return Double.compare( this.computeUtility(), other.computeUtility() );
     }
 
     @Override
     public Behavior clone(){
 		return Utils.clone(this);
+    }
+
+    public Behavior deepClone(){
+        return Utils.deepClone(this);
     }
 
 	public void reset() {
@@ -376,11 +378,11 @@ public class Behavior implements Comparable<Behavior>{
      */
     public int calculateMatchPreconditions(CopyOnWriteArrayList<String> states) {
         numMatches = 0;
-		stateMatches = "";
+		stateMatches = new ArrayList<>();
         for( List<Premise> precondList : preconditions ){
             for( Premise precond : precondList ){
                 if( states.contains(precond.getLabel()) ){
-					stateMatches += String.format("[(%s, %s)] ",precond.getLabel(), precond.getWeight());
+					stateMatches.add(precond);
                     numMatches++;
                 }
             }
@@ -396,7 +398,43 @@ public class Behavior implements Comparable<Behavior>{
 		this.numMatches = numMatches;
 	}
 
-	public String getStateMatches() {
+	public List<Premise> getStateMatches() {
 		return stateMatches;
+	}
+
+	public List<Premise> getMissingStates() {
+        List<Premise> missing = new ArrayList<>();
+        for(List<Premise> premises : preconditions){
+            for(Premise premise : premises){
+                if(!stateMatches.contains(premise)){
+                    missing.add(premise);
+                }
+            }
+        }
+        return missing;
+    }
+
+    /**
+     * Creates a grounded (specific) behavior from an abstract one. Basically, 
+     * we add a (grounded) prefix to behavior name, pre and post conditions. 
+     * @param prefix
+     * @return
+     */
+	public Behavior ground(String prefix) {
+        Behavior clone = deepClone();
+    	prefix = prefix + TOKEN;
+		clone.name = prefix + clone.name;
+		for(List<Premise> premises : clone.preconditions){
+			for(Premise premise : premises){
+				premise.setLabel( prefix + premise.getLabel() );
+			}
+		}
+		for(int i = 0; i < clone.addList.size(); i++){
+			clone.addList.set(i, prefix + clone.addList.get(i) );
+		}
+		for(int i = 0; i < clone.deleteList.size(); i++){
+			clone.deleteList.set(i, prefix + clone.deleteList.get(i) );
+		}
+		return clone;
 	}
 }

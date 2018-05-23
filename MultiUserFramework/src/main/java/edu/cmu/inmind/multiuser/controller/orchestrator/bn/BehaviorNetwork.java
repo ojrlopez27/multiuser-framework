@@ -11,14 +11,14 @@ import java.util.regex.Pattern;
  * @author oromero
  */
 public class BehaviorNetwork {
-	private List<Behavior> modules = new Vector<>();
+	private List<Behavior> behaviors = new Vector<>();
     private CopyOnWriteArrayList<String> states = new CopyOnWriteArrayList<>();
 	private List<String> goals = new Vector <>();
     private boolean removePrecond = false;
 	private transient List<String> goalsResolved = new Vector <>();
 
 	private double pi = 15; //20 the mean level of activation,
-	private double theta = 15; //45 the threshold of activation, where is lowered 10% every time no module could be selected, and is reset to its initial value whenever a module becomes active.
+	private double theta = 15; //45 the threshold of activation, where is lowered 10% every time no behavior could be selected, and is reset to its initial value whenever a behavior becomes active.
 	private double initialTheta = 15;//45
 	private double phi = 70; //20 // 90 the amount of activation energy injected by the state per true proposition,
 	private double gamma = 20; //70 the amount of activation energy injected by the goals per goal,
@@ -36,13 +36,13 @@ public class BehaviorNetwork {
     private transient boolean verboseTree = true;
     private transient boolean verboseVal = false;
     private transient List<String> previousStates;
-    private transient List<Behavior> modulesCopy = new Vector<>();
+    private transient List<Behavior> behaviorsCopy = new Vector<>();
     private transient String nameBehaviorActivated;
 	private String output;
 	private String statesOutput;
 
     private transient int cycle = 1;
-	private transient HashMap<String, Behavior> map = new HashMap<>();
+	private transient HashMap<String, Behavior> map;
     private transient int padBehaviorName;
     private final static String LEVEL_1 = "|-- ";
     private final static String LEVEL_2 = "   |-- ";
@@ -52,7 +52,8 @@ public class BehaviorNetwork {
 
 	public HashMap<String, Behavior> map(){
         int length = 0;
-        for(Behavior behavior : modules ){
+        map = new HashMap<>();
+        for(Behavior behavior : behaviors){
             map.put(behavior.getName(), behavior);
             if(behavior.getName().length() > length) length = behavior.getName().length();
             behavior.setNetwork(this);
@@ -63,7 +64,7 @@ public class BehaviorNetwork {
 
     public List<Behavior> getBehByPrefix(String prefix){
 	    List<Behavior> behaviors = new ArrayList<>();
-        for(Behavior behavior : modules ){
+        for(Behavior behavior : this.behaviors){
             if(behavior.getName().startsWith(prefix)){
                 behaviors.add(behavior);
             }
@@ -72,8 +73,8 @@ public class BehaviorNetwork {
     }
 
 
-    public List<Behavior> getModules() {
-		return modules;
+    public List<Behavior> getBehaviors() {
+		return behaviors;
 	}
 
 	synchronized double[] getActivations() {
@@ -95,7 +96,7 @@ public class BehaviorNetwork {
 
     public Behavior getBehaviorActivated(){
 		if( indexBehActivated >= 0 ) {
-			return modules.get(indexBehActivated);
+			return behaviors.get(indexBehActivated);
 		}
 		return null;
 	}
@@ -112,28 +113,28 @@ public class BehaviorNetwork {
         return nameBehaviorActivated;
 	}
 
-	public void setModules(List<Behavior> modules) {
-		this.modules = modules;
-		activationSuccesors = new double[modules.size()][modules.size()];
-		activationPredeccesors = new double[modules.size()][modules.size()];
-		activationConflicters = new double[modules.size()][modules.size()];
-		activationInputs = new double[modules.size()];
-		activationLinks = new double[modules.size()];
+	public void setBehaviors(List<Behavior> behaviors) {
+		this.behaviors = behaviors;
+		activationSuccesors = new double[behaviors.size()][behaviors.size()];
+		activationPredeccesors = new double[behaviors.size()][behaviors.size()];
+		activationConflicters = new double[behaviors.size()][behaviors.size()];
+		activationInputs = new double[behaviors.size()];
+		activationLinks = new double[behaviors.size()];
 	}
 
-	void setModules(List<Behavior> modules, int size) {
-		this.modules = modules;
-		for( int i = 0; i < modules.size(); i++ ){
-			modules.get(i).setIdx(i);
+	void setBehaviors(List<Behavior> behaviors, int size) {
+		this.behaviors = behaviors;
+		for( int i = 0; i < behaviors.size(); i++ ){
+			behaviors.get(i).setIdx(i);
 		}
 
-		activationSuccesors = new double[modules.size()][modules.size()];
-		activationPredeccesors = new double[modules.size()][modules.size()];
-		activationConflicters = new double[modules.size()][modules.size()];
-		activationInputs = new double[modules.size()];
-		activationLinks = new double[modules.size()];
-		if( size < modules.size() ) {
-			activations = new Double[modules.size()];
+		activationSuccesors = new double[behaviors.size()][behaviors.size()];
+		activationPredeccesors = new double[behaviors.size()][behaviors.size()];
+		activationConflicters = new double[behaviors.size()][behaviors.size()];
+		activationInputs = new double[behaviors.size()];
+		activationLinks = new double[behaviors.size()];
+		if( size < behaviors.size() ) {
+			activations = new Double[behaviors.size()];
 		}else{
 			activations = new Double[size];
 		}
@@ -281,13 +282,13 @@ public class BehaviorNetwork {
 	}
 
 	/**
-	 * A function executable(i t), which returns 1 if competence module i is executable
-	 * at time t (i.e., if all of the preconditions of competence module i are members
+	 * A function executable(i t), which returns 1 if behavior i is executable
+	 * at time t (i.e., if all of the preconditions of behavior i are members
 	 * of S (t)), and 0 otherwise.
 	 */
 	public boolean executable (int i){
 		try {
-			return modules.get(i).isExecutable(states);
+			return behaviors.get(i).isExecutable(states);
 		}catch (Exception e){
 			e.printStackTrace();
 		}
@@ -296,7 +297,7 @@ public class BehaviorNetwork {
 
     public boolean executable (int idx, int maximum){
         try {
-            return modules.get(idx).isExecutable(maximum);
+            return behaviors.get(idx).isExecutable(maximum);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -305,7 +306,7 @@ public class BehaviorNetwork {
 
 	private boolean executable (int idx, double maximum){
 		try {
-			return modules.get(idx).isExecutable(maximum);
+			return behaviors.get(idx).isExecutable(maximum);
 		}catch (Exception e){
 			e.printStackTrace();
 		}
@@ -313,13 +314,13 @@ public class BehaviorNetwork {
 	}
 
 	/**
-	 * a function M (j), which returns the set of modules that match proposition j ,
-	 * i.e., the modules x for which j E cx,
+	 * a function M (j), which returns the set of behaviors that match proposition j ,
+	 * i.e., the behaviors x for which j E cx,
 	 * Note: modified with weights.
 	 */
 	private List<Behavior> matchProposition(String proposition){
 		Vector<Behavior> behaviors = new Vector<>();
-		for(Behavior behavior : modules){
+		for(Behavior behavior : this.behaviors){
 			if(behavior.hasPrecondition(proposition))
 				behaviors.add(behavior);
 		}
@@ -327,13 +328,13 @@ public class BehaviorNetwork {
 	}
 
 	/**
-	 * a function A(j ), which returns the set of modules that achieve proposition j ,
-	 * i.e., the modules x for which j E ax,
+	 * a function A(j ), which returns the set of behaviors that achieve proposition j ,
+	 * i.e., the behaviors x for which j E ax,
 	 * Note: modified with weights.
 	 */
 	private Vector<Behavior> achieveProposition(String proposition){
 		Vector<Behavior> behaviors = new Vector<>();
-		for(Behavior beh : modules){
+		for(Behavior beh : this.behaviors){
 			if( beh.isSuccesor(proposition) )
 				behaviors.add( beh );
 		}
@@ -341,12 +342,12 @@ public class BehaviorNetwork {
 	}
 
 	/**
-	 * a function U (j ), which returns the set of modules that undo proposition j , i.e.,
-	 * the modules x for which j E dx,
+	 * a function U (j ), which returns the set of behaviors that undo proposition j , i.e.,
+	 * the behaviors x for which j E dx,
 	 */
 	private Vector<Behavior> undoProposition(String proposition){
 		Vector<Behavior> behaviors = new Vector<>();
-		for(Behavior beh : modules){
+		for(Behavior beh : this.behaviors){
 			if( beh.isInhibition(proposition) )
 				behaviors.add( beh );
 		}
@@ -354,14 +355,14 @@ public class BehaviorNetwork {
 	}
 
 	/**
-	 * a function U (j ), which returns the set of modules that undo proposition j , i.e.,
-	 * the modules x for which j E dx, and j E S(t)
+	 * a function U (j ), which returns the set of behaviors that undo proposition j , i.e.,
+	 * the behaviors x for which j E dx, and j E S(t)
 	 *
 	 * Note: modified with weights.
 	 */
 	private Vector<Behavior> undoPropositionState(String proposition, int indexBehx){
 		Vector<Behavior> behaviors = new Vector<>();
-		for(Behavior behx : modules){
+		for(Behavior behx : this.behaviors){
 			if(behx.getIdx() != indexBehx){
 				if( behx.isInhibition(proposition) && states.contains(proposition) )
 					behaviors.add(behx);
@@ -371,7 +372,7 @@ public class BehaviorNetwork {
 	}
 
 	/**
-	 * The impact of the state, goals and protected goals on the activation level of a module is computed.
+	 * The impact of the state, goals and protected goals on the activation level of a behavior is computed.
 	 Note: modified with weights.
 	 */
 	private void computeActivation (){
@@ -397,16 +398,16 @@ public class BehaviorNetwork {
 			matchesByGoalsResolved[i] = undoProposition(goalsRList.get(i)).size();
 		}
 
-		for(int i = 0; i < modules.size(); i++){
-			double actState = modules.get(i).calculateInputFromState(statesList, matchesByState, phi);
-			double actGoal = modules.get(i).calculateInputFromGoals(goalsList, matchesByGoal, gamma);
-			double actGoalR = modules.get(i).calculateTakeAwayByProtectedGoals(goalsRList, matchesByGoalsResolved, delta); //ojrl states
+		for(int i = 0; i < behaviors.size(); i++){
+			double actState = behaviors.get(i).calculateInputFromState(statesList, matchesByState, phi);
+			double actGoal = behaviors.get(i).calculateInputFromGoals(goalsList, matchesByGoal, gamma);
+			double actGoalR = behaviors.get(i).calculateTakeAwayByProtectedGoals(goalsRList, matchesByGoalsResolved, delta); //ojrl states
 			activationInputs[i] += actState + actGoal - actGoalR;
 		}
 	}
 
 	/**
-	 * The way the competence module activates and inhibits related modules through
+	 * The way the behavior activates and inhibits related behaviors through
 	 * its successor links, predecessor links and conflicter links is computed.
 	 *
 	 * Note: modified with weights.
@@ -414,12 +415,12 @@ public class BehaviorNetwork {
 	private void computeLinks (){
         //int highest = highestNumPreconditions();
 		double highest = highestUtility();
-		for(int i = 0; i < modules.size(); i++){
+		for(int i = 0; i < behaviors.size(); i++){
 			//boolean isExecutable = executable(i);
             boolean isExecutable = executable(i); //executable(i, highest);
-			activationSuccesors[i] = spreadsForward(modules.get(i).getIdx(), isExecutable);
-			activationPredeccesors[i] = spreadsBackward(modules.get(i).getIdx(), isExecutable);
-			activationConflicters[i] = takesAway(modules.get(i).getIdx());
+			activationSuccesors[i] = spreadsForward(behaviors.get(i).getIdx(), isExecutable);
+			activationPredeccesors[i] = spreadsBackward(behaviors.get(i).getIdx(), isExecutable);
+			activationConflicters[i] = takesAway(behaviors.get(i).getIdx());
 		}
 	}
 
@@ -429,9 +430,9 @@ public class BehaviorNetwork {
 	 */
 	private double highestUtility() {
 		double maximum = 0;
-		for (Behavior module : modules) {
-			module.calculateMatchPreconditions(states);
-			double utility = module.computeUtility();
+		for (Behavior behavior : behaviors) {
+			behavior.calculateMatchPreconditions(states);
+			double utility = behavior.computeUtility();
 			if (utility > maximum) {
 				maximum = utility;
 			}
@@ -445,8 +446,8 @@ public class BehaviorNetwork {
      */
     private int highestNumPreconditions() {
         int maximum = 0;
-		for (Behavior module : modules) {
-			int numMatched = module.calculateMatchPreconditions(states);
+		for (Behavior behavior : behaviors) {
+			int numMatched = behavior.calculateMatchPreconditions(states);
 			if (numMatched > maximum) {
 				maximum = numMatched;
 			}
@@ -455,22 +456,22 @@ public class BehaviorNetwork {
     }
 
     /**
-	 * An executable competence module x spreads activation forward. It increases
+	 * An executable behavior x spreads activation forward. It increases
 	 * (by a fraction of its own activation level) the activation level of those
 	 * successors y for which the shared proposition p E ax n cy is not true.
-	 * Intuitively, we want these successor modules to become more activated because
+	 * Intuitively, we want these successor behaviors to become more activated because
 	 * they are 'almost executable', since more of their preconditions will be fulfilled
-	 * after the competence module has become active.
-	 * Formally, given that competence module x = (cx ax dx zx) is executable,
+	 * after the behavior has become active.
+	 * Formally, given that behavior x = (cx ax dx zx) is executable,
 	 * it spreads forward through those successor links for which the proposition
 	 * that defines them p E ax is false.
 	 *
 	 * Note: modified with weights.
 	 */
 	private double[] spreadsForward(int indexBehavior, boolean executable){
-		double[] activation = new double[modules.size()];
+		double[] activation = new double[behaviors.size()];
 		if(executable){
-			Vector<String> addList = new Vector<> ( modules.get(indexBehavior).getAddList() );
+			Vector<String> addList = new Vector<> ( behaviors.get(indexBehavior).getAddList() );
 			for(String addPremise : addList ){
 				if( !states.contains(addPremise) ){ //p E ax is false
                     List<Behavior> sparseBehaviors = matchProposition(addPremise); //j E ax n cy
@@ -480,7 +481,7 @@ public class BehaviorNetwork {
 						double temp = beh.getActivation() * (phi/gamma) * (1d / cardinalityMj) * (1d / cardinalityCy);
                         activation[beh.getIdx()] += temp;
                         if( verboseVal ) {
-                            System.out.println(modules.get(indexBehavior).getName() + " spreads " + temp + " forward to " +
+                            System.out.println(behaviors.get(indexBehavior).getName() + " spreads " + temp + " forward to " +
                                     beh.getName() + " for " + addPremise);
                         }
 					}
@@ -491,13 +492,13 @@ public class BehaviorNetwork {
 	}
 
 	/**
-	 * A competence module x that is NOT executable spreads activation backward.
+	 * A behavior x that is NOT executable spreads activation backward.
 	 * It increases (by a fraction of its own activation level) the activation level of
 	 * those predecessors y for which the shared proposition p E cx n ay is not true.
-	 * Intuitively, a non-executable competence module spreads to the modules that
+	 * Intuitively, a non-executable behavior spreads to the behaviors that
 	 * `promise' to fulfill its preconditions that are not yet true, so that the competence
-	 * module may become executable afterwards. Formally, given that competence
-	 * module x = (cx ax dx zx) is not executable, it spreads backward through those
+	 * behavior may become executable afterwards. Formally, given that competence
+	 * behavior x = (cx ax dx zx) is not executable, it spreads backward through those
 	 * predecessor links for which the proposition that defined them p E cx is false.
 	 * @param indexBehavior
 	 * @param executable
@@ -506,9 +507,9 @@ public class BehaviorNetwork {
 	 * Note: modified with weights.
 	 */
 	private double[] spreadsBackward(int indexBehavior, boolean executable){
-		double[] activation = new double[modules.size()];
+		double[] activation = new double[behaviors.size()];
 		if(!executable){
-			Behavior beh = modules.get(indexBehavior);
+			Behavior beh = behaviors.get(indexBehavior);
 			Collection<List<Premise>> condList = new Vector<> (beh.getPreconditions());
 			for(List<Premise> condRow : condList ){
                 for(Premise cond : condRow ){
@@ -534,14 +535,14 @@ public class BehaviorNetwork {
 
 	/**
 	 * Inhibition of Conflicters
-	 * Every competence module x (executable or not) decreases (by a fraction of its
+	 * Every behavior x (executable or not) decreases (by a fraction of its
 	 * own activation level) the activation level of those conflicters y for which the
-	 * shared proposition p E cx n dy is true. Intuitively, a module tries to prevent a
-	 * module that undoes its true preconditions from becoming active. Notice that
-	 * we do not allow a module to inhibit itself (while it may activate itself). In
-	 * case of mutual conflict of modules, only the one with the highest activation
+	 * shared proposition p E cx n dy is true. Intuitively, a behavior tries to prevent a
+	 * behavior that undoes its true preconditions from becoming active. Notice that
+	 * we do not allow a behavior to inhibit itself (while it may activate itself). In
+	 * case of mutual conflict of behaviors, only the one with the highest activation
 	 * level inhibits the other. This prevents the phenomenon that the most relevant
-	 * modules eliminate each other. Formally, competence module x = (cx ax dx zx)
+	 * behaviors eliminate each other. Formally, behavior x = (cx ax dx zx)
 	 * takes away activation energy through all of its conflicter links for which the
 	 * proposition that defines them p E cx is true, except those links for which there
 	 * exists an inverse conflicter link that is stronger.
@@ -549,8 +550,8 @@ public class BehaviorNetwork {
 	 * Note: modified with weights.
 	 */
 	private double[] takesAway(int indexBehavior){
-		double[] activation = new double[modules.size()];
-		Behavior behx = modules.get(indexBehavior);
+		double[] activation = new double[behaviors.size()];
+		Behavior behx = behaviors.get(indexBehavior);
         Collection<List<Premise>> condListX = new Vector<>(behx.getPreconditions());
 
 		for( List<Premise> condRow : condListX ){
@@ -585,8 +586,8 @@ public class BehaviorNetwork {
 	 * Note: modified with weights.
 	 */
 	private boolean inverseTakesAway(int indexBehx, int indexBehy){
-        Collection<List<Premise>> condsListy = new Vector<> (modules.get(indexBehy).getPreconditions());
-		Behavior behx = modules.get(indexBehx);
+        Collection<List<Premise>> condsListy = new Vector<> (behaviors.get(indexBehy).getPreconditions());
+		Behavior behx = behaviors.get(indexBehx);
 
 		for(List<Premise> condRow : condsListy ){
             for( Premise cond : condRow ) {
@@ -605,48 +606,48 @@ public class BehaviorNetwork {
 		double sum = 0, factor, mayor = 0;
 		int indexMayor = 0;
 
-		for(int i = 0; i < modules.size(); i++){
-			sum += modules.get(i).getActivation();
-			if(modules.get(i).getActivation() > mayor){
-				mayor = modules.get(i).getActivation();
+		for(int i = 0; i < behaviors.size(); i++){
+			sum += behaviors.get(i).getActivation();
+			if(behaviors.get(i).getActivation() > mayor){
+				mayor = behaviors.get(i).getActivation();
 				indexMayor = i;
 			}
 		}
-		if(sum > pi * modules.size()){
-			factor = pi * modules.size() / sum;
-			for (Behavior module : modules) {
-				module.decay(factor);
+		if(sum > pi * behaviors.size()){
+			factor = pi * behaviors.size() / sum;
+			for (Behavior behavior : behaviors) {
+				behavior.decay(factor);
 			}
 		}
 		//ojrl decay bahavior which increments its activation continously and is not activated
-		if(modules.get(indexMayor).getActivation() > (theta * 1.5) && !modules.get(indexMayor).getActivated()){
-			modules.get(indexMayor).decay(0.5);
-			for (Behavior module : modules) {
-				if (module.getExecutable() && module.getIdx() != modules.get(indexMayor).getIdx()
-						&& !module.getActivated() && indexBehActivated != -1) {
-					if (indexBehActivated != module.getIdx())
-						module.decay(1.5);
+		if(behaviors.get(indexMayor).getActivation() > (theta * 1.5) && !behaviors.get(indexMayor).getActivated()){
+			behaviors.get(indexMayor).decay(0.5);
+			for (Behavior behavior : behaviors) {
+				if (behavior.getExecutable() && behavior.getIdx() != behaviors.get(indexMayor).getIdx()
+						&& !behavior.getActivated() && indexBehActivated != -1) {
+					if (indexBehActivated != behavior.getIdx())
+						behavior.decay(1.5);
 					else
-						module.decay(0.9);
+						behavior.decay(0.9);
 				}
 			}
 		}
 
-		for(int i = 0; i < modules.size(); i++){
+		for(int i = 0; i < behaviors.size(); i++){
             if( verboseVal ) {
-//                System.out.println("activation-level " + modules.get(i).getName() + ": " + modules.get(i).getActivation());
+//                System.out.println("activation-level " + behaviors.get(i).getName() + ": " + behaviors.get(i).getActivation());
             }
 		}
 	}
 
 	/**
-	 * The competence module that fulfills the following three conditions becomes
+	 * The behavior that fulfills the following three conditions becomes
 	 * active: (i) It has to be executable, (ii) Its level of activation has to surpass a
 	 * certain threshold and (iii) It must have a higher activation level than all other
-	 * competence modules that fulfill conditions (i) and (ii). When two competence
-	 * modules fulfilll these conditions (i.e., they are equally strong), one of them is
-	 * chosen randomly. The activation level of the module that has become active is
-	 * reinitialized to 0 2. If none of the modules fulfills conditions (i) and (ii), the
+	 * competence behaviors that fulfill conditions (i) and (ii). When two competence
+	 * behaviors fulfilll these conditions (i.e., they are equally strong), one of them is
+	 * chosen randomly. The activation level of the behavior that has become active is
+	 * reinitialized to 0 2. If none of the behaviors fulfills conditions (i) and (ii), the
 	 * threshold is lowered by 10%.
 	 *
 	 * Note: modified with weights.
@@ -654,9 +655,9 @@ public class BehaviorNetwork {
 	private int activateBehavior (){
 		double act = 0;
 		indexBehActivated = -1;
-		for( Behavior beh : modules ){
+		for( Behavior beh : behaviors){
             if( beh.getActivation() >= theta && beh.getExecutable() && beh.getActivation() > act){
-                indexBehActivated = modules.indexOf(beh);
+                indexBehActivated = behaviors.indexOf(beh);
                 act = beh.getActivation();
                 nameBehaviorActivated = beh.getName(); //beh.getName();
             }
@@ -666,7 +667,7 @@ public class BehaviorNetwork {
 		    System.out.println(LEVEL_2 + "STATE: " + Arrays.toString(states.toArray()));
             System.out.println(LEVEL_2 + "BEHAVIOR (B), ACTIVATION (AC), PRECONDITIONS THAT ARE TRUE (PT), LIST OF PRECONDITIONS (LP), So:  |-- B  AC  (PT) -> LP");
         }
-		for( Behavior beh : modules ){
+		for( Behavior beh : behaviors){
 			if( verboseTree ) {
 				System.out.println(LEVEL_3 + Utils.padRight(beh.getName(), padBehaviorName)
                         + Utils.padRight(beh.getActivation(), 10) + "("+beh.getNumMatches()+") -> " + beh.getStateMatches());
@@ -678,11 +679,11 @@ public class BehaviorNetwork {
         if( indexBehActivated >= 0 ){
 			statesOutput = Arrays.toString(states.toArray());
 			if(verboseTree ) {
-				System.out.println(LEVEL_2 + "EXECUTING BEHAVIOR: " + modules.get(indexBehActivated).getName());
+				System.out.println(LEVEL_2 + "EXECUTING BEHAVIOR: " + behaviors.get(indexBehActivated).getName());
 			}
             execution = true;
-            modules.get(indexBehActivated).setActivated(true);
-            protectGoals(modules.get(indexBehActivated));
+            behaviors.get(indexBehActivated).setActivated(true);
+            protectGoals(behaviors.get(indexBehActivated));
         }
 		return indexBehActivated;
 	}
@@ -756,12 +757,12 @@ public class BehaviorNetwork {
 	 * Note: modified with weights.
 	 */
 	private void updateActivation(){
-		//activation level of a competence module y at time t
-		for(int i = 0; i < modules.size(); i++){
-			for(int j = 0; j < modules.size(); j++){
+		//activation level of a behavior y at time t
+		for(int i = 0; i < behaviors.size(); i++){
+			for(int j = 0; j < behaviors.size(); j++){
 				activationLinks[i] += activationSuccesors[j][i] + activationPredeccesors[j][i] - activationConflicters[j][i];
 			}
-			modules.get(i).updateActivation(activationInputs[i] + activationLinks[i]);
+			behaviors.get(i).updateActivation(activationInputs[i] + activationLinks[i]);
 			activationInputs[i] = 0;
 			activationLinks[i] = 0;
 		}
@@ -774,8 +775,8 @@ public class BehaviorNetwork {
 		//reseting
 		if(execution)
 			theta = initialTheta;
-		for (Behavior module : modules) {
-			module.resetActivation(module.getActivated());
+		for (Behavior behavior : behaviors) {
+			behavior.resetActivation(behavior.getActivated());
 		}
 	}
 
@@ -786,9 +787,9 @@ public class BehaviorNetwork {
     public int selectBehavior() {
 		if(verboseTree) System.out.println(LEVEL_1 + "BEHAVIOR NETWORK DECISION CYCLE: " + cycle);
         if (activations == null) {
-            setModules(modules, modules.size() + 1);
+            setBehaviors(behaviors, behaviors.size() + 1);
         }
-        activations[modules.size()] = theta;
+        activations[behaviors.size()] = theta;
         if (verboseVal) {
             System.out.println(String.format("\nStep: %s.\tgoals achieved: %s,\tgoals: %s",cont, goalsResolved.size(), goals.size()));
         }
@@ -807,15 +808,15 @@ public class BehaviorNetwork {
 	 * Note: modified with weights.
 	 */
 	private void recordActivations(){
-        for (int i = 0; i < modules.size(); i++) {
-            Behavior b = modules.get(i);
+        for (int i = 0; i < behaviors.size(); i++) {
+            Behavior b = behaviors.get(i);
             if (verboseVal) {
                 System.out.println("Behavior: " + b.getName() + "  activation: " + b.getActivation());
             }
-            activations[i] = modules.get(i).getActivation();
+            activations[i] = behaviors.get(i).getActivation();
         }
         if (indexBehActivated != -1) {
-            activations[modules.size()] = modules.get(indexBehActivated).getActivation();
+            activations[behaviors.size()] = behaviors.get(indexBehActivated).getActivation();
         }
     }
 
@@ -823,7 +824,7 @@ public class BehaviorNetwork {
         if( !execution ){
             theta *= 0.9;
             if( verboseVal ) {
-                System.err.println("None of the executable modules has accumulated enough activation to become active");
+                System.err.println("None of the executable behaviors has accumulated enough activation to become active");
                 System.out.println("Theta: " + theta);
             }
         }else{
@@ -835,22 +836,22 @@ public class BehaviorNetwork {
     public int getHighestActivation() {
         int idx = 5; //ASN
         double max = 0;
-        for(int i = 0; i< modules.size(); i++){
-            Behavior beh = modules.get(i);
+        for(int i = 0; i< behaviors.size(); i++){
+            Behavior beh = behaviors.get(i);
             if( beh.getActivation() > theta && beh.getActivation() > max ){
                 idx = i;
             }
         }
-        modules.get(idx).setActivation(max * 1.15);
-        nameBehaviorActivated = modules.get(idx).getId(); //.getName();
+        behaviors.get(idx).setActivation(max * 1.15);
+        nameBehaviorActivated = behaviors.get(idx).getId(); //.getName();
         return indexBehActivated = idx;
     }
 
 	public int getHighestActivationUsingNone(){
 		int idx = 7, maxPrecTrue = 0;
 		double max = 0;
-		for(int i = 0; i< modules.size(); i++){
-			Behavior beh = modules.get(i);
+		for(int i = 0; i< behaviors.size(); i++){
+			Behavior beh = behaviors.get(i);
 			if( beh.getName().equals("NONE")){
 				idx = i;
 			}
@@ -865,24 +866,22 @@ public class BehaviorNetwork {
             max = theta;
         }
         indexBehActivated = idx;
-        nameBehaviorActivated = modules.get(idx).getId(); //getName();
-        modules.get(idx).setActivation(max * 1.30);
-		modules.get(idx).setNumMatches(maxPrecTrue);
-        modules.get(idx).setActivated(true);
+        nameBehaviorActivated = behaviors.get(idx).getId(); //getName();
+        behaviors.get(idx).setActivation(max * 1.30);
+		behaviors.get(idx).setNumMatches(maxPrecTrue);
+        behaviors.get(idx).setActivated(true);
         execution = true;
         recordActivations();
 		return idx;
 	}
 
-    public String[] getModuleNamesByHighestActivation() {
-        getModulesCopy();
-        Collections.sort( modulesCopy );
-        Collections.reverse( modulesCopy );
-        String[] results = new String[modulesCopy.size()];
+    public String[] getBehaviorNamesByHighestActivation() {
+        getBehaviorsSorted();
+        String[] results = new String[behaviorsCopy.size()];
 		DecimalFormat formatter = new DecimalFormat("#0.00");
 		output = "";
-        for( int i = 0; i < modulesCopy.size(); i++ ){
-			Behavior bp = modulesCopy.get(i);
+        for( int i = 0; i < behaviorsCopy.size(); i++ ){
+			Behavior bp = behaviorsCopy.get(i);
             results[i] = bp.getId();
 			output += "["+bp.getName()+": ("+formatter.format( bp.getActivation())+") - ("+bp.getNumMatches()+")], ";
         }
@@ -890,23 +889,30 @@ public class BehaviorNetwork {
         return results;
     }
 
-    private void getModulesCopy() {
-        modulesCopy.clear();
-        for( Behavior beh : modules ){
-            modulesCopy.add( beh.clone() );
+    public List<Behavior> getBehaviorsSorted(){
+        getBehaviorsCopy(false);
+        Collections.sort( behaviorsCopy );
+        Collections.reverse( behaviorsCopy );
+        return behaviorsCopy;
+    }
+
+    private void getBehaviorsCopy(boolean deep) {
+        behaviorsCopy.clear();
+        for( Behavior beh : behaviors){
+            behaviorsCopy.add( deep? beh.deepClone() : beh.clone() );
         }
     }
 
-	public String[] getModuleNames() {
-		String[] names = new String[ modules.size() ];
+	public String[] getBehaviorNames() {
+		String[] names = new String[ behaviors.size() ];
 		for(int i = 0; i < names.length; i++){
-			names[i] = modules.get(i).getName();
+			names[i] = behaviors.get(i).getName();
 		}
 		return names;
 	}
 
 	public double[] getOnlyActivations() {
-		int size = modules.size();
+		int size = behaviors.size();
 		double[] actvs = new double[ size ];
 		for( int i = 0; i < size; i++){
 			actvs[i] = activations[i];
@@ -915,7 +921,7 @@ public class BehaviorNetwork {
 	}
 
 	public void resetAll() {
-		for( Behavior beh : modules ){
+		for( Behavior beh : behaviors){
 			beh.reset();
 		}
 		theta = initialTheta;
@@ -930,9 +936,11 @@ public class BehaviorNetwork {
     public void endMeansAnalysis(){
 	    List<String> latentStates = new ArrayList<>();
 	    for(String goal : goals){
-	        for( Behavior behavior : modules){
+	        for( Behavior behavior : behaviors){
 	            for(String addCondition : behavior.getAddList() ){
-	                if( addCondition.equals(goal) ){
+	                if( addCondition.contains(Behavior.TOKEN)
+                            ?addCondition.substring(addCondition.indexOf(Behavior.TOKEN) + Behavior.TOKEN.length()).equals(goal)
+                            :addCondition.equals(goal) ){
 	                    // so this behavior promises to achieve the goal
                         latentStates = extractLatentStates(behavior, latentStates);
                     }
@@ -949,7 +957,7 @@ public class BehaviorNetwork {
                     if (checkIsRequired(premise.getLabel()) && !latentStates.contains(premise.getLabel())) {
                         latentStates.add(premise.getLabel());
                     }
-                    for (Behavior beh : modules) {
+                    for (Behavior beh : behaviors) {
                         if (beh != behavior) {
                             for (String addCondition : beh.getAddList()) {
                                 if (addCondition.equals(premise.getLabel())) {
@@ -967,5 +975,9 @@ public class BehaviorNetwork {
     private boolean checkIsRequired(String premise){
         return premise.contains("-required");
         //return premise.lastIndexOf("R") == premise.length() - 1;
+    }
+
+    public void addBehaviors(List<Behavior> behaviors) {
+        this.behaviors.addAll(behaviors);
     }
 }

@@ -1,363 +1,96 @@
 {
-  "modules": [
+  "behaviors": [
     {
-      "name": "bob-phone-do-shopping",
+      "name": "get-self-location",
       "preconditions": [
         [
           {
-            "label": "bob-nearest-to-shop",
+            "label": "self-location-required",
             "weight": 1
           }
         ],
         [
           {
-            "label": "shopping-list-provided",
+            "label": "gps-turned-on",
             "weight": 1
           }
         ],
         [
           {
-            "label": "shopping-not-done",
-            "weight": 1
-          }
-        ]
-      ],
-      "addList": [
-        "shopping-done"
-      ],
-      "deleteList": [
-        "shopping-not-done"
-      ],
-      "addGoals": []
-    },
-    {
-      "name": "alice-phone-do-shopping",
-      "preconditions": [
-        [
-          {
-            "label": "alice-nearest-to-shop",
-            "weight": 1
-          }
-        ],
-        [
-          {
-            "label": "shopping-list-provided",
-            "weight": 1
-          }
-        ],
-        [
-          {
-            "label": "shopping-not-done",
-            "weight": 1
-          }
-        ]
-      ],
-      "addList": [
-        "shopping-done"
-      ],
-      "deleteList": [
-        "shopping-not-done"
-      ],
-      "addGoals": []
-    },
-    {
-      "name": "bob-phone-check-have-shopping-list",
-      "preconditions": [
-        [
-          {
-            "label": "shopping-list-required",
-            "weight": 1
-          }
-        ]
-      ],
-      "addList": [
-        "shopping-list-provided"
-      ],
-      "deleteList": [
-        "shopping-list-required"
-      ],
-      "addGoals": []
-    },
-    {
-      "name": "alice-phone-check-have-shopping-list",
-      "preconditions": [
-        [
-          {
-            "label": "shopping-list-required",
-            "weight": 1
-          }
-        ]
-      ],
-      "addList": [
-        "shopping-list-provided"
-      ],
-      "deleteList": [
-        "shopping-list-required"
-      ],
-      "addGoals": []
-    },
-    {
-      "name": "server-who-is-nearer-to-shop",
-      "preconditions": [
-        [
-          {
-            "label": "alice-distance-to-shop-provided",
-            "weight": 1
-          }
-        ],
-        [
-          {
-            "label": "bob-distance-to-shop-provided",
-            "weight": 1
-          }
-        ],
-        [
-          {
-            "label": "who-is-closer-required",
-            "weight": 1
-          }
-        ]
-      ],
-      "addList": [
-        "bob-nearest-to-shop",
-        "alice-nearest-to-shop"
-      ],
-      "deleteList": [
-        "who-is-closer-required"
-      ],
-      "addGoals": []
-    },
-    {
-      "name": "bob-phone-get-distance-to-shop",
-      "preconditions": [
-        [
-          {
-            "label": "bob-distance-to-shop-required",
-            "weight": 1
-          }
-        ],
-        [
-          {
-            "label": "bob-location-provided",
-            "weight": 1
-          }
-        ],
-        [
-          {
-            "label": "bob-nearest-shop-provided",
-            "weight": 1
-          }
-        ]
-      ],
-      "addList": [
-        "bob-distance-to-shop-provided"
-      ],
-      "deleteList": [
-        "bob-distance-to-shop-required"
-      ],
-      "addGoals": []
-    },
-    {
-      "name": "alice-phone-get-distance-to-shop",
-      "preconditions": [
-        [
-          {
-            "label": "alice-distance-to-shop-required",
-            "weight": 1
-          }
-        ],
-        [
-          {
-            "label": "alice-location-provided",
-            "weight": 1
-          }
-        ],
-        [
-          {
-            "label": "alice-nearest-shop-provided",
-            "weight": 1
-          }
-        ]
-      ],
-      "addList": [
-        "alice-distance-to-shop-provided"
-      ],
-      "deleteList": [
-        "alice-distance-to-shop-required"
-      ],
-      "addGoals": []
-    },
-    {
-      "name": "alice-phone-find-nearest-shop",
-      "preconditions": [
-        [
-          {
-            "label": "alice-nearest-shop-required",
-            "weight": 1
-          }
-        ],
-        [
-          {
-            "label": "alice-location-provided",
-            "weight": 1
-          }
-        ]
-      ],
-      "addList": [
-        "alice-nearest-shop-provided"
-      ],
-      "deleteList": [
-        "alice-nearest-shop-required"
-      ],
-      "addGoals": []
-    },
-    {
-      "name": "bob-phone-find-nearest-shop",
-      "preconditions": [
-        [
-          {
-            "label": "bob-nearest-shop-required",
-            "weight": 1
-          }
-        ],
-        [
-          {
-            "label": "bob-location-provided",
-            "weight": 1
-          }
-        ]
-      ],
-      "addList": [
-        "bob-nearest-shop-provided"
-      ],
-      "deleteList": [
-        "bob-nearest-shop-required"
-      ],
-      "addGoals": []
-    },
-    {
-      "name": "bob-phone-location",
-      "preconditions": [
-        [
-          {
-            "label": "bob-location-required",
-            "weight": 1
-          }
-        ],
-        [
-          {
-            "label": "bob-phone-gps-turned-on",
-            "weight": 1
-          }
-        ],
-        [
-          {
-            "label": "bob-phone-medium-battery",
+            "label": "medium-battery",
             "weight": 1
           },
           {
-            "label": "bob-phone-high-battery",
+            "label": "high-battery",
             "weight": 1
           }
         ]
       ],
       "addList": [
-        "bob-location-provided"
+        "self-location-provided"
       ],
       "deleteList": [
-        "bob-location-required"
+        "self-location-required"
       ],
       "addGoals": []
     },
     {
-      "name": "alice-phone-location",
+      "name": "find-place-location",
       "preconditions": [
         [
           {
-            "label": "alice-location-required",
+            "label": "place-location-required",
             "weight": 1
           }
         ],
         [
           {
-            "label": "alice-phone-gps-turned-on",
+            "label": "self-location-provided",
             "weight": 1
           }
         ],
         [
           {
-            "label": "alice-phone-medium-battery",
-            "weight": 1
-          },
-          {
-            "label": "alice-phone-high-battery",
+            "label": "place-name-provided",
             "weight": 1
           }
         ]
       ],
       "addList": [
-        "alice-location-provided"
+        "place-location-provided"
       ],
       "deleteList": [
-        "alice-location-required"
+        "place-location-required"
       ],
       "addGoals": []
     },
     {
-      "name": "bob-tablet-location",
+      "name": "get-distance-to-place",
       "preconditions": [
         [
           {
-            "label": "bob-location-required",
+            "label": "distance-to-place-required",
             "weight": 1
           }
         ],
         [
           {
-            "label": "bob-tablet-gps-turned-on",
+            "label": "place-location-provided",
             "weight": 1
           }
         ],
         [
           {
-            "label": "bob-tablet-medium-battery",
-            "weight": 1
-          },
-          {
-            "label": "bob-tablet-high-battery",
+            "label": "self-location-provided",
             "weight": 1
           }
         ]
       ],
       "addList": [
-        "bob-location-provided"
+        "distance-to-place-provided"
       ],
       "deleteList": [
-        "bob-location-required"
-      ],
-      "addGoals": []
-    },
-    {
-      "name": "bob-phone-weather",
-      "preconditions": [
-        [
-          {
-            "label": "bob-weather-required",
-            "weight": 4
-          }
-        ],
-        [
-          {
-            "label": "bob-location-provided",
-            "weight": 1
-          }
-        ]
-      ],
-      "addList": [
-        "bob-weather-provided"
-      ],
-      "deleteList": [
-        "bob-weather-required"
+        "distance-to-place-required"
       ],
       "addGoals": []
     }

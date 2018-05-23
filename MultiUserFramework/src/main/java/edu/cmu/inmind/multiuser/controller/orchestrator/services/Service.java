@@ -12,14 +12,20 @@ public abstract class Service {
     protected Behavior behavior; // each behavior maps one and only one service
     protected CopyOnWriteArrayList<String> state; //we need state to update changes on it
     protected BehaviorNetwork network;
+    protected String deviceName;
 
     public Service(){}
 
-    public Service(Behavior behavior, CopyOnWriteArrayList<String> state){
+    public Service(String deviceName, Behavior behavior, CopyOnWriteArrayList<String> state){
         this.behavior = behavior;
         this.state = state;
         this.network = behavior.getNetwork();
+        this.deviceName = deviceName;
     }
 
     public abstract void execute();
+
+    public void setBehavior(Behavior behavior) {
+        this.behavior = behavior;
+    }
 }

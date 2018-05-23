@@ -5,28 +5,28 @@
       "preconditions": [
         [
           {
-            "label": "7_BNTS",
+            "label": "bob-nearest-to-shop",
             "weight": 1
           }
         ],
         [
           {
-            "label": "6_SLP",
+            "label": "shopping-list-provided",
             "weight": 1
           }
         ],
         [
           {
-            "label": "6_SND",
+            "label": "shopping-not-done",
             "weight": 1
           }
         ]
       ],
       "addList": [
-        "6_SD"
+        "shopping-done"
       ],
       "deleteList": [
-        "6_SND"
+        "shopping-not-done"
       ],
       "addGoals": []
     },
@@ -35,28 +35,28 @@
       "preconditions": [
         [
           {
-            "label": "7_ANTS",
+            "label": "alice-nearest-to-shop",
             "weight": 1
           }
         ],
         [
           {
-            "label": "6_SLP",
+            "label": "shopping-list-provided",
             "weight": 1
           }
         ],
         [
           {
-            "label": "6_SND",
+            "label": "shopping-not-done",
             "weight": 1
           }
         ]
       ],
       "addList": [
-        "6_SD"
+        "shopping-done"
       ],
       "deleteList": [
-        "6_SND"
+        "shopping-not-done"
       ],
       "addGoals": []
     },
@@ -65,16 +65,16 @@
       "preconditions": [
         [
           {
-            "label": "6_SLR",
+            "label": "shopping-list-required",
             "weight": 1
           }
         ]
       ],
       "addList": [
-        "6_SLP"
+        "shopping-list-provided"
       ],
       "deleteList": [
-        "6_SLR"
+        "shopping-list-required"
       ],
       "addGoals": []
     },
@@ -83,16 +83,16 @@
       "preconditions": [
         [
           {
-            "label": "6_SLR",
+            "label": "shopping-list-required",
             "weight": 1
           }
         ]
       ],
       "addList": [
-        "6_SLP"
+        "shopping-list-provided"
       ],
       "deleteList": [
-        "6_SLR"
+        "shopping-list-required"
       ],
       "addGoals": []
     },
@@ -101,22 +101,30 @@
       "preconditions": [
         [
           {
-            "label": "5_ADSP",
+            "label": "alice-distance-to-shop-provided",
             "weight": 1
           }
         ],
         [
           {
-            "label": "5_BDSP",
+            "label": "bob-distance-to-shop-provided",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "who-is-closer-required",
             "weight": 1
           }
         ]
       ],
       "addList": [
-        "7_BNTS",
-        "7_ANTS"
+        "bob-nearest-to-shop",
+        "alice-nearest-to-shop"
       ],
-      "deleteList": [],
+      "deleteList": [
+        "who-is-closer-required"
+      ],
       "addGoals": []
     },
     {
@@ -124,34 +132,28 @@
       "preconditions": [
         [
           {
-            "label": "5_BDSR",
+            "label": "bob-distance-to-shop-required",
             "weight": 1
           }
         ],
         [
           {
-            "label": "2_BLP",
+            "label": "bob-location-provided",
             "weight": 1
           }
         ],
         [
           {
-            "label": "4_BNSP",
-            "weight": 1
-          }
-        ],
-        [
-          {
-            "label": "6_SND",
+            "label": "bob-nearest-shop-provided",
             "weight": 1
           }
         ]
       ],
       "addList": [
-        "5_BDSP"
+        "bob-distance-to-shop-provided"
       ],
       "deleteList": [
-        "5_BDSR"
+        "bob-distance-to-shop-required"
       ],
       "addGoals": []
     },
@@ -160,34 +162,28 @@
       "preconditions": [
         [
           {
-            "label": "5_ADSR",
+            "label": "alice-distance-to-shop-required",
             "weight": 1
           }
         ],
         [
           {
-            "label": "2_ALP",
+            "label": "alice-location-provided",
             "weight": 1
           }
         ],
         [
           {
-            "label": "4_ANSP",
-            "weight": 1
-          }
-        ],
-        [
-          {
-            "label": "6_SND",
+            "label": "alice-nearest-shop-provided",
             "weight": 1
           }
         ]
       ],
       "addList": [
-        "5_ADSP"
+        "alice-distance-to-shop-provided"
       ],
       "deleteList": [
-        "5_ADSR"
+        "alice-distance-to-shop-required"
       ],
       "addGoals": []
     },
@@ -196,26 +192,22 @@
       "preconditions": [
         [
           {
-            "label": "4_ANSR",
-            "weight": 1
-          },
-          {
-            "label": "6_SND",
+            "label": "alice-nearest-shop-required",
             "weight": 1
           }
         ],
         [
           {
-            "label": "2_ALP",
+            "label": "alice-location-provided",
             "weight": 1
           }
         ]
       ],
       "addList": [
-        "4_ANSP"
+        "alice-nearest-shop-provided"
       ],
       "deleteList": [
-        "4_ANSR"
+        "alice-nearest-shop-required"
       ],
       "addGoals": []
     },
@@ -224,26 +216,22 @@
       "preconditions": [
         [
           {
-            "label": "4_BNSR",
-            "weight": 1
-          },
-          {
-            "label": "6_SND",
+            "label": "bob-nearest-shop-required",
             "weight": 1
           }
         ],
         [
           {
-            "label": "2_BLP",
+            "label": "bob-location-provided",
             "weight": 1
           }
         ]
       ],
       "addList": [
-        "4_BNSP"
+        "bob-nearest-shop-provided"
       ],
       "deleteList": [
-        "4_BNSR"
+        "bob-nearest-shop-required"
       ],
       "addGoals": []
     },
@@ -252,32 +240,32 @@
       "preconditions": [
         [
           {
-            "label": "2_BLR",
+            "label": "bob-location-required",
             "weight": 1
           }
         ],
         [
           {
-            "label": "1_BPGT",
+            "label": "bob-phone-gps-turned-on",
             "weight": 1
           }
         ],
         [
           {
-            "label": "1_BPMB",
+            "label": "bob-phone-medium-battery",
             "weight": 1
           },
           {
-            "label": "1_BPHB",
+            "label": "bob-phone-high-battery",
             "weight": 1
           }
         ]
       ],
       "addList": [
-        "2_BLP"
+        "bob-location-provided"
       ],
       "deleteList": [
-        "2_BLR"
+        "bob-location-required"
       ],
       "addGoals": []
     },
@@ -286,32 +274,32 @@
       "preconditions": [
         [
           {
-            "label": "2_ALR",
+            "label": "alice-location-required",
             "weight": 1
           }
         ],
         [
           {
-            "label": "1_APGT",
+            "label": "alice-phone-gps-turned-on",
             "weight": 1
           }
         ],
         [
           {
-            "label": "1_APMB",
+            "label": "alice-phone-medium-battery",
             "weight": 1
           },
           {
-            "label": "1_APHB",
+            "label": "alice-phone-high-battery",
             "weight": 1
           }
         ]
       ],
       "addList": [
-        "2_ALP"
+        "alice-location-provided"
       ],
       "deleteList": [
-        "2_ALR"
+        "alice-location-required"
       ],
       "addGoals": []
     },
@@ -320,32 +308,32 @@
       "preconditions": [
         [
           {
-            "label": "2_BLR",
+            "label": "bob-location-required",
             "weight": 1
           }
         ],
         [
           {
-            "label": "1_BTGT",
+            "label": "bob-tablet-gps-turned-on",
             "weight": 1
           }
         ],
         [
           {
-            "label": "1_BTMB",
+            "label": "bob-tablet-medium-battery",
             "weight": 1
           },
           {
-            "label": "1_BTHB",
+            "label": "bob-tablet-high-battery",
             "weight": 1
           }
         ]
       ],
       "addList": [
-        "2_BLP"
+        "bob-location-provided"
       ],
       "deleteList": [
-        "2_BLR"
+        "bob-location-required"
       ],
       "addGoals": []
     },
@@ -354,22 +342,22 @@
       "preconditions": [
         [
           {
-            "label": "3_BWR",
-            "weight": 1
+            "label": "bob-weather-required",
+            "weight": 4
           }
         ],
         [
           {
-            "label": "2_BLP",
+            "label": "bob-location-provided",
             "weight": 1
           }
         ]
       ],
       "addList": [
-        "3_BWP"
+        "bob-weather-provided"
       ],
       "deleteList": [
-        "3_BWR"
+        "bob-weather-required"
       ],
       "addGoals": []
     }

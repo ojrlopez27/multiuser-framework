@@ -216,7 +216,6 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
                     } else {
                         if (orchestrator != null) {
                             if (useAutomaticAck || !message.contains(Constants.ACK)) {
-                                Log4J.info(this, message);
                                 process(message);
                             }
                         }else{

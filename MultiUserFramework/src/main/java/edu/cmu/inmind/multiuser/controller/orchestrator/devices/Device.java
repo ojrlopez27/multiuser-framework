@@ -3,9 +3,14 @@ package edu.cmu.inmind.multiuser.controller.orchestrator.devices;
 import edu.cmu.inmind.multiuser.controller.common.Pair;
 import edu.cmu.inmind.multiuser.controller.orchestrator.bn.Behavior;
 import edu.cmu.inmind.multiuser.controller.orchestrator.bn.BehaviorNetwork;
-import edu.cmu.inmind.multiuser.controller.orchestrator.services.*;
+import edu.cmu.inmind.multiuser.controller.orchestrator.services.DistanceCalculatorService;
+import edu.cmu.inmind.multiuser.controller.orchestrator.services.FindPlaceService;
+import edu.cmu.inmind.multiuser.controller.orchestrator.services.LocationService;
+import edu.cmu.inmind.multiuser.controller.orchestrator.services.Service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -17,6 +22,7 @@ public class Device {
     protected Map<String, Pair<Behavior, Service>> behServMap;
     protected CopyOnWriteArrayList<String> state;
     protected BehaviorNetwork network;
+    public enum TYPES{ PHONE, TABLET}
 
     // QoS device attributes
     protected boolean isGPSturnedOn = true;
@@ -29,7 +35,8 @@ public class Device {
         this.network = network;
         this.state = network.getState();
         this.name = name;
-        buildMap(name);
+        this.behServMap = new HashMap<>();
+        //buildMap(name);
     }
 
     public Device setGPSturnedOn(boolean GPSturnedOn) {
@@ -70,12 +77,11 @@ public class Device {
     }
 
     private String addPrefix(String premise){
-        return name + "-" +premise;
+        return name + Behavior.TOKEN +premise;
     }
 
     private void buildMap(String name){
         try {
-            this.behServMap = new HashMap<>();
             for (Behavior behavior : network.getBehByPrefix(name)) {
                 behServMap.put(behavior.getName(), new Pair(behavior, getService(behavior)));
             }
@@ -83,19 +89,26 @@ public class Device {
     }
 
     private Service getService(Behavior behavior) {
-        if( behavior.getName().equals("bob-phone-do-shopping") ) return new BobPhoneDoShopService(behavior, state);
-        else if( behavior.getName().equals("alice-phone-do-shopping") ) return new AlicePhoneDoShopService(behavior, state);
-        else if( behavior.getName().equals("bob-phone-check-have-shopping-list") ) return new BobPhoneHasShopListService(behavior, state);
-        else if( behavior.getName().equals("alice-phone-check-have-shopping-list") ) return new AlicePhoneHasShopListService(behavior, state);
-        else if( behavior.getName().equals("server-who-is-nearer-to-shop") ) return new ServerWhoIsNeareastService(behavior, state);
-        else if( behavior.getName().equals("bob-phone-get-distance-to-shop") ) return new BobPhoneDistanceShopService(behavior, state);
-        else if( behavior.getName().equals("alice-phone-get-distance-to-shop") ) return new AlicePhoneDistanceShopService(behavior, state);
-        else if( behavior.getName().equals("alice-phone-find-nearest-shop") ) return new AlicePhoneNearestShopService(behavior, state);
-        else if( behavior.getName().equals("bob-phone-find-nearest-shop") ) return new BobPhoneNearestShopService(behavior, state);
-        else if( behavior.getName().equals("bob-phone-location") ) return new BobPhoneLocationService(behavior, state);
-        else if( behavior.getName().equals("bob-tablet-location") ) return new BobTabletLocationService(behavior, state);
-        else if( behavior.getName().equals("alice-phone-location") ) return new AlicePhoneLocationService(behavior, state);
-        else if( behavior.getName().equals("bob-phone-weather") ) return new BobPhoneWeatherService(behavior, state);
+        if( behavior.getName().equals("get-self-location") ) return new LocationService(name, behavior, state);
+        else if( behavior.getName().equals("find-place-location") ) return new FindPlaceService(name, behavior, state);
+        else if( behavior.getName().equals("get-distance-to-place") ) return new DistanceCalculatorService(name, behavior, state);
         return null;
+    }
+
+    public void addServices(Behavior... behaviors) {
+        for (Behavior behavior : behaviors) {
+            Service service = getService(behavior);
+            behavior = behavior.ground(name);
+            service.setBehavior(behavior);
+            behServMap.put(behavior.getName(), new Pair(behavior, service));
+        }
+    }
+
+    public List<Behavior> getBehaviors(){
+        List<Behavior> behaviors = new ArrayList<>();
+        for(Pair<Behavior, Service> pair : behServMap.values()){
+            behaviors.add(pair.fst);
+        }
+        return behaviors;
     }
 }

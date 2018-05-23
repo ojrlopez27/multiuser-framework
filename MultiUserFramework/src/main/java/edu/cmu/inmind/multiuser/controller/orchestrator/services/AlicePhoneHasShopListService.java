@@ -12,8 +12,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class AlicePhoneHasShopListService extends Service {
     private boolean hasShoppingList = true;
 
-    public AlicePhoneHasShopListService(Behavior behavior, CopyOnWriteArrayList<String> state){
-        super(behavior, state);
+    public AlicePhoneHasShopListService(String deviceName, Behavior behavior, CopyOnWriteArrayList<String> state){
+        super(deviceName, behavior, state);
     }
 
     @Override
