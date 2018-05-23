@@ -44,7 +44,7 @@ public class Test {
             }
             int idx = network.selectBehavior();
             if( idx >= 0 ){
-                Behavior selectedBehavior = network.getModules().get(idx);
+                Behavior selectedBehavior = network.getBehaviors().get(idx);
                 deviceServiceMap.get(selectedBehavior).executeService(selectedBehavior.getName());
             }
         }

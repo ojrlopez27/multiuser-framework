@@ -486,6 +486,10 @@ public class Utils {
         return cloner.shallowClone(object);
     }
 
+    public static <T> T deepClone( T object ){
+        return cloner.deepClone(object);
+    }
+
     public static <T extends List> T cloneList( T list ){
         return cloner.deepClone(list);
     }

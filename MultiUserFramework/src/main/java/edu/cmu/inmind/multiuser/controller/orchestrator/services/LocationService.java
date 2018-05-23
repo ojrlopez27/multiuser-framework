@@ -5,12 +5,12 @@ import edu.cmu.inmind.multiuser.controller.orchestrator.bn.Behavior;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Created by oscarr on 4/30/18.
+ * Created by oscarr on 5/22/18.
  */
-public class BobTabletLocationService extends Service {
+public class LocationService extends Service {
 
-    public BobTabletLocationService(Behavior behavior, CopyOnWriteArrayList<String> state){
-        super(behavior, state);
+    public LocationService(String deviceName, Behavior behavior, CopyOnWriteArrayList<String> state){
+        super(deviceName, behavior, state);
     }
 
     @Override

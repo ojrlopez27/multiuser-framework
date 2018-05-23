@@ -5,12 +5,11 @@ import edu.cmu.inmind.multiuser.controller.orchestrator.bn.Behavior;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Created by oscarr on 4/30/18.
+ * Created by oscarr on 5/22/18.
  */
-public class AlicePhoneDistanceShopService extends Service {
-
-    public AlicePhoneDistanceShopService(Behavior behavior, CopyOnWriteArrayList<String> state){
-        super(behavior, state);
+public class DistanceCalculatorService extends Service {
+    public DistanceCalculatorService(String deviceName, Behavior behavior, CopyOnWriteArrayList<String> state){
+        super(deviceName, behavior, state);
     }
 
     @Override
