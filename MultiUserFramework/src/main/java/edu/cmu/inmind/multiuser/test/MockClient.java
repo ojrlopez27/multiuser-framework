@@ -31,6 +31,7 @@ public class MockClient {
                     .setResponseListener(new ResponseListener() {
                         @Override
                         public void process(String message) {
+                            System.out.println(message);
                             SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
                             Log4J.info(ResponseListener.class, "Received message: " + message);
                         }

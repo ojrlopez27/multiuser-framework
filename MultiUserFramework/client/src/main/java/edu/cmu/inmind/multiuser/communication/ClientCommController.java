@@ -611,6 +611,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
             }
         }
 
+
         @Override
         public void close(DestroyableCallback callback) throws Throwable {
             this.callback = callback;

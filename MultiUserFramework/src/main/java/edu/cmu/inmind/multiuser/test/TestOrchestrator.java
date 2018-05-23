@@ -5,6 +5,7 @@ import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
+import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 
 /**
@@ -18,8 +19,9 @@ public class TestOrchestrator extends ProcessOrchestratorImpl {
         System.out.println("Orchestrator receives: " + input);
         SessionMessage sessionMessage = Utils.fromJson( input, SessionMessage.class );
         logger.turnOn( false );
-        //blackboard.post(this, "MSG_COMPONENT_1", sessionMessage.getPayload() );
-        sendResponse("this is the output from server: " + input);
+        Log4J.info(this, " input "+input);
+        blackboard.post(this, "MSG_COMPONENT_1", sessionMessage.getPayload() );
+        sendResponse( input);
     }
 
     @Override
