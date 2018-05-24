@@ -12,17 +12,20 @@
         [
           {
             "label": "gps-turned-on",
-            "weight": 1
+            "weight": 1,
+            "dependsOnDevice": true
           }
         ],
         [
           {
             "label": "medium-battery",
-            "weight": 1
+            "weight": 1,
+            "dependsOnDevice": true
           },
           {
             "label": "high-battery",
-            "weight": 1
+            "weight": 1,
+            "dependsOnDevice": true
           }
         ]
       ],
@@ -92,6 +95,30 @@
       "deleteList": [
         "distance-to-place-required"
       ],
+      "addGoals": []
+    },
+    {
+      "name": "calculate-nearest-place",
+      "preconditions": [
+        [
+          {
+            "label": "user1-distance-to-place-provided",
+            "weight": 1
+          }
+        ],
+        [
+          {
+            "label": "user2-distance-to-place-provided",
+            "weight": 1
+          }
+        ]
+      ],
+      "addList": [
+        "user1-is-closer-to-place",
+        "user2-is-closer-to-place",
+        "nearest-person-calculated"
+      ],
+      "deleteList": [],
       "addGoals": []
     }
   ],

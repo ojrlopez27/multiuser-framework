@@ -19,4 +19,12 @@ public class User {
     public void addDevice(Device device){
         devices.add(device);
     }
+
+    public List<Device> getDevices() {
+        return devices;
+    }
+
+    public String getName() {
+        return name;
+    }
 }

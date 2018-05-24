@@ -193,10 +193,9 @@ public class Behavior implements Comparable<Behavior>{
 							.matcher( proposition ).matches() ){
                         return true;
                     }
-                }else if( precond.getLabel().equals(proposition) ){
+                }else if( areEqual(precond.getLabel(), proposition) ){
                     return true;
                 }
-
             }
         }
 		return false;
@@ -415,26 +414,81 @@ public class Behavior implements Comparable<Behavior>{
     }
 
     /**
-     * Creates a grounded (specific) behavior from an abstract one. Basically, 
-     * we add a (grounded) prefix to behavior name, pre and post conditions. 
-     * @param prefix
+     * Creates a grounded (specific) behavior from an abstract one. Basically,
+     * we add a (grounded) prefix to behavior name, pre and post conditions.
+     * @param devicePrefix
+     * @param userPrefix
      * @return
      */
-	public Behavior ground(String prefix) {
+	public Behavior groundByPrefix(String devicePrefix, String userPrefix) {
         Behavior clone = deepClone();
-    	prefix = prefix + TOKEN;
-		clone.name = prefix + clone.name;
+        devicePrefix += TOKEN;
+        userPrefix += TOKEN;
+		clone.name = devicePrefix + clone.name;
 		for(List<Premise> premises : clone.preconditions){
 			for(Premise premise : premises){
-				premise.setLabel( prefix + premise.getLabel() );
+			    premise.setLabel( (premise.isDependsOnDevice()? devicePrefix : userPrefix) + premise.getLabel() );
 			}
 		}
 		for(int i = 0; i < clone.addList.size(); i++){
-			clone.addList.set(i, prefix + clone.addList.get(i) );
+			clone.addList.set(i, userPrefix + clone.addList.get(i) );
 		}
 		for(int i = 0; i < clone.deleteList.size(); i++){
-			clone.deleteList.set(i, prefix + clone.deleteList.get(i) );
+			clone.deleteList.set(i, userPrefix + clone.deleteList.get(i) );
 		}
 		return clone;
 	}
+
+
+    /***
+     * Unlike {@ground} method, which adds a prefix to each premise (pre and post conditions),
+     * this method replaces some keywords by actual vaules.
+     * @param mappings
+     * @return
+     */
+    public Behavior groundByReplacing(Map<String, String> mappings) {
+        Behavior clone = deepClone();
+        for(List<Premise> premises : clone.preconditions){
+            for(Premise premise : premises){
+                premise.setLabel( replaceMapping(premise.getLabel(), mappings) );
+            }
+        }
+        for(int i = 0; i < clone.addList.size(); i++){
+            clone.addList.set(i, replaceMapping(clone.addList.get(i), mappings) );
+        }
+        for(int i = 0; i < clone.deleteList.size(); i++){
+            clone.deleteList.set(i, replaceMapping(clone.deleteList.get(i), mappings) );
+        }
+        return clone;
+    }
+
+    private String replaceMapping(String premise, Map<String, String> mappings){
+        for(String keyword : mappings.keySet() ){
+            if( premise.contains(keyword) ){
+                return premise.replace(keyword, mappings.get(keyword) );
+            }
+        }
+        return premise;
+    }
+
+
+    public static String removeToken(String text){
+        if(text.contains(Behavior.TOKEN)) return text.substring( text.indexOf(Behavior.TOKEN) + Behavior.TOKEN.length() );
+        return text;
+    }
+
+    public static String replaceToken(String text){
+        if(text.contains(Behavior.TOKEN)) return text.replaceAll(Behavior.TOKEN, "-");
+        return text;
+    }
+
+    /**
+     * This method takes two strings, replaces the TOKEN, and then compares the two strings
+     * @return
+     */
+    public static boolean areEqual(String premise1, String premise2){
+        if(premise1.contains("distance-to-place-provided") && premise2.contains("distance-to-place-provided"))
+            System.out.println("111");
+        return replaceToken(premise1).equals(replaceToken(premise2));
+    }
 }

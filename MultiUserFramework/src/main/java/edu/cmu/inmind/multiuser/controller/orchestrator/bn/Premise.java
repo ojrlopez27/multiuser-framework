@@ -6,6 +6,8 @@ package edu.cmu.inmind.multiuser.controller.orchestrator.bn;
 public class Premise {
     private String label;
     private double weight;
+    /** Some premises are device dependant, like battery level, gps, etc. */
+    private boolean dependsOnDevice;
 
     public String getLabel() {
         return label;
@@ -13,6 +15,14 @@ public class Premise {
 
     public void setLabel(String label) {
         this.label = label;
+    }
+
+    public boolean isDependsOnDevice() {
+        return dependsOnDevice;
+    }
+
+    public void setDependsOnDevice(boolean dependsOnDevice) {
+        this.dependsOnDevice = dependsOnDevice;
     }
 
     public double getWeight() {
@@ -23,9 +33,10 @@ public class Premise {
         this.weight = weight;
     }
 
-    public Premise(String label, double weight) {
+    public Premise(String label, double weight, boolean dependsOnDevice) {
         this.label = label;
         this.weight = weight;
+        this.dependsOnDevice = dependsOnDevice;
     }
 
     @Override

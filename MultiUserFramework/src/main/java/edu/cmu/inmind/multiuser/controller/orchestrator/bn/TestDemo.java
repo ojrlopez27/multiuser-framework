@@ -1,16 +1,14 @@
 package edu.cmu.inmind.multiuser.controller.orchestrator.bn;
 
+import edu.cmu.inmind.multiuser.controller.common.Pair;
 import edu.cmu.inmind.multiuser.controller.orchestrator.devices.Device;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 
 /**
  * Created by oscarr on 4/26/18.
  */
 public class TestDemo {
-    private static Scanner scanner = new Scanner(System.in);
-
     public static void main(String args[]) throws Exception{
         // this is our composition controller
         CompositionController compositionController = new CompositionController("behavior-network.json");
@@ -22,12 +20,17 @@ public class TestDemo {
         compositionController.createDevice("bob", Device.TYPES.PHONE).setGPSturnedOn(false);
         compositionController.createDevice("bob", Device.TYPES.TABLET).setBatteryLevel(6);
         compositionController.createDevice("alice", Device.TYPES.PHONE);
+        compositionController.createDevice("server", Device.TYPES.SERVER);
 
         // create services
-        compositionController.instantiateServices( "get-self-location", "find-place-location", "get-distance-to-place" );
+        compositionController.instantiateServices(
+                new Pair(Arrays.asList("bob", "alice"),
+                        Arrays.asList("get-self-location", "find-place-location", "get-distance-to-place")),
+                new Pair(Arrays.asList(CompositionController.SERVER),
+                        Arrays.asList("calculate-nearest-place")) );
 
         // set system/user goals
-        compositionController.setGoals( Arrays.asList("distance-to-place-provided")); //party-organization-done
+        compositionController.setGoals( Arrays.asList(  "nearest-person-calculated")); //party-organization-done
         // let's extract xxx-required preconditions
         compositionController.endMeansAnalysis();
 
@@ -40,9 +43,8 @@ public class TestDemo {
             }else{
                 List<String> missing = compositionController.nextPlausibleBehavior();
                 for(String miss : missing){
-                    System.out.println( String.format("Enter the value for %s:", miss) );
-                    String state = scanner.nextLine();
-                    compositionController.addState(miss, state);
+                    compositionController.addState(miss, "");
+                    System.out.println("Adding missing state: " + miss);
                 }
             }
         }

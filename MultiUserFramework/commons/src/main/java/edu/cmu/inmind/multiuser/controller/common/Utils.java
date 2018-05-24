@@ -170,7 +170,7 @@ public class Utils {
         return null;
     }
 
-    public static String getDateString() throws Throwable{
+    public static String getDateString(){
         SimpleDateFormat format = new SimpleDateFormat("[yyyy-MM-dd-HH.mm.ss]");
         return format.format( new Date() );
     }
@@ -228,7 +228,7 @@ public class Utils {
         return null;
     }
 
-    private static String trimDoubleQuotes(String stringRepresentation) throws Throwable{
+    private static String trimDoubleQuotes(String stringRepresentation){
         if( stringRepresentation == null || stringRepresentation.isEmpty() ) return null;
         boolean trimmed = false;
         if( stringRepresentation.substring(0, 1).equals("\"") ){
@@ -275,7 +275,7 @@ public class Utils {
         toJsonFile(gson, obj, directory, fileName);
     }
 
-    public static <T> T fromJsonFile(String fileName, Class<T> clazz) throws Exception{
+    public static <T> T fromJsonFile(String fileName, Class<T> clazz) throws FileNotFoundException{
         if( fileName == null ) return null;
         Scanner scanner = null;
         try {
@@ -287,9 +287,7 @@ public class Utils {
             }else{
                 throw new FileNotFoundException();
             }
-        } catch (FileNotFoundException e) {
-            throw e;
-        }finally {
+        } finally {
             if( scanner != null ) {
                 scanner.close();
             }
@@ -353,9 +351,7 @@ public class Utils {
      * Changes the annotation value for the given key of the given annotation to newValue and returns
      * the previous value.
      */
-    @SuppressWarnings("unchecked")
-    public static Object addOrChangeAnnotation(Annotation annotation, String key, Object newValue)
-            throws Throwable{
+    public static Object addOrChangeAnnotation(Annotation annotation, String key, Object newValue){
         Object handler = Proxy.getInvocationHandler(annotation);
         Field f;
         try {
@@ -378,8 +374,7 @@ public class Utils {
         return oldValue;
     }
 
-    public static <T extends Annotation> T getAnnotation(Class<?> clazz, Class<T> annotationType)
-            throws Throwable{
+    public static <T extends Annotation> T getAnnotation(Class<?> clazz, Class<T> annotationType){
         T result;
         boolean isAnnotationPresent = clazz.isAnnotationPresent(annotationType);
         if(!isAnnotationPresent){
@@ -466,7 +461,7 @@ public class Utils {
         return prop;
     }
 
-    public static void renameFile(String pathAndNameOriginalFile, String nameFinalFile) throws Throwable{
+    public static void renameFile(String pathAndNameOriginalFile, String nameFinalFile){
         try {
             Path yourFile = Paths.get(pathAndNameOriginalFile);
             Files.move(yourFile, yourFile.resolveSibling(nameFinalFile), REPLACE_EXISTING);
@@ -494,7 +489,7 @@ public class Utils {
         return cloner.deepClone(list);
     }
 
-    public static ArrayList cloneArray( ArrayList list ) throws Throwable{
+    public static ArrayList cloneArray( ArrayList list ){
         ArrayList result = new ArrayList(list.size());
         for( Object element : list ){
             result.add( cloner.deepClone(element) );

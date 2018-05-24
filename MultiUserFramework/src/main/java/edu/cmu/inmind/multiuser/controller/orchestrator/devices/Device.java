@@ -3,10 +3,7 @@ package edu.cmu.inmind.multiuser.controller.orchestrator.devices;
 import edu.cmu.inmind.multiuser.controller.common.Pair;
 import edu.cmu.inmind.multiuser.controller.orchestrator.bn.Behavior;
 import edu.cmu.inmind.multiuser.controller.orchestrator.bn.BehaviorNetwork;
-import edu.cmu.inmind.multiuser.controller.orchestrator.services.DistanceCalculatorService;
-import edu.cmu.inmind.multiuser.controller.orchestrator.services.FindPlaceService;
-import edu.cmu.inmind.multiuser.controller.orchestrator.services.LocationService;
-import edu.cmu.inmind.multiuser.controller.orchestrator.services.Service;
+import edu.cmu.inmind.multiuser.controller.orchestrator.services.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,11 +15,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Created by oscarr on 4/26/18.
  */
 public class Device {
+    public enum TYPES{ PHONE, TABLET, SERVER}
+
     protected String name;
     protected Map<String, Pair<Behavior, Service>> behServMap;
     protected CopyOnWriteArrayList<String> state;
     protected BehaviorNetwork network;
-    public enum TYPES{ PHONE, TABLET}
+    protected String belongsToUser;
 
     // QoS device attributes
     protected boolean isGPSturnedOn = true;
@@ -31,11 +30,12 @@ public class Device {
 
     public Device(){}
 
-    public Device(String name, BehaviorNetwork network){
+    public Device(String name, BehaviorNetwork network, String belongsToUser){
         this.network = network;
         this.state = network.getState();
         this.name = name;
         this.behServMap = new HashMap<>();
+        this.belongsToUser = belongsToUser;
         //buildMap(name);
     }
 
@@ -68,6 +68,7 @@ public class Device {
     }
 
     public synchronized void executeService(String serviceName){
+        System.out.println(String.format("*** %s device is executing service: %s", name, serviceName));
         behServMap.get(serviceName).snd.execute();
         //TODO: each subclass has to do something with the actual service
     }
@@ -92,13 +93,18 @@ public class Device {
         if( behavior.getName().equals("get-self-location") ) return new LocationService(name, behavior, state);
         else if( behavior.getName().equals("find-place-location") ) return new FindPlaceService(name, behavior, state);
         else if( behavior.getName().equals("get-distance-to-place") ) return new DistanceCalculatorService(name, behavior, state);
+        else if( behavior.getName().equals("calculate-nearest-place") ) return new WhoIsNearestService(name, behavior, state);
         return null;
     }
 
-    public void addServices(Behavior... behaviors) {
+    public void addServices(List<Behavior> behaviors, Map<String, String>... optionalMappings) {
         for (Behavior behavior : behaviors) {
             Service service = getService(behavior);
-            behavior = behavior.ground(name);
+            if(name.equals("server")){
+                behavior = behavior.groundByReplacing(optionalMappings[0]);
+            }else{
+                behavior = behavior.groundByPrefix(name, belongsToUser);
+            }
             service.setBehavior(behavior);
             behServMap.put(behavior.getName(), new Pair(behavior, service));
         }

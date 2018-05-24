@@ -13,6 +13,9 @@ public class Constants {
     public static final String UNREGISTER_REMOTE_SERVICE = "UNREGISTER_REMOTE_SERVICE";
     public static final String RESPONSE_REMOTE_UNREGISTERED = "RESPONSE_REMOTE_UNREGISTERED";
     public static final String RESPONSE_PUBLISHED = "RESPONSE_PUBLISHED";
+    /**
+     * This is the message type returned by SessionManager when the server shutdowns unexpectedly.
+     */
     public static final String SHUTDOW_SERVER = "SHUTDOW_SERVER";
 
     //lifecycle
@@ -34,6 +37,9 @@ public class Constants {
 
     //session
     public static final String SESSION_INITIATED = "SESSION_INITIATED";
+    /**
+     * This is the message type returned by SessionManager when client requests to disconnect from server.
+     */
     public static final String SESSION_CLOSED = "SESSION_CLOSED";
     public static final String SESSION_PAUSED = "SESSION_PAUSED";
     public static final String SESSION_RESUMED = "SESSION_RESUMED";
