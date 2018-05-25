@@ -3,7 +3,7 @@ package edu.cmu.inmind.multiuser.controller.orchestrator.bn;
 import edu.cmu.inmind.multiuser.controller.common.Utils;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.regex.Pattern;
 
 /**
@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  *
  */
 public class Behavior implements Comparable<Behavior>{
-    public static final String TOKEN = "TOKEN";
+    public static final String TOKEN = "-";
     private String name;
     private String id;
 	private List<List<Premise>> preconditions = new Vector <>();
@@ -34,6 +34,7 @@ public class Behavior implements Comparable<Behavior>{
 	private transient List<Premise> stateMatches;
     private transient double utility;
     private transient BehaviorNetwork network;
+    private transient String userName;
 
     public Behavior(String name){
 		this.name = name;
@@ -51,7 +52,8 @@ public class Behavior implements Comparable<Behavior>{
         this.description = description;
     }
 
-    public Behavior(String name, String description, Premise[][] preconds, String[] addlist, String[] deletelist, String[] addGoals){
+    public Behavior(String name, String description, Premise[][] preconds, String[] addlist, String[] deletelist,
+                    String[] addGoals){
         this(name, description, preconds, addlist, deletelist);
         this.description = description;
         this.addGoals.addAll(Arrays.asList(addGoals));
@@ -135,9 +137,10 @@ public class Behavior implements Comparable<Behavior>{
 	public void setActivated(boolean a){
 		activated = a;
 	}
+    public void setUserName(String userName) {this.userName = userName;}
+    public String getUserName() {return userName;}
 
-
-	/**
+    /**
 	 * Determines if is into the add-list
 	 * @param proposition
 	 * @return
@@ -196,7 +199,6 @@ public class Behavior implements Comparable<Behavior>{
                 }else if( precond.getLabel().equals(proposition) ){
                     return true;
                 }
-
             }
         }
 		return false;
@@ -228,11 +230,13 @@ public class Behavior implements Comparable<Behavior>{
 	}
 
 	private int findPremise(List<String> states, String condition){
+	    int idx = states.indexOf(condition);
+		if(idx > -1) return idx;
 		for( int i = 0; i < states.size(); i++ ){
 			if( condition.contains("*") && Pattern.compile(condition.replace("*", "[a-zA-Z0-9_]*"))
 					.matcher(states.get(i)).matches() ){
 				return i;
-			}else if(condition.equals(states.get(i))){
+			}else if(condition.equals( states.get(i))){
 			    return i;
             }
 		}
@@ -292,7 +296,7 @@ public class Behavior implements Comparable<Behavior>{
 	 * of S (t)), and 0 (false) otherwise.
      * Note: modified with weights.
 	 */
-	public boolean isExecutable (List <String> states){
+	public boolean isExecutable (ConcurrentSkipListSet<String> states){
 		Collection<List<Premise>> preconds = new Vector<> (this.getPreconditions());
 		executable = true;
 		for(List<Premise> precondRow : preconds ){
@@ -376,7 +380,7 @@ public class Behavior implements Comparable<Behavior>{
      * @param states
      * @return
      */
-    public int calculateMatchPreconditions(CopyOnWriteArrayList<String> states) {
+    public int calculateMatchPreconditions(ConcurrentSkipListSet<String> states) {
         numMatches = 0;
 		stateMatches = new ArrayList<>();
         for( List<Premise> precondList : preconditions ){
@@ -415,26 +419,62 @@ public class Behavior implements Comparable<Behavior>{
     }
 
     /**
-     * Creates a grounded (specific) behavior from an abstract one. Basically, 
-     * we add a (grounded) prefix to behavior name, pre and post conditions. 
-     * @param prefix
+     * Creates a grounded (specific) behavior from an abstract one. Basically,
+     * we add a (grounded) prefix to behavior name, pre and post conditions.
+     * It is used for user's devices
+     * @param devicePrefix
+     * @param userPrefix
      * @return
      */
-	public Behavior ground(String prefix) {
+	public Behavior groundByPrefix(String devicePrefix, String userPrefix) {
         Behavior clone = deepClone();
-    	prefix = prefix + TOKEN;
-		clone.name = prefix + clone.name;
+		clone.name = devicePrefix + TOKEN + clone.name;
+        devicePrefix += TOKEN;
+        userPrefix += TOKEN;
 		for(List<Premise> premises : clone.preconditions){
 			for(Premise premise : premises){
-				premise.setLabel( prefix + premise.getLabel() );
+			    premise.setLabel( (premise.isDependsOnDevice()? devicePrefix : userPrefix) + premise.getLabel() );
 			}
 		}
 		for(int i = 0; i < clone.addList.size(); i++){
-			clone.addList.set(i, prefix + clone.addList.get(i) );
+			clone.addList.set(i, userPrefix + clone.addList.get(i) );
 		}
 		for(int i = 0; i < clone.deleteList.size(); i++){
-			clone.deleteList.set(i, prefix + clone.deleteList.get(i) );
+			clone.deleteList.set(i, userPrefix + clone.deleteList.get(i) );
 		}
 		return clone;
 	}
+
+
+    /***
+     * Unlike {@ground} method, which only adds a prefix to each premise (pre and post conditions),
+     * this method also replaces some keywords by actual values. It is used for server devices
+     * @param mappings
+     * @return
+     */
+    public Behavior groundByReplacing(String prefix, Map<String, String> mappings) {
+        Behavior clone = deepClone();
+        clone.name = prefix + TOKEN + clone.name;
+        for(List<Premise> premises : clone.preconditions){
+            for(Premise premise : premises){
+                premise.setLabel( replaceMapping(premise.getLabel(), mappings) );
+            }
+        }
+        for(int i = 0; i < clone.addList.size(); i++){
+            clone.addList.set(i, replaceMapping(clone.addList.get(i), mappings) );
+        }
+        for(int i = 0; i < clone.deleteList.size(); i++){
+            clone.deleteList.set(i, replaceMapping(clone.deleteList.get(i), mappings) );
+        }
+        return clone;
+    }
+
+    private String replaceMapping(String premise, Map<String, String> mappings){
+        for(String keyword : mappings.keySet() ){
+            if( premise.contains(keyword) ){
+                return premise.replace(keyword, mappings.get(keyword) );
+            }
+        }
+        return premise;
+    }
 }

@@ -3,26 +3,26 @@ package edu.cmu.inmind.multiuser.controller.orchestrator.devices;
 import edu.cmu.inmind.multiuser.controller.common.Pair;
 import edu.cmu.inmind.multiuser.controller.orchestrator.bn.Behavior;
 import edu.cmu.inmind.multiuser.controller.orchestrator.bn.BehaviorNetwork;
-import edu.cmu.inmind.multiuser.controller.orchestrator.services.DistanceCalculatorService;
-import edu.cmu.inmind.multiuser.controller.orchestrator.services.FindPlaceService;
-import edu.cmu.inmind.multiuser.controller.orchestrator.services.LocationService;
-import edu.cmu.inmind.multiuser.controller.orchestrator.services.Service;
+import edu.cmu.inmind.multiuser.controller.orchestrator.services.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * Created by oscarr on 4/26/18.
  */
 public class Device {
+    public enum TYPES{ PHONE, TABLET, SERVER}
+    public final static String SERVER = "server";
+
     protected String name;
     protected Map<String, Pair<Behavior, Service>> behServMap;
-    protected CopyOnWriteArrayList<String> state;
+    protected ConcurrentSkipListSet<String> state;
     protected BehaviorNetwork network;
-    public enum TYPES{ PHONE, TABLET}
+    protected String belongsToUser;
 
     // QoS device attributes
     protected boolean isGPSturnedOn = true;
@@ -31,12 +31,12 @@ public class Device {
 
     public Device(){}
 
-    public Device(String name, BehaviorNetwork network){
+    public Device(String name, BehaviorNetwork network, String belongsToUser){
         this.network = network;
         this.state = network.getState();
         this.name = name;
         this.behServMap = new HashMap<>();
-        //buildMap(name);
+        this.belongsToUser = belongsToUser;
     }
 
     public Device setGPSturnedOn(boolean GPSturnedOn) {
@@ -67,9 +67,12 @@ public class Device {
         else addState( addPrefix("low-latency" ));
     }
 
-    public synchronized void executeService(String serviceName){
-        behServMap.get(serviceName).snd.execute();
+    public synchronized boolean executeService(String serviceName, int simulationStep){
+        System.out.println(String.format("*** %s device is executing service: %s   at simulation step: %s"
+                , name, serviceName, simulationStep));
+        boolean perfomed = behServMap.get(serviceName).snd.execute(simulationStep);
         //TODO: each subclass has to do something with the actual service
+        return perfomed;
     }
 
     public synchronized void addState(String premise){
@@ -77,28 +80,17 @@ public class Device {
     }
 
     private String addPrefix(String premise){
-        return name + Behavior.TOKEN +premise;
+        return name + Behavior.TOKEN + premise;
     }
 
-    private void buildMap(String name){
-        try {
-            for (Behavior behavior : network.getBehByPrefix(name)) {
-                behServMap.put(behavior.getName(), new Pair(behavior, getService(behavior)));
-            }
-        }catch (Throwable e){e.printStackTrace();}
-    }
-
-    private Service getService(Behavior behavior) {
-        if( behavior.getName().equals("get-self-location") ) return new LocationService(name, behavior, state);
-        else if( behavior.getName().equals("find-place-location") ) return new FindPlaceService(name, behavior, state);
-        else if( behavior.getName().equals("get-distance-to-place") ) return new DistanceCalculatorService(name, behavior, state);
-        return null;
-    }
-
-    public void addServices(Behavior... behaviors) {
+    public void addServices(List<Behavior> behaviors, Map<String, String>... optionalMappings) {
         for (Behavior behavior : behaviors) {
-            Service service = getService(behavior);
-            behavior = behavior.ground(name);
+            Service service = Service.getService(behavior, name, state);
+            if(name.equals(SERVER)){
+                behavior = behavior.groundByReplacing(name + Behavior.TOKEN + belongsToUser, optionalMappings[0]);
+            }else{
+                behavior = behavior.groundByPrefix(name, belongsToUser);
+            }
             service.setBehavior(behavior);
             behServMap.put(behavior.getName(), new Pair(behavior, service));
         }

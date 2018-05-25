@@ -9,6 +9,7 @@ import java.util.List;
  * Created by oscarr on 5/22/18.
  */
 public class User {
+    public final static String ADMIN = "admin";
     private String name;
     private List<Device> devices = new ArrayList<>();
 
@@ -18,5 +19,13 @@ public class User {
 
     public void addDevice(Device device){
         devices.add(device);
+    }
+
+    public List<Device> getDevices() {
+        return devices;
+    }
+
+    public String getName() {
+        return name;
     }
 }
