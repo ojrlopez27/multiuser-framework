@@ -4,12 +4,12 @@ import edu.cmu.inmind.multiuser.controller.orchestrator.bn.Behavior;
 
 import java.util.concurrent.ConcurrentSkipListSet;
 
-
 /**
- * Created by oscarr on 5/22/18.
+ * Created by oscarr on 5/25/18.
  */
-public class DistanceCalculatorService extends Service {
-    public DistanceCalculatorService(String deviceName, Behavior behavior, ConcurrentSkipListSet<String> state){
+public class DoBeerShoppingService extends Service {
+
+    public DoBeerShoppingService(String deviceName, Behavior behavior, ConcurrentSkipListSet<String> state){
         super(deviceName, behavior, state);
     }
 

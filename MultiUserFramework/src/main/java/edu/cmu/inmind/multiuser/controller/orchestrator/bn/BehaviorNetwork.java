@@ -4,18 +4,15 @@ import edu.cmu.inmind.multiuser.controller.common.Utils;
 
 import java.text.DecimalFormat;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.regex.Pattern;
-
-import static edu.cmu.inmind.multiuser.controller.orchestrator.bn.Behavior.areEqual;
-import static edu.cmu.inmind.multiuser.controller.orchestrator.bn.Behavior.replaceToken;
 
 /**
  * @author oromero
  */
 public class BehaviorNetwork {
 	private List<Behavior> behaviors = new Vector<>();
-    private CopyOnWriteArrayList<String> states = new CopyOnWriteArrayList<>();
+    private ConcurrentSkipListSet<String> states = new ConcurrentSkipListSet<>();
 	private List<String> goals = new Vector <>();
     private boolean removePrecond = false;
 	private transient List<String> goalsResolved = new Vector <>();
@@ -196,10 +193,10 @@ public class BehaviorNetwork {
 	 * (the state of the environment as perceived by the agent) S being implemented
 	 * by an independent process (or the real world),
 	 */
-	public CopyOnWriteArrayList<String> getState (){
+	public ConcurrentSkipListSet<String> getState (){
 		if(states != null)
 			return states;
-		return new CopyOnWriteArrayList<>();
+		return new ConcurrentSkipListSet<>();
 	}
 
 	public String getStateString(){
@@ -227,10 +224,10 @@ public class BehaviorNetwork {
 	public synchronized void setState(List<String> states){
         try {
             if( this.states == null ){
-                this.states = new CopyOnWriteArrayList<>(states);
+                this.states = new ConcurrentSkipListSet<>(states);
             }else{
                 for(String state : states){
-                    if( !this.states.contains(state) ) this.states.add(state);
+                    this.states.add(state);
                 }
             }
         }catch (Exception e){
@@ -367,8 +364,9 @@ public class BehaviorNetwork {
 		Vector<Behavior> behaviors = new Vector<>();
 		for(Behavior behx : this.behaviors){
 			if(behx.getIdx() != indexBehx){
-				if( behx.isInhibition(proposition) && states.contains(proposition) )
-					behaviors.add(behx);
+				if( behx.isInhibition(proposition) && states.contains(proposition) ) {
+                    behaviors.add(behx);
+                }
 			}
 		}
 		return behaviors;
@@ -622,19 +620,19 @@ public class BehaviorNetwork {
 				behavior.decay(factor);
 			}
 		}
-		//ojrl decay bahavior which increments its activation continously and is not activated
-		if(behaviors.get(indexMayor).getActivation() > (theta * 1.5) && !behaviors.get(indexMayor).getActivated()){
-			behaviors.get(indexMayor).decay(0.5);
-			for (Behavior behavior : behaviors) {
-				if (behavior.getExecutable() && behavior.getIdx() != behaviors.get(indexMayor).getIdx()
-						&& !behavior.getActivated() && indexBehActivated != -1) {
-					if (indexBehActivated != behavior.getIdx())
-						behavior.decay(1.5);
-					else
-						behavior.decay(0.9);
-				}
-			}
-		}
+//		//ojrl decay bahavior which increments its activation continously and is not activated
+//		if(behaviors.get(indexMayor).getActivation() > (theta * 1.5) && !behaviors.get(indexMayor).getActivated()){
+//			behaviors.get(indexMayor).decay(0.5);
+//			for (Behavior behavior : behaviors) {
+//				if (behavior.getExecutable() && behavior.getIdx() != behaviors.get(indexMayor).getIdx()
+//						&& !behavior.getActivated() && indexBehActivated != -1) {
+//					if (indexBehActivated != behavior.getIdx())
+//						behavior.decay(1.5);
+//					else
+//						behavior.decay(0.9);
+//				}
+//			}
+//		}
 
 		for(int i = 0; i < behaviors.size(); i++){
             if( verboseVal ) {
@@ -666,15 +664,15 @@ public class BehaviorNetwork {
             }
         }
         execution = false;
-        System.out.println(LEVEL_2 + "STATE: " + replaceToken(Arrays.toString(states.toArray())));
         if( verboseTree ) {
+            System.out.println(LEVEL_2 + "STATE: " + Arrays.toString(states.toArray()));
             System.out.println(LEVEL_2 + "BEHAVIOR (B), ACTIVATION (AC), PRECONDITIONS THAT ARE TRUE (PT), LIST OF PRECONDITIONS (LP), So:  |-- B  AC  (PT) -> LP");
         }
 		for( Behavior beh : behaviors){
 			if( verboseTree ) {
-				System.out.println(LEVEL_3 + Utils.padRight( replaceToken(beh.getName()), padBehaviorName)
+				System.out.println(LEVEL_3 + Utils.padRight( beh.getName(), padBehaviorName)
                         + Utils.padRight(beh.getActivation(), 10) + "("+beh.getNumMatches()+") -> "
-                        + replaceToken(beh.getStateMatches().toString()));
+                        + beh.getStateMatches().toString());
 			}
 		}
 		if( verboseTree ) {
@@ -683,11 +681,10 @@ public class BehaviorNetwork {
         if( indexBehActivated >= 0 ){
 			statesOutput = Arrays.toString(states.toArray());
 			if(verboseTree ) {
-				System.out.println(LEVEL_2 + "EXECUTING BEHAVIOR: " + replaceToken(behaviors.get(indexBehActivated).getName()));
+				System.out.println(LEVEL_2 + "EXECUTING BEHAVIOR: " + behaviors.get(indexBehActivated).getName());
 			}
             execution = true;
             behaviors.get(indexBehActivated).setActivated(true);
-            protectGoals(behaviors.get(indexBehActivated));
         }
 		return indexBehActivated;
 	}
@@ -706,11 +703,7 @@ public class BehaviorNetwork {
         try {
             previousStates = new Vector<>(states);
             for (String anAddList : addConditions) {
-                if(!states.contains(anAddList)) {
-                    if( anAddList.contains("bob-distance-to-place-provided"))
-                        System.currentTimeMillis();
-                    states.add(anAddList);
-                }
+                states.add(anAddList);
             }
             if (removePrecond) {
                 if( beh.getPreconditions() != null ) {
@@ -723,9 +716,9 @@ public class BehaviorNetwork {
             } else {
                 List<String> toRemove = new ArrayList<>();
                 for (String premise : deleteConditions) {
-                    if(states.contains(premise))
+                    if(states.contains(premise)) {
                         toRemove.add(premise);
-                    else {
+                    }else {
                         for (String st : states) {
                             if (premise.contains("*") && Pattern.compile(premise.replace("*", "[a-zA-Z0-9]*"))
                                     .matcher(st).matches()) {
@@ -734,11 +727,15 @@ public class BehaviorNetwork {
                         }
                     }
                 }
-                states.removeAll(toRemove);
+                // bulk operations are not guaranteed to be performed atomically
+                for(String strToRemove : toRemove){
+                    states.remove(strToRemove);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+		protectGoals(beh);
         for (String goal : beh.getAddGoals()) {
             goals.remove(goal);
             goals.add(goal);
@@ -752,7 +749,7 @@ public class BehaviorNetwork {
 	 */
 	private void protectGoals(Behavior beh){
 		for (String goalTemp : beh.getAddList()) {
-		    goalTemp = replaceToken(goalTemp);
+		    if(goalTemp.startsWith(beh.getUserName())) goalTemp = goalTemp.substring(beh.getUserName().length()+1);
 			if (goals.contains(goalTemp)){
 				goalsResolved.add(goalTemp);
 				goals.remove(goalTemp);
@@ -941,19 +938,32 @@ public class BehaviorNetwork {
      * promise to trigger the goal-behavior. During this search, we check whether behServMap
      * have preconditions like "*-required", if so, then add them to the state.
      */
-    public void endMeansAnalysis(){
+    public void endMeansAnalysis(List<String> users){
 	    List<String> latentStates = new ArrayList<>();
 	    for(String goal : goals){
 	        for( Behavior behavior : behaviors){
 	            for(String addCondition : behavior.getAddList() ){
-	                if( areEqual( addCondition, goal) ){
+	                if( removeUserPrefix(addCondition, users).equals(goal) ){
 	                    // so this behavior promises to achieve the goal
                         latentStates = extractLatentStates(behavior, latentStates);
                     }
                 }
             }
         }
-        states.addAll(latentStates);
+        // we cannot use addAll since it is not guaranteed to be performed atomically
+        for(String latentState : latentStates){
+	        states.add(latentState);
+        }
+    }
+
+    private String removeUserPrefix(String premise, List<String> users){
+        int pos = premise.indexOf(Behavior.TOKEN);
+        if( pos != -1 ){
+            if( users.contains( premise.substring(0, pos)) ){
+                premise = premise.substring( pos+1 );
+            }
+        }
+        return premise;
     }
 
     private List<String> extractLatentStates(Behavior behavior, List<String> latentStates) {
@@ -966,7 +976,7 @@ public class BehaviorNetwork {
                     for (Behavior beh : behaviors) {
                         if (beh != behavior) {
                             for (String addCondition : beh.getAddList()) {
-                                if (areEqual(addCondition, premise.getLabel())) {
+                                if (addCondition.equals(premise.getLabel())) {
                                     extractLatentStates( beh, latentStates);
                                 }
                             }

@@ -11,13 +11,13 @@ import java.util.Collection;
 public class ServerDevice extends Device {
     private Collection<User> users;
 
-    public ServerDevice(String name, BehaviorNetwork network, Collection<User> users){
-        super(name, network, name);
+    public ServerDevice(String name, BehaviorNetwork network, String belongsTo, Collection<User> users){
+        super(name, network, belongsTo);
         this.users = users;
     }
 
     @Override
-    public synchronized void executeService(String serviceName){
-        super.executeService(serviceName);
+    public synchronized boolean executeService(String serviceName, int simulationStep){
+        return super.executeService(serviceName, simulationStep);
     }
 }

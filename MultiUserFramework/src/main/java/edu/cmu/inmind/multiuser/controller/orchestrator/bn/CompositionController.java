@@ -10,6 +10,9 @@ import edu.cmu.inmind.multiuser.controller.orchestrator.group.User;
 
 import java.util.*;
 
+import static edu.cmu.inmind.multiuser.controller.orchestrator.devices.Device.SERVER;
+import static edu.cmu.inmind.multiuser.controller.orchestrator.group.User.ADMIN;
+
 /**
  * Created by oscarr on 5/22/18.
  */
@@ -20,7 +23,7 @@ public class CompositionController {
     private HashMap<Behavior, Device> deviceServiceMap;
     private HashMap<String, User> usersMap;
     private HashMap<String, List<String>> behaviorsActivatedByUser;
-    public final static String SERVER = "server";
+    private List<String> users;
 
 
     public CompositionController(String bnJsonFile){
@@ -36,17 +39,19 @@ public class CompositionController {
     }
 
     public void createUsers(String... names){
+        users = new ArrayList<>();
         for(String name : names){
             usersMap.put(name, new User(name));
+            users.add(name);
         }
-        usersMap.put(SERVER, new User(SERVER));
+        usersMap.put(ADMIN, new User(ADMIN));
     }
 
     public Device createDevice(String userName, Device.TYPES type) {
-        String deviceName = userName + "-" + type.toString().toLowerCase();
+        String deviceName = userName + Behavior.TOKEN + type.toString().toLowerCase();
         Device device = type.equals( Device.TYPES.PHONE )? new PhoneDevice( deviceName, network, userName )
                 : type.equals( Device.TYPES.TABLET )? new TabletDevice( deviceName, network, userName )
-                : new ServerDevice(SERVER, network, usersMap.values());
+                : new ServerDevice(SERVER, network, ADMIN, usersMap.values());
         devices.add( device );
         usersMap.get(userName).addDevice(device);
         return device;
@@ -56,7 +61,7 @@ public class CompositionController {
      * User abstract behaviors to instantiate grounded behaviors. Remove abstract behaviors
      * from network, and add newly created grounded behaviors.
      */
-    public void instantiateServices(Pair... mappings) {
+    public void instantiateServices(Pair<List<String>, List<String>>... mappings) {
         // let's remove all abstract behaviors
         network.getBehaviors().clear();
 
@@ -69,11 +74,11 @@ public class CompositionController {
             for(String user : (List<String>)mapping.fst) {
                 for (Device device : usersMap.get(user).getDevices()) {
                     // let's install the services (behaviors) to each device
-                    if(user.equals(SERVER)){
+                    if(user.equals(ADMIN)){
                         Map<String, String> userMappings = new HashMap<>();
                         int idx = 1;
                         for(User userObj : usersMap.values()){
-                            if(!userObj.getName().equals(SERVER)){
+                            if(!userObj.getName().equals(ADMIN)){
                                 userMappings.put("user" + (idx), userObj.getName() );
                                 idx++;
                             }
@@ -92,7 +97,7 @@ public class CompositionController {
     }
 
     public void endMeansAnalysis() {
-        network.endMeansAnalysis();
+        network.endMeansAnalysis( users );
     }
 
     public void setGoals(List<String> goals) {
@@ -113,14 +118,21 @@ public class CompositionController {
         return network.selectBehavior();
     }
 
-    public void executeBehavior(int idx) {
+    public boolean executeBehavior(int idx, int simulationStep) {
+        // executing service
         Behavior selectedBehavior = network.getBehaviors().get(idx);
-        deviceServiceMap.get(selectedBehavior).executeService(selectedBehavior.getName());
+        boolean performed = deviceServiceMap.get(selectedBehavior)
+                .executeService(selectedBehavior.getName(), simulationStep);
+
+        // keep a record of those (abstract) services that have been activated per user so
+        // we don't activate them in the future (e.g., if location is executed by phone, we
+        // don't neet it to be re-calculated by tablet.
         String[] id = splitBehName(selectedBehavior.getName());
         List<String> behaviorsActivated = behaviorsActivatedByUser.get(id[0]);
         if( behaviorsActivated == null ) behaviorsActivated = new ArrayList<>();
         if( !behaviorsActivated.contains(id[2]) ) behaviorsActivated.add( id[2] );
         behaviorsActivatedByUser.put(id[0], behaviorsActivated);
+        return performed;
     }
 
     private HashMap<Behavior, Device> generateMap() {
@@ -133,6 +145,15 @@ public class CompositionController {
         return deviceServiceMap;
     }
 
+    /**
+     * The BN may loop when it doesn't find enough sates that trigger preconditions of any behavior.
+     * In order to avoid this issue, we will find a behavior which is the next most plausible behavior
+     * to be activated in terms of highest activation (except those behaviors that have been already
+     * activated). Once a plausible behavior is found, then we seek for those preconditions that are
+     * missing from the current state, and return them. The external caller may decide whether to ask
+     * the user for these missing conditions, auto-generate them, or any other strategy.
+     * @return
+     */
     public List<String> nextPlausibleBehavior() {
         List<String> missingStr = new ArrayList();
         List<Behavior> behaviors = network.getBehaviorsSorted();
@@ -150,20 +171,32 @@ public class CompositionController {
         return missingStr;
     }
 
+    /**
+     * We need to split behavior's name into three sections: e.g., bob-phone-get-self-location:
+     * result[0]:    user name -> bob
+     * result[1]:    device type -> phone
+     * result[2]:    service name -> get-self-location
+     * @param behName
+     * @return
+     */
     private String[] splitBehName(String behName){
         String[] result = new String[3];
-        // id[0] = user id, id[1] = abstract behavior
-        String[] id = behName.contains(Behavior.TOKEN)? behName.split(Behavior.TOKEN)
-                : new String[]{SERVER + "-server", behName};
-        String[] user = id[0].split("-");
-        result[0] = user[0];
-        result[1] = user[1];
-        result[2] = id[1];
+        for(int i = 0, fromIndex = 0; i < 3; i++ ){
+            int pos = behName.indexOf(Behavior.TOKEN, fromIndex);
+            if( pos != -1 ) {
+                result[i] = i == 2? behName.substring(fromIndex) : behName.substring(fromIndex, pos);
+                fromIndex = pos+1;
+            }
+            else break;
+        }
         return result;
     }
 
-    public void addState(String state, String value) {
-        network.getState().add(state);
-        //TODO: we need to do something with the value, like put it on the WM for further processing
+    public void addState(List<String> states) {
+        network.setState(states);
+    }
+
+    public void removeState(String state) {
+        network.getState().remove(state);
     }
 }

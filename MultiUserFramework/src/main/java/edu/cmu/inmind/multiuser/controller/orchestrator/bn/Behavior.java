@@ -3,7 +3,7 @@ package edu.cmu.inmind.multiuser.controller.orchestrator.bn;
 import edu.cmu.inmind.multiuser.controller.common.Utils;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.regex.Pattern;
 
 /**
@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  *
  */
 public class Behavior implements Comparable<Behavior>{
-    public static final String TOKEN = "TOKEN";
+    public static final String TOKEN = "-";
     private String name;
     private String id;
 	private List<List<Premise>> preconditions = new Vector <>();
@@ -34,6 +34,7 @@ public class Behavior implements Comparable<Behavior>{
 	private transient List<Premise> stateMatches;
     private transient double utility;
     private transient BehaviorNetwork network;
+    private transient String userName;
 
     public Behavior(String name){
 		this.name = name;
@@ -51,7 +52,8 @@ public class Behavior implements Comparable<Behavior>{
         this.description = description;
     }
 
-    public Behavior(String name, String description, Premise[][] preconds, String[] addlist, String[] deletelist, String[] addGoals){
+    public Behavior(String name, String description, Premise[][] preconds, String[] addlist, String[] deletelist,
+                    String[] addGoals){
         this(name, description, preconds, addlist, deletelist);
         this.description = description;
         this.addGoals.addAll(Arrays.asList(addGoals));
@@ -135,9 +137,10 @@ public class Behavior implements Comparable<Behavior>{
 	public void setActivated(boolean a){
 		activated = a;
 	}
+    public void setUserName(String userName) {this.userName = userName;}
+    public String getUserName() {return userName;}
 
-
-	/**
+    /**
 	 * Determines if is into the add-list
 	 * @param proposition
 	 * @return
@@ -193,7 +196,7 @@ public class Behavior implements Comparable<Behavior>{
 							.matcher( proposition ).matches() ){
                         return true;
                     }
-                }else if( areEqual(precond.getLabel(), proposition) ){
+                }else if( precond.getLabel().equals(proposition) ){
                     return true;
                 }
             }
@@ -227,11 +230,13 @@ public class Behavior implements Comparable<Behavior>{
 	}
 
 	private int findPremise(List<String> states, String condition){
+	    int idx = states.indexOf(condition);
+		if(idx > -1) return idx;
 		for( int i = 0; i < states.size(); i++ ){
 			if( condition.contains("*") && Pattern.compile(condition.replace("*", "[a-zA-Z0-9_]*"))
 					.matcher(states.get(i)).matches() ){
 				return i;
-			}else if(condition.equals(states.get(i))){
+			}else if(condition.equals( states.get(i))){
 			    return i;
             }
 		}
@@ -291,7 +296,7 @@ public class Behavior implements Comparable<Behavior>{
 	 * of S (t)), and 0 (false) otherwise.
      * Note: modified with weights.
 	 */
-	public boolean isExecutable (List <String> states){
+	public boolean isExecutable (ConcurrentSkipListSet<String> states){
 		Collection<List<Premise>> preconds = new Vector<> (this.getPreconditions());
 		executable = true;
 		for(List<Premise> precondRow : preconds ){
@@ -375,7 +380,7 @@ public class Behavior implements Comparable<Behavior>{
      * @param states
      * @return
      */
-    public int calculateMatchPreconditions(CopyOnWriteArrayList<String> states) {
+    public int calculateMatchPreconditions(ConcurrentSkipListSet<String> states) {
         numMatches = 0;
 		stateMatches = new ArrayList<>();
         for( List<Premise> precondList : preconditions ){
@@ -416,15 +421,16 @@ public class Behavior implements Comparable<Behavior>{
     /**
      * Creates a grounded (specific) behavior from an abstract one. Basically,
      * we add a (grounded) prefix to behavior name, pre and post conditions.
+     * It is used for user's devices
      * @param devicePrefix
      * @param userPrefix
      * @return
      */
 	public Behavior groundByPrefix(String devicePrefix, String userPrefix) {
         Behavior clone = deepClone();
+		clone.name = devicePrefix + TOKEN + clone.name;
         devicePrefix += TOKEN;
         userPrefix += TOKEN;
-		clone.name = devicePrefix + clone.name;
 		for(List<Premise> premises : clone.preconditions){
 			for(Premise premise : premises){
 			    premise.setLabel( (premise.isDependsOnDevice()? devicePrefix : userPrefix) + premise.getLabel() );
@@ -441,13 +447,14 @@ public class Behavior implements Comparable<Behavior>{
 
 
     /***
-     * Unlike {@ground} method, which adds a prefix to each premise (pre and post conditions),
-     * this method replaces some keywords by actual vaules.
+     * Unlike {@ground} method, which only adds a prefix to each premise (pre and post conditions),
+     * this method also replaces some keywords by actual values. It is used for server devices
      * @param mappings
      * @return
      */
-    public Behavior groundByReplacing(Map<String, String> mappings) {
+    public Behavior groundByReplacing(String prefix, Map<String, String> mappings) {
         Behavior clone = deepClone();
+        clone.name = prefix + TOKEN + clone.name;
         for(List<Premise> premises : clone.preconditions){
             for(Premise premise : premises){
                 premise.setLabel( replaceMapping(premise.getLabel(), mappings) );
@@ -469,26 +476,5 @@ public class Behavior implements Comparable<Behavior>{
             }
         }
         return premise;
-    }
-
-
-    public static String removeToken(String text){
-        if(text.contains(Behavior.TOKEN)) return text.substring( text.indexOf(Behavior.TOKEN) + Behavior.TOKEN.length() );
-        return text;
-    }
-
-    public static String replaceToken(String text){
-        if(text.contains(Behavior.TOKEN)) return text.replaceAll(Behavior.TOKEN, "-");
-        return text;
-    }
-
-    /**
-     * This method takes two strings, replaces the TOKEN, and then compares the two strings
-     * @return
-     */
-    public static boolean areEqual(String premise1, String premise2){
-        if(premise1.contains("distance-to-place-provided") && premise2.contains("distance-to-place-provided"))
-            System.out.println("111");
-        return replaceToken(premise1).equals(replaceToken(premise2));
     }
 }

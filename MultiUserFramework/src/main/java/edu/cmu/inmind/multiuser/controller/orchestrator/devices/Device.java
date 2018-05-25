@@ -9,17 +9,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * Created by oscarr on 4/26/18.
  */
 public class Device {
     public enum TYPES{ PHONE, TABLET, SERVER}
+    public final static String SERVER = "server";
 
     protected String name;
     protected Map<String, Pair<Behavior, Service>> behServMap;
-    protected CopyOnWriteArrayList<String> state;
+    protected ConcurrentSkipListSet<String> state;
     protected BehaviorNetwork network;
     protected String belongsToUser;
 
@@ -36,7 +37,6 @@ public class Device {
         this.name = name;
         this.behServMap = new HashMap<>();
         this.belongsToUser = belongsToUser;
-        //buildMap(name);
     }
 
     public Device setGPSturnedOn(boolean GPSturnedOn) {
@@ -67,10 +67,12 @@ public class Device {
         else addState( addPrefix("low-latency" ));
     }
 
-    public synchronized void executeService(String serviceName){
-        System.out.println(String.format("*** %s device is executing service: %s", name, serviceName));
-        behServMap.get(serviceName).snd.execute();
+    public synchronized boolean executeService(String serviceName, int simulationStep){
+        System.out.println(String.format("*** %s device is executing service: %s   at simulation step: %s"
+                , name, serviceName, simulationStep));
+        boolean perfomed = behServMap.get(serviceName).snd.execute(simulationStep);
         //TODO: each subclass has to do something with the actual service
+        return perfomed;
     }
 
     public synchronized void addState(String premise){
@@ -78,30 +80,14 @@ public class Device {
     }
 
     private String addPrefix(String premise){
-        return name + Behavior.TOKEN +premise;
-    }
-
-    private void buildMap(String name){
-        try {
-            for (Behavior behavior : network.getBehByPrefix(name)) {
-                behServMap.put(behavior.getName(), new Pair(behavior, getService(behavior)));
-            }
-        }catch (Throwable e){e.printStackTrace();}
-    }
-
-    private Service getService(Behavior behavior) {
-        if( behavior.getName().equals("get-self-location") ) return new LocationService(name, behavior, state);
-        else if( behavior.getName().equals("find-place-location") ) return new FindPlaceService(name, behavior, state);
-        else if( behavior.getName().equals("get-distance-to-place") ) return new DistanceCalculatorService(name, behavior, state);
-        else if( behavior.getName().equals("calculate-nearest-place") ) return new WhoIsNearestService(name, behavior, state);
-        return null;
+        return name + Behavior.TOKEN + premise;
     }
 
     public void addServices(List<Behavior> behaviors, Map<String, String>... optionalMappings) {
         for (Behavior behavior : behaviors) {
-            Service service = getService(behavior);
-            if(name.equals("server")){
-                behavior = behavior.groundByReplacing(optionalMappings[0]);
+            Service service = Service.getService(behavior, name, state);
+            if(name.equals(SERVER)){
+                behavior = behavior.groundByReplacing(name + Behavior.TOKEN + belongsToUser, optionalMappings[0]);
             }else{
                 behavior = behavior.groundByPrefix(name, belongsToUser);
             }
