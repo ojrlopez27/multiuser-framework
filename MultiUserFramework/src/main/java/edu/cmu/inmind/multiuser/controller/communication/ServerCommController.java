@@ -289,7 +289,7 @@ public class ServerCommController implements DestroyableCallback {
     }
 
     private void sendShutdown() throws Throwable{
-        send(MDP.S_SHUTDOWN, Constants.SHUTDOW_SERVER);
+        send(MDP.S_SHUTDOWN, new SessionMessage(Constants.SHUTDOW_SERVER));
     }
 
     @Override
