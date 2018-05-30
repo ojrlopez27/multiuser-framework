@@ -8,6 +8,8 @@ import edu.cmu.inmind.multiuser.controller.muf.ShutdownHook;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -32,13 +34,24 @@ public class SimpleServer {
 
 
     public static Config createConfig() {
+        String ipaddress="";
+        try {
+            ipaddress = InetAddress.getLocalHost().getHostAddress();
+            System.out.println(ipaddress);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        if(ipaddress.isEmpty())
+        {
+            ipaddress = "127.0.0.1";
+        }
         return new Config.Builder()
                 .setExceptionTraceLevel( Constants.SHOW_ALL_EXCEPTIONS)
                 .setSessionManagerPort(5555)
                 .setDefaultNumOfPoolInstances(10)
                 .setPathLogs(Utils.getProperty("pathLogs"))
                 .setSessionTimeout(5, TimeUnit.MINUTES)
-                .setServerAddress("tcp://127.0.0.1") //use IP instead of 'localhost'
+                .setServerAddress("tcp://"+ipaddress) //use IP instead of 'localhost'
                 .build();
     }
 

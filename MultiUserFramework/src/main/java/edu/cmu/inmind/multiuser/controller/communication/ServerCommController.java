@@ -8,6 +8,7 @@ import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.plugin.Const;
+import edu.cmu.inmind.multiuser.controller.resources.CommonsResourceLocator;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
@@ -303,7 +304,7 @@ public class ServerCommController implements DestroyableCallback {
                 isDestroyed.getAndSet(true);
                 Log4J.info(this, "Gracefully destroying...");
             }
-            ResourceLocator.setIamDone(this);
+            CommonsResourceLocator.setIamDone(this);
             if(callback != null) callback.destroyInCascade(this);
         }catch (Throwable e){
             ExceptionHandler.handle(e);

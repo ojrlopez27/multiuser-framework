@@ -5,7 +5,6 @@ import edu.cmu.inmind.multiuser.controller.common.Constants;
 import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
-import edu.cmu.inmind.multiuser.controller.log.Log4J;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -70,7 +69,7 @@ public class DummyClient {
     class MyResponseListener implements ResponseListener {
         @Override
         public void process(String message) {
-            Log4J.debug(this, "Response from server: " + message);
+            System.out.println("Response from server: " + message);
         }
     }
 }

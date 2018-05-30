@@ -8,9 +8,8 @@ import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
-import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.plugin.Const;
-import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
+import edu.cmu.inmind.multiuser.controller.resources.CommonsResourceLocator;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
@@ -90,11 +89,11 @@ public class ClientCommController implements ClientController, DestroyableCallba
         this.responseListener = builder.responseListener;
         this.sessionManagerService = builder.sessionManagerService;
         this.sendAck = builder.sendAck;
-        this.ctx = ResourceLocator.getContext( this );
+        this.ctx = CommonsResourceLocator.getContext( this );
         this.callbacks = new ArrayList<>();
         //  Bind to inproc: endpoint, then start upstream thread
         this.inprocName += "-" + sessionId + "-" + this.serviceName;
-        this.clientSocket = ResourceLocator.createSocket(ctx, ZMQ.PAIR);
+        this.clientSocket = CommonsResourceLocator.createSocket(ctx, ZMQ.PAIR);
         this.clientSocket.bind(inprocName);
         this.timer = new ResponseTimer();
         this.closeableObjects = new CopyOnWriteArrayList<>();
@@ -285,7 +284,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
     public void close(DestroyableCallback callback){
         callbacks.add(callback);
         try {
-            Log4J.info(ClientCommController.this, "Closing ClientCommController...");
+            System.out.println("Closing ClientCommController...");
             stop.getAndSet(true);
             if( timer != null ){
                 timer.cancel();
@@ -311,9 +310,9 @@ public class ClientCommController implements ClientController, DestroyableCallba
                 sessionMngrCommAPI = null;
                 sessionCommAPI = null;
                 ctx = null;
-                Log4J.info(this, "Gracefully destroying...");
+                System.out.println("Gracefully destroying...");
                 isDestroyed.set(true);
-                ResourceLocator.setIamDone(this);
+                CommonsResourceLocator.setIamDone(this);
                 for (DestroyableCallback callback : callbacks) {
                     if (callback != null) callback.destroyInCascade(this);
                 }
@@ -369,23 +368,23 @@ public class ClientCommController implements ClientController, DestroyableCallba
     public void sendToInternalSocket(Pair<String, Object> message){
         try {
             checkFrequency();
-            Log4J.track(this, "4:" + message.snd);
+            System.out.println("4:" + message.snd);
             clientSocket.send(message.fst + TOKEN + (message.snd instanceof String? (String) message.snd
                     : Utils.toJson(message.snd) ));
             String response = clientSocket.recvStr();
-            Log4J.track(this, "5:" + message.snd);
+            System.out.println("5:" + message.snd);
             if (response.equals( String.valueOf( Constants.CONNECTION_STARTED )) ){
-                Log4J.track(this, "5.1:" + message.snd);
+                System.out.println("5.1:" + message.snd);
                 sendState.getAndSet( checkFSM(sendState, Constants.CONNECTION_STARTED) );
                 response = clientSocket.recvStr();
             }
             if (response.equals(STOP_FLAG)) {
-                Log4J.track(this, "5.2:" + message.snd);
+                System.out.println("5.2:" + message.snd);
                 sendState.getAndSet( checkFSM(sendState, Constants.CONNECTION_FINISHED) );
                 if( stop.get() ) sendState.getAndSet( checkFSM(sendState, Constants.CONNECTION_STOPPED) );
                 checkReconnect();
             }
-            Log4J.track(this, "6:" + message.snd);
+            System.out.println("6:" + message.snd);
         }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
@@ -426,7 +425,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
         private DestroyableCallback callback;
 
         public SenderThread(){
-            this.context = ResourceLocator.getContext( this );
+            this.context = CommonsResourceLocator.getContext( this );
         }
 
         public String getName(){
@@ -438,7 +437,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
             try{
                 connect();
                 isSendThreadAlive.getAndSet(true);
-                senderSocket = ResourceLocator.createSocket(context, ZMQ.PAIR);
+                senderSocket = CommonsResourceLocator.createSocket(context, ZMQ.PAIR);
                 senderSocket.connect(inprocName);
                 senderSocket.send(String.valueOf(Constants.CONNECTION_STARTED), 0);
                 while( !stop.get() && !Thread.currentThread().isInterrupted() ) {
@@ -446,19 +445,19 @@ public class ClientCommController implements ClientController, DestroyableCallba
                         isConnected.set(true);
                         processMsgQueue();
                         String strMsg = senderSocket.recvStr(); //ZMQ.DONTWAIT);
-                        Log4J.track(this, "7:" + strMsg.split(TOKEN)[1]);
+                        System.out.println("7:" + strMsg.split(TOKEN)[1]);
                         if( strMsg != null ) {
                             String[] msg = strMsg.split(TOKEN);
-                            Log4J.track(this, "8:" + msg[1]);
+                            System.out.println("8:" + msg[1]);
                             Utils.setAtom( stop, !sendToBroker(msg[0], msg[1])
                                     && (sentMessages.get() > receivedMessages.get() + difference));
-                            Log4J.track(this, "13:" + msg[1]);
+                            System.out.println("13:" + msg[1]);
                             if (stop.get()) {
                                 continue;
                             }
                             sentMessages.incrementAndGet();
                             //  Signal downstream to client-thread
-                            Log4J.track(this, "14:" + msg[1]);
+                            System.out.println("14:" + msg[1]);
                             senderSocket.send("ACK", 0);
                         }else{
                             Utils.sleep(10);
@@ -495,7 +494,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
 
         @Override
         public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable {
-            ResourceLocator.setIamDone(this);
+            CommonsResourceLocator.setIamDone(this);
             if(callback != null) callback.destroyInCascade(this);
         }
     }
@@ -571,7 +570,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
                         String response = receive(sessionCommAPI);
                         if( "".equals(response) )
                             continue;
-                        Log4J.track(this, "33:" + response);
+                        System.out.println("33:" + response);
                         receivedMessages.incrementAndGet();
                         if (response == null && (sentMessages.get() > receivedMessages.get() + difference)) {
                             stop.getAndSet(true);
@@ -579,7 +578,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
                             stop.getAndSet(true);
                         } else if (responseListener != null) {
                             if (shouldProcessReply) {
-                                Log4J.track(this, "34:" + response);
+                                System.out.println("34:" + response);
                                 responseListener.process(response);
                                 if( sendAck ) send(sessionId, new SessionMessage(Constants.ACK));
                                 if( response.contains(Constants.SHUTDOW_SERVER) ){
