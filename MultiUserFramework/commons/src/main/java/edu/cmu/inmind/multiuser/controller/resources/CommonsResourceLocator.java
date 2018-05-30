@@ -8,6 +8,7 @@ import org.zeromq.ZMQ;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+//added to remove dependency from core, instead ResourceLocator in commons uses this ZMQ
 public class CommonsResourceLocator {
 
 
@@ -47,12 +48,4 @@ public class CommonsResourceLocator {
         sockets.add(socket);
         return socket;
     }
-
-   /*public static Logger getLogger(Class clazz){
-        return loggers.get(clazz);
-    }
-
-    public static void addLogger(Class clazz, Logger logger){
-        loggers.put(clazz, logger);
-    }*/
 }
