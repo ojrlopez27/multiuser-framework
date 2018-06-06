@@ -24,6 +24,7 @@ public class CompositionController {
     private HashMap<String, User> usersMap;
     private HashMap<String, List<String>> behaviorsActivatedByUser;
     private List<String> users;
+    private List<Double>[] activations;
 
 
     public CompositionController(String bnJsonFile){
@@ -92,8 +93,13 @@ public class CompositionController {
                 }
             }
         }
+        network.sortBehaviorsByName();
         serviceMap = network.map();
         deviceServiceMap = generateMap();
+        activations = new List[serviceMap.values().size()];
+        for(int i = 0; i < activations.length; i++){
+            activations[i] = new ArrayList<>();
+        }
     }
 
     public void endMeansAnalysis() {
@@ -115,7 +121,12 @@ public class CompositionController {
     }
 
     public int selectBehavior() {
-        return network.selectBehavior();
+        int beh = network.selectBehavior();
+        for(int i = 0; i < network.getBehaviors().size(); i++){
+            Behavior behavior = network.getBehaviors().get(i);
+            if(beh > -1) activations[i].add( behavior.getActivation() );
+        }
+        return beh;
     }
 
     public boolean executeBehavior(int idx, int simulationStep) {
@@ -126,7 +137,7 @@ public class CompositionController {
 
         // keep a record of those (abstract) services that have been activated per user so
         // we don't activate them in the future (e.g., if location is executed by phone, we
-        // don't neet it to be re-calculated by tablet.
+        // don't need it to be re-calculated by tablet.
         String[] id = splitBehName(selectedBehavior.getName());
         List<String> behaviorsActivated = behaviorsActivatedByUser.get(id[0]);
         if( behaviorsActivated == null ) behaviorsActivated = new ArrayList<>();
@@ -198,5 +209,43 @@ public class CompositionController {
 
     public void removeState(String state) {
         network.getState().remove(state);
+    }
+
+    public List<Behavior> getServices() {
+        return new ArrayList<>( network.getBehaviors() );
+    }
+
+    public List<Double>[] getNormalizedActivations() {
+        double highest = network.getHighestActivation();
+        double currentBehActivation = getActivationBeh();
+        int idxActivated = network.getIdxBehActivated();
+        if( highest > currentBehActivation ) {
+            double belowActivated = currentBehActivation * 0.9;
+            for (int i = 0; i < activations.length; i++) {
+                Double lastActivation = activations[i].remove(activations[i].size() - 1);
+                if (i != idxActivated)
+                    lastActivation = lastActivation * belowActivated / highest;
+                activations[i].add(lastActivation);
+            }
+        }
+        return activations;
+    }
+
+    public double getThreshold() {
+        return network.getTheta();
+    }
+
+    public String getBehActivated() {
+        if( network.getIdxBehActivated() == -1) return null;
+        return network.getBehaviorActivated().getShortName();
+    }
+
+    public double getActivationBeh() {
+        if(network.getIdxBehActivated() == -1) throw new IllegalStateException("There should be a winner behavior");
+        return network.getBehaviorActivated().getActivation();
+    }
+
+    public void addGoal(String goal) {
+        network.getGoals().add(goal);
     }
 }

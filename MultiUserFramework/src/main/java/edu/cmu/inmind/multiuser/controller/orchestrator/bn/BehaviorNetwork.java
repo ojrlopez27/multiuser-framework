@@ -12,9 +12,9 @@ import java.util.regex.Pattern;
  */
 public class BehaviorNetwork {
 	private List<Behavior> behaviors = new Vector<>();
-    private ConcurrentSkipListSet<String> states = new ConcurrentSkipListSet<>();
+	private ConcurrentSkipListSet<String> states = new ConcurrentSkipListSet<>();
 	private List<String> goals = new Vector <>();
-    private boolean removePrecond = false;
+	private boolean removePrecond = false;
 	private transient List<String> goalsResolved = new Vector <>();
 
 	private double pi = 15; //20 the mean level of activation,
@@ -33,47 +33,51 @@ public class BehaviorNetwork {
 	private transient int indexBehActivated = -1;
 	private transient int cont = 1;
 	private transient Double[] activations;
-    private transient boolean verboseTree = false;
-    private transient boolean verboseVal = false;
-    private transient List<String> previousStates;
-    private transient List<Behavior> behaviorsCopy = new Vector<>();
-    private transient String nameBehaviorActivated;
+	private transient boolean verboseTree = false;
+	private transient boolean verboseVal = false;
+	private transient List<String> previousStates;
+	private transient List<Behavior> behaviorsCopy = new Vector<>();
+	private transient String nameBehaviorActivated;
 	private String output;
 	private String statesOutput;
 
-    private transient int cycle = 1;
+	private transient int cycle = 1;
 	private transient HashMap<String, Behavior> map;
-    private transient int padBehaviorName;
-    private final static String LEVEL_1 = "|-- ";
-    private final static String LEVEL_2 = "   |-- ";
-    private final static String LEVEL_3 = "      |-- ";
+	private transient int padBehaviorName;
+	private final static String LEVEL_1 = "|-- ";
+	private final static String LEVEL_2 = "   |-- ";
+	private final static String LEVEL_3 = "      |-- ";
 
-    BehaviorNetwork(){}
+	BehaviorNetwork(){}
 
 	public HashMap<String, Behavior> map(){
-        int length = 0;
-        map = new HashMap<>();
-        for(Behavior behavior : behaviors){
-            map.put(behavior.getName(), behavior);
-            if(behavior.getName().length() > length) length = behavior.getName().length();
-            behavior.setNetwork(this);
-        }
-        padBehaviorName = length + 5;
-        return map;
-    }
+		int length = 0;
+		map = new HashMap<>();
+		for(Behavior behavior : behaviors){
+			map.put(behavior.getName(), behavior);
+			if(behavior.getName().length() > length) length = behavior.getName().length();
+			behavior.setNetwork(this);
+		}
+		padBehaviorName = length + 5;
+		return map;
+	}
 
-    public List<Behavior> getBehByPrefix(String prefix){
-	    List<Behavior> behaviors = new ArrayList<>();
-        for(Behavior behavior : this.behaviors){
-            if(behavior.getName().startsWith(prefix)){
-                behaviors.add(behavior);
-            }
-        }
-        return behaviors;
-    }
+	public void sortBehaviorsByName(){
+		Collections.sort(behaviors, Comparator.comparing(Behavior::getShortName));
+	}
+
+	public List<Behavior> getBehByPrefix(String prefix){
+		List<Behavior> behaviors = new ArrayList<>();
+		for(Behavior behavior : this.behaviors){
+			if(behavior.getName().startsWith(prefix)){
+				behaviors.add(behavior);
+			}
+		}
+		return behaviors;
+	}
 
 
-    public List<Behavior> getBehaviors() {
+	public List<Behavior> getBehaviors() {
 		return behaviors;
 	}
 
@@ -90,11 +94,11 @@ public class BehaviorNetwork {
 		return indexBehActivated;
 	}
 
-    public boolean isRemovePrecond() {
-        return removePrecond;
-    }
+	public boolean isRemovePrecond() {
+		return removePrecond;
+	}
 
-    public Behavior getBehaviorActivated(){
+	public Behavior getBehaviorActivated(){
 		if( indexBehActivated >= 0 ) {
 			return behaviors.get(indexBehActivated);
 		}
@@ -110,7 +114,7 @@ public class BehaviorNetwork {
 	}
 
 	public String getNameBehaviorActivated() {
-        return nameBehaviorActivated;
+		return nameBehaviorActivated;
 	}
 
 	public void setBehaviors(List<Behavior> behaviors) {
@@ -210,29 +214,29 @@ public class BehaviorNetwork {
 		return result;
 	}
 
-    public String getPreviousStateString(){
-        String result = "";
-        if(previousStates != null) {
-            for( String state : previousStates ){
-                result += state + ", ";
-            }
-            result = result.substring(0, result.length()-2);
-        }
-        return result;
-    }
+	public String getPreviousStateString(){
+		String result = "";
+		if(previousStates != null) {
+			for( String state : previousStates ){
+				result += state + ", ";
+			}
+			result = result.substring(0, result.length()-2);
+		}
+		return result;
+	}
 
 	public synchronized void setState(List<String> states){
-        try {
-            if( this.states == null ){
-                this.states = new ConcurrentSkipListSet<>(states);
-            }else{
-                for(String state : states){
-                    this.states.add(state);
-                }
-            }
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+		try {
+			if( this.states == null ){
+				this.states = new ConcurrentSkipListSet<>(states);
+			}else{
+				for(String state : states){
+					this.states.add(state);
+				}
+			}
+		}catch (Exception e){
+			e.printStackTrace();
+		}
 	}
 
 //	public void addState(List<String> states){
@@ -295,14 +299,14 @@ public class BehaviorNetwork {
 		return false;
 	}
 
-    public boolean executable (int idx, int maximum){
-        try {
-            return behaviors.get(idx).isExecutable(maximum);
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-        return false;
-    }
+	public boolean executable (int idx, int maximum){
+		try {
+			return behaviors.get(idx).isExecutable(maximum);
+		}catch (Exception e){
+			e.printStackTrace();
+		}
+		return false;
+	}
 
 	private boolean executable (int idx, double maximum){
 		try {
@@ -365,8 +369,8 @@ public class BehaviorNetwork {
 		for(Behavior behx : this.behaviors){
 			if(behx.getIdx() != indexBehx){
 				if( behx.isInhibition(proposition) && states.contains(proposition) ) {
-                    behaviors.add(behx);
-                }
+					behaviors.add(behx);
+				}
 			}
 		}
 		return behaviors;
@@ -414,11 +418,11 @@ public class BehaviorNetwork {
 	 * Note: modified with weights.
 	 */
 	private void computeLinks (){
-        //int highest = highestNumPreconditions();
+		//int highest = highestNumPreconditions();
 		double highest = highestUtility();
 		for(int i = 0; i < behaviors.size(); i++){
 			//boolean isExecutable = executable(i);
-            boolean isExecutable = executable(i); //executable(i, highest);
+			boolean isExecutable = executable(i); //executable(i, highest);
 			activationSuccesors[i] = spreadsForward(behaviors.get(i).getIdx(), isExecutable);
 			activationPredeccesors[i] = spreadsBackward(behaviors.get(i).getIdx(), isExecutable);
 			activationConflicters[i] = takesAway(behaviors.get(i).getIdx());
@@ -442,21 +446,21 @@ public class BehaviorNetwork {
 	}
 
 	/**
-     * This method returns the behavior with the highest number of preconditions present at the current state.
-     * @return
-     */
-    private int highestNumPreconditions() {
-        int maximum = 0;
+	 * This method returns the behavior with the highest number of preconditions present at the current state.
+	 * @return
+	 */
+	private int highestNumPreconditions() {
+		int maximum = 0;
 		for (Behavior behavior : behaviors) {
 			int numMatched = behavior.calculateMatchPreconditions(states);
 			if (numMatched > maximum) {
 				maximum = numMatched;
 			}
 		}
-        return maximum;
-    }
+		return maximum;
+	}
 
-    /**
+	/**
 	 * An executable behavior x spreads activation forward. It increases
 	 * (by a fraction of its own activation level) the activation level of those
 	 * successors y for which the shared proposition p E ax n cy is not true.
@@ -475,16 +479,16 @@ public class BehaviorNetwork {
 			Vector<String> addList = new Vector<> ( behaviors.get(indexBehavior).getAddList() );
 			for(String addPremise : addList ){
 				if( !states.contains(addPremise) ){ //p E ax is false
-                    List<Behavior> sparseBehaviors = matchProposition(addPremise); //j E ax n cy
+					List<Behavior> sparseBehaviors = matchProposition(addPremise); //j E ax n cy
 					for(Behavior beh : sparseBehaviors ){
 						int cardinalityMj = sparseBehaviors.size();
 						int cardinalityCy = beh.getPreconditions().size();
 						double temp = beh.getActivation() * (phi/gamma) * (1d / cardinalityMj) * (1d / cardinalityCy);
-                        activation[beh.getIdx()] += temp;
-                        if( verboseVal ) {
-                            System.out.println(behaviors.get(indexBehavior).getName() + " spreads " + temp + " forward to " +
-                                    beh.getName() + " for " + addPremise);
-                        }
+						activation[beh.getIdx()] += temp;
+						if( verboseVal ) {
+							System.out.println(behaviors.get(indexBehavior).getName() + " spreads " + temp + " forward to " +
+									beh.getName() + " for " + addPremise);
+						}
 					}
 				}
 			}
@@ -513,22 +517,22 @@ public class BehaviorNetwork {
 			Behavior beh = behaviors.get(indexBehavior);
 			Collection<List<Premise>> condList = new Vector<> (beh.getPreconditions());
 			for(List<Premise> condRow : condList ){
-                for(Premise cond : condRow ){
-                    if( !states.contains( cond.getLabel() ) ) { //p E cx is false
-                        Vector<Behavior> sparseBehaviors = achieveProposition(cond.getLabel()); //j E cx n ay
-                        for (int j = 0; j < sparseBehaviors.size(); j++) {
+				for(Premise cond : condRow ){
+					if( !states.contains( cond.getLabel() ) ) { //p E cx is false
+						Vector<Behavior> sparseBehaviors = achieveProposition(cond.getLabel()); //j E cx n ay
+						for (int j = 0; j < sparseBehaviors.size(); j++) {
 							int cardinalityAj = sparseBehaviors.size();
-                            int cardinalityAy = sparseBehaviors.get(j).getAddList().size();
-                            double temp = beh.getActivation() * (1d / cardinalityAj) * (1d / cardinalityAy);
-                            activation[sparseBehaviors.get(j).getIdx()] += temp;
-                            if( verboseVal ) {
-                                System.out.println( String.format("%s spreads %s backward to %s for %s",
-                                        beh.getName(), temp, sparseBehaviors.get(j).getName(), cond.getLabel()) );
-                            }
-                        }
+							int cardinalityAy = sparseBehaviors.get(j).getAddList().size();
+							double temp = beh.getActivation() * (1d / cardinalityAj) * (1d / cardinalityAy);
+							activation[sparseBehaviors.get(j).getIdx()] += temp;
+							if( verboseVal ) {
+								System.out.println( String.format("%s spreads %s backward to %s for %s",
+										beh.getName(), temp, sparseBehaviors.get(j).getName(), cond.getLabel()) );
+							}
+						}
 
-                    }
-                }
+					}
+				}
 			}
 		}
 		return activation;
@@ -553,27 +557,27 @@ public class BehaviorNetwork {
 	private double[] takesAway(int indexBehavior){
 		double[] activation = new double[behaviors.size()];
 		Behavior behx = behaviors.get(indexBehavior);
-        Collection<List<Premise>> condListX = new Vector<>(behx.getPreconditions());
+		Collection<List<Premise>> condListX = new Vector<>(behx.getPreconditions());
 
 		for( List<Premise> condRow : condListX ){
-            for( Premise cond : condRow ) {
+			for( Premise cond : condRow ) {
 				Vector<Behavior> sparseBehaviors = undoPropositionState(cond.getLabel(), indexBehavior); //j E cx n dy
-                for ( Behavior behy : sparseBehaviors) {
-                    double temp = 0;
-                    if ((behx.getActivation() <= behy.getActivation()) && inverseTakesAway(indexBehavior, behy.getIdx())) {
-                        activation[behy.getIdx()] = 0;
-                    } else {
-                        int cardinalityUj = sparseBehaviors.size();
-                        int cardinalityDy = behy.getDeleteList().size();
-                        temp = behx.getActivation() * (delta / gamma) * (1d / cardinalityUj) * (1d / cardinalityDy);
-                        activation[behy.getIdx()] += temp;//Math.max(activationTemp, sparseBehaviors.get(j).getActivationPrior());
-                    }
-                    if( verboseVal ) {
-                        System.out.println(behx.getName() + " decreases (inhibits)" + behy.getName() + " with " + temp +
-                                " for " + cond);
-                    }
-                }
-            }
+				for ( Behavior behy : sparseBehaviors) {
+					double temp = 0;
+					if ((behx.getActivation() <= behy.getActivation()) && inverseTakesAway(indexBehavior, behy.getIdx())) {
+						activation[behy.getIdx()] = 0;
+					} else {
+						int cardinalityUj = sparseBehaviors.size();
+						int cardinalityDy = behy.getDeleteList().size();
+						temp = behx.getActivation() * (delta / gamma) * (1d / cardinalityUj) * (1d / cardinalityDy);
+						activation[behy.getIdx()] += temp;//Math.max(activationTemp, sparseBehaviors.get(j).getActivationPrior());
+					}
+					if( verboseVal ) {
+						System.out.println(behx.getName() + " decreases (inhibits)" + behy.getName() + " with " + temp +
+								" for " + cond);
+					}
+				}
+			}
 		}
 		return activation;
 	}
@@ -587,15 +591,15 @@ public class BehaviorNetwork {
 	 * Note: modified with weights.
 	 */
 	private boolean inverseTakesAway(int indexBehx, int indexBehy){
-        Collection<List<Premise>> condsListy = new Vector<> (behaviors.get(indexBehy).getPreconditions());
+		Collection<List<Premise>> condsListy = new Vector<> (behaviors.get(indexBehy).getPreconditions());
 		Behavior behx = behaviors.get(indexBehx);
 
 		for(List<Premise> condRow : condsListy ){
-            for( Premise cond : condRow ) {
-                if (behx.getDeleteList().contains(cond.getLabel()) ) //cy n dx
-                    if (states.contains( cond.getLabel() )) //cy n S(t)
-                        return true;
-            }
+			for( Premise cond : condRow ) {
+				if (behx.getDeleteList().contains(cond.getLabel()) ) //cy n dx
+					if (states.contains( cond.getLabel() )) //cy n S(t)
+						return true;
+			}
 		}
 		return false;
 	}
@@ -635,9 +639,9 @@ public class BehaviorNetwork {
 //		}
 
 		for(int i = 0; i < behaviors.size(); i++){
-            if( verboseVal ) {
+			if( verboseVal ) {
 //                System.out.println("activation-level " + behaviors.get(i).getName() + ": " + behaviors.get(i).getActivation());
-            }
+			}
 		}
 	}
 
@@ -657,89 +661,89 @@ public class BehaviorNetwork {
 		double act = 0;
 		indexBehActivated = -1;
 		for( Behavior beh : behaviors){
-            if( beh.getActivation() >= theta && beh.getExecutable() && beh.getActivation() > act){
-                indexBehActivated = behaviors.indexOf(beh);
-                act = beh.getActivation();
-                nameBehaviorActivated = beh.getName(); //beh.getName();
-            }
-        }
-        execution = false;
-        if( verboseTree ) {
-            System.out.println(LEVEL_2 + "STATE: " + Arrays.toString(states.toArray()));
-            System.out.println(LEVEL_2 + "BEHAVIOR (B), ACTIVATION (AC), PRECONDITIONS THAT ARE TRUE (PT), LIST OF PRECONDITIONS (LP), So:  |-- B  AC  (PT) -> LP");
-        }
+			if( beh.getActivation() >= theta && beh.getExecutable() && beh.getActivation() > act){
+				indexBehActivated = behaviors.indexOf(beh);
+				act = beh.getActivation();
+				nameBehaviorActivated = beh.getName(); //beh.getName();
+			}
+		}
+		execution = false;
+		if( verboseTree ) {
+			System.out.println(LEVEL_2 + "STATE: " + Arrays.toString(states.toArray()));
+			System.out.println(LEVEL_2 + "BEHAVIOR (B), ACTIVATION (AC), PRECONDITIONS THAT ARE TRUE (PT), LIST OF PRECONDITIONS (LP), So:  |-- B  AC  (PT) -> LP");
+		}
 		for( Behavior beh : behaviors){
 			if( verboseTree ) {
 				System.out.println(LEVEL_3 + CommonUtils.padRight( beh.getName(), padBehaviorName)
-                        + CommonUtils.padRight(beh.getActivation(), 10) + "("+beh.getNumMatches()+") -> "
-                        + beh.getStateMatches().toString());
+						+ CommonUtils.padRight(beh.getActivation(), 10) + "("+beh.getNumMatches()+") -> "
+						+ beh.getStateMatches().toString());
 			}
 		}
 		if( verboseTree ) {
 			System.out.println(LEVEL_2 + "THETA (THRESHOLD): " + theta );
 		}
-        if( indexBehActivated >= 0 ){
+		if( indexBehActivated >= 0 ){
 			statesOutput = Arrays.toString(states.toArray());
 			if(verboseTree ) {
 				System.out.println(LEVEL_2 + "EXECUTING BEHAVIOR: " + behaviors.get(indexBehActivated).getName());
 			}
-            execution = true;
-            behaviors.get(indexBehActivated).setActivated(true);
-        }
+			execution = true;
+			behaviors.get(indexBehActivated).setActivated(true);
+		}
 		return indexBehActivated;
 	}
 
 
-    public synchronized void triggerPostconditions(Behavior beh, List<String> addConditions){
-        triggerPostconditions(beh, addConditions, beh.getDeleteList());
-    }
+	public synchronized void triggerPostconditions(Behavior beh, List<String> addConditions){
+		triggerPostconditions(beh, addConditions, beh.getDeleteList());
+	}
 
-    public synchronized void triggerPostconditions(Behavior beh ) {
-        triggerPostconditions(beh, beh.getAddList(), beh.getDeleteList());
-    }
+	public synchronized void triggerPostconditions(Behavior beh ) {
+		triggerPostconditions(beh, beh.getAddList(), beh.getDeleteList());
+	}
 
 
 	public synchronized void triggerPostconditions(Behavior beh, List<String> addConditions, List<String> deleteConditions){
-        try {
-            previousStates = new Vector<>(states);
-            for (String anAddList : addConditions) {
-                states.add(anAddList);
-            }
-            if (removePrecond) {
-                if( beh.getPreconditions() != null ) {
-                    for (List<Premise> preconds : beh.getPreconditions()) {
-                        for (Premise precond : preconds) {
-                            states.remove(precond.getLabel());
-                        }
-                    }
-                }
-            } else {
-                List<String> toRemove = new ArrayList<>();
-                for (String premise : deleteConditions) {
-                    if(states.contains(premise)) {
-                        toRemove.add(premise);
-                    }else {
-                        for (String st : states) {
-                            if (premise.contains("*") && Pattern.compile(premise.replace("*", "[a-zA-Z0-9]*"))
-                                    .matcher(st).matches()) {
-                                toRemove.add(st);
-                            }
-                        }
-                    }
-                }
-                // bulk operations are not guaranteed to be performed atomically
-                for(String strToRemove : toRemove){
-                    states.remove(strToRemove);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+		try {
+			previousStates = new Vector<>(states);
+			for (String anAddList : addConditions) {
+				states.add(anAddList);
+			}
+			if (removePrecond) {
+				if( beh.getPreconditions() != null ) {
+					for (List<Premise> preconds : beh.getPreconditions()) {
+						for (Premise precond : preconds) {
+							states.remove(precond.getLabel());
+						}
+					}
+				}
+			} else {
+				List<String> toRemove = new ArrayList<>();
+				for (String premise : deleteConditions) {
+					if(states.contains(premise)) {
+						toRemove.add(premise);
+					}else {
+						for (String st : states) {
+							if (premise.contains("*") && Pattern.compile(premise.replace("*", "[a-zA-Z0-9]*"))
+									.matcher(st).matches()) {
+								toRemove.add(st);
+							}
+						}
+					}
+				}
+				// bulk operations are not guaranteed to be performed atomically
+				for(String strToRemove : toRemove){
+					states.remove(strToRemove);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		protectGoals(beh);
-        for (String goal : beh.getAddGoals()) {
-            goals.remove(goal);
-            goals.add(goal);
-        }
+		for (String goal : beh.getAddGoals()) {
+			goals.remove(goal);
+			goals.add(goal);
+		}
 	}
 
 	/**
@@ -749,7 +753,7 @@ public class BehaviorNetwork {
 	 */
 	private void protectGoals(Behavior beh){
 		for (String goalTemp : beh.getAddList()) {
-		    if(goalTemp.startsWith(beh.getUserName())) goalTemp = goalTemp.substring(beh.getUserName().length()+1);
+			if(goalTemp.startsWith(beh.getUserName())) goalTemp = goalTemp.substring(beh.getUserName().length()+1);
 			if (goals.contains(goalTemp)){
 				goalsResolved.add(goalTemp);
 				goals.remove(goalTemp);
@@ -789,68 +793,78 @@ public class BehaviorNetwork {
 	 * Note: modified with weights.
 	 * @return
 	 */
-    public int selectBehavior() {
+	public int selectBehavior() {
 		if(verboseTree) System.out.println(LEVEL_1 + "BEHAVIOR NETWORK DECISION CYCLE: " + cycle);
-        if (activations == null) {
-            setBehaviors(behaviors, behaviors.size() + 1);
-        }
-        activations[behaviors.size()] = theta;
-        if (verboseVal) {
-            System.out.println(String.format("\nStep: %s.\tgoals achieved: %s,\tgoals: %s",cont, goalsResolved.size(), goals.size()));
-        }
-        computeActivation();
-        computeLinks();
-        updateActivation();
-        activateBehavior();
-        recordActivations();
-        applyDecayFx();
-        cont++;
-        checkExecute();
-        return indexBehActivated;
-    }
+		if (activations == null) {
+			setBehaviors(behaviors, behaviors.size() + 1);
+		}
+		activations[behaviors.size()] = theta;
+		if (verboseVal) {
+			System.out.println(String.format("\nStep: %s.\tgoals achieved: %s,\tgoals: %s",cont, goalsResolved.size(), goals.size()));
+		}
+		computeActivation();
+		computeLinks();
+		updateActivation();
+		activateBehavior();
+		recordActivations();
+		applyDecayFx();
+		cont++;
+		checkExecute();
+		return indexBehActivated;
+	}
 
 	/**
 	 * Note: modified with weights.
 	 */
 	private void recordActivations(){
-        for (int i = 0; i < behaviors.size(); i++) {
-            Behavior b = behaviors.get(i);
-            if (verboseVal) {
-                System.out.println("Behavior: " + b.getName() + "  activation: " + b.getActivation());
-            }
-            activations[i] = behaviors.get(i).getActivation();
-        }
-        if (indexBehActivated != -1) {
-            activations[behaviors.size()] = behaviors.get(indexBehActivated).getActivation();
-        }
-    }
+		for (int i = 0; i < behaviors.size(); i++) {
+			Behavior b = behaviors.get(i);
+			if (verboseVal) {
+				System.out.println("Behavior: " + b.getName() + "  activation: " + b.getActivation());
+			}
+			activations[i] = behaviors.get(i).getActivation();
+		}
+		if (indexBehActivated != -1) {
+			activations[behaviors.size()] = behaviors.get(indexBehActivated).getActivation();
+		}
+	}
 
-    public void checkExecute(){
-        if( !execution ){
-            theta *= 0.9;
-            if( verboseVal ) {
-                System.err.println("None of the executable behaviors has accumulated enough activation to become active");
-                System.out.println("Theta: " + theta);
-            }
-        }else{
-            cycle = 1;
-        }
-        reset();
-    }
+	public void checkExecute(){
+		if( !execution ){
+			theta *= 0.9;
+			if( verboseVal ) {
+				System.err.println("None of the executable behaviors has accumulated enough activation to become active");
+				System.out.println("Theta: " + theta);
+			}
+		}else{
+			cycle = 1;
+		}
+		reset();
+	}
 
-    public int getHighestActivation() {
-        int idx = 5; //ASN
-        double max = 0;
-        for(int i = 0; i< behaviors.size(); i++){
-            Behavior beh = behaviors.get(i);
-            if( beh.getActivation() > theta && beh.getActivation() > max ){
-                idx = i;
-            }
-        }
-        behaviors.get(idx).setActivation(max * 1.15);
-        nameBehaviorActivated = behaviors.get(idx).getId(); //.getName();
-        return indexBehActivated = idx;
-    }
+	public int getHighestActivationWithTheta() {
+		int idx = 0;
+		double max = 0;
+		for(int i = 0; i< behaviors.size(); i++){
+			Behavior beh = behaviors.get(i);
+			if( beh.getActivation() > theta && beh.getActivation() > max ){
+				idx = i;
+			}
+		}
+		behaviors.get(idx).setActivation(max * 1.15);
+		nameBehaviorActivated = behaviors.get(idx).getId(); //.getName();
+		return indexBehActivated = idx;
+	}
+
+	public double getHighestActivation() {
+		double max = 0;
+		for(Behavior behavior : behaviors){
+			if( behavior.getActivation() > max ){
+				max = behavior.getActivation();
+			}
+		}
+		return max;
+	}
 
 	public int getHighestActivationUsingNone(){
 		int idx = 7, maxPrecTrue = 0;
@@ -867,46 +881,46 @@ public class BehaviorNetwork {
 				maxPrecTrue = beh.getNumMatches();
 			}
 		}
-        if( max == 0){
-            max = theta;
-        }
-        indexBehActivated = idx;
-        nameBehaviorActivated = behaviors.get(idx).getId(); //getName();
-        behaviors.get(idx).setActivation(max * 1.30);
+		if( max == 0){
+			max = theta;
+		}
+		indexBehActivated = idx;
+		nameBehaviorActivated = behaviors.get(idx).getId(); //getName();
+		behaviors.get(idx).setActivation(max * 1.30);
 		behaviors.get(idx).setNumMatches(maxPrecTrue);
-        behaviors.get(idx).setActivated(true);
-        execution = true;
-        recordActivations();
+		behaviors.get(idx).setActivated(true);
+		execution = true;
+		recordActivations();
 		return idx;
 	}
 
-    public String[] getBehaviorNamesByHighestActivation() {
-        getBehaviorsSorted();
-        String[] results = new String[behaviorsCopy.size()];
+	public String[] getBehaviorNamesByHighestActivation() {
+		getBehaviorsSorted();
+		String[] results = new String[behaviorsCopy.size()];
 		DecimalFormat formatter = new DecimalFormat("#0.00");
 		output = "";
-        for( int i = 0; i < behaviorsCopy.size(); i++ ){
+		for( int i = 0; i < behaviorsCopy.size(); i++ ){
 			Behavior bp = behaviorsCopy.get(i);
-            results[i] = bp.getId();
+			results[i] = bp.getId();
 			output += "["+bp.getName()+": ("+formatter.format( bp.getActivation())+") - ("+bp.getNumMatches()+")], ";
-        }
+		}
 		output += "theta: " + theta;
-        return results;
-    }
+		return results;
+	}
 
-    public List<Behavior> getBehaviorsSorted(){
-        getBehaviorsCopy(false);
-        Collections.sort( behaviorsCopy );
-        Collections.reverse( behaviorsCopy );
-        return behaviorsCopy;
-    }
+	public List<Behavior> getBehaviorsSorted(){
+		getBehaviorsCopy(false);
+		Collections.sort( behaviorsCopy );
+		Collections.reverse( behaviorsCopy );
+		return behaviorsCopy;
+	}
 
-    private void getBehaviorsCopy(boolean deep) {
-        behaviorsCopy.clear();
-        for( Behavior beh : behaviors){
-            behaviorsCopy.add( deep? beh.deepClone() : beh.clone() );
-        }
-    }
+	private void getBehaviorsCopy(boolean deep) {
+		behaviorsCopy.clear();
+		for( Behavior beh : behaviors){
+			behaviorsCopy.add( deep? beh.deepClone() : beh.clone() );
+		}
+	}
 
 	public String[] getBehaviorNames() {
 		String[] names = new String[ behaviors.size() ];
@@ -933,67 +947,67 @@ public class BehaviorNetwork {
 	}
 
 
-    /**
-     * Using the goal, we go backward over behServMap, looking for those behServMap that
-     * promise to trigger the goal-behavior. During this search, we check whether behServMap
-     * have preconditions like "*-required", if so, then add them to the state.
-     */
-    public void endMeansAnalysis(List<String> users){
-	    List<String> latentStates = new ArrayList<>();
-	    for(String goal : goals){
-	        for( Behavior behavior : behaviors){
-	            for(String addCondition : behavior.getAddList() ){
-	                if( removeUserPrefix(addCondition, users).equals(goal) ){
-	                    // so this behavior promises to achieve the goal
-                        latentStates = extractLatentStates(behavior, latentStates);
-                    }
-                }
-            }
-        }
-        // we cannot use addAll since it is not guaranteed to be performed atomically
-        for(String latentState : latentStates){
-	        states.add(latentState);
-        }
-    }
+	/**
+	 * Using the goal, we go backward over behServMap, looking for those behServMap that
+	 * promise to trigger the goal-behavior. During this search, we check whether behServMap
+	 * have preconditions like "*-required", if so, then add them to the state.
+	 */
+	public void endMeansAnalysis(List<String> users){
+		List<String> latentStates = new ArrayList<>();
+		for(String goal : goals){
+			for( Behavior behavior : behaviors){
+				for(String addCondition : behavior.getAddList() ){
+					if( removeUserPrefix(addCondition, users).equals(goal) ){
+						// so this behavior promises to achieve the goal
+						latentStates = extractLatentStates(behavior, latentStates);
+					}
+				}
+			}
+		}
+		// we cannot use addAll since it is not guaranteed to be performed atomically
+		for(String latentState : latentStates){
+			states.add(latentState);
+		}
+	}
 
-    private String removeUserPrefix(String premise, List<String> users){
-        int pos = premise.indexOf(Behavior.TOKEN);
-        if( pos != -1 ){
-            if( users.contains( premise.substring(0, pos)) ){
-                premise = premise.substring( pos+1 );
-            }
-        }
-        return premise;
-    }
+	private String removeUserPrefix(String premise, List<String> users){
+		int pos = premise.indexOf(Behavior.TOKEN);
+		if( pos != -1 ){
+			if( users.contains( premise.substring(0, pos)) ){
+				premise = premise.substring( pos+1 );
+			}
+		}
+		return premise;
+	}
 
-    private List<String> extractLatentStates(Behavior behavior, List<String> latentStates) {
-        for( List<Premise> premises : behavior.getPreconditions() ){
-            for(Premise premise : premises){
-                if( !states.contains(premise.getLabel()) ) {
-                    if (checkIsRequired(premise.getLabel()) && !latentStates.contains(premise.getLabel())) {
-                        latentStates.add(premise.getLabel());
-                    }
-                    for (Behavior beh : behaviors) {
-                        if (beh != behavior) {
-                            for (String addCondition : beh.getAddList()) {
-                                if (addCondition.equals(premise.getLabel())) {
-                                    extractLatentStates( beh, latentStates);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return latentStates;
-    }
+	private List<String> extractLatentStates(Behavior behavior, List<String> latentStates) {
+		for( List<Premise> premises : behavior.getPreconditions() ){
+			for(Premise premise : premises){
+				if( !states.contains(premise.getLabel()) ) {
+					if (checkIsRequired(premise.getLabel()) && !latentStates.contains(premise.getLabel())) {
+						latentStates.add(premise.getLabel());
+					}
+					for (Behavior beh : behaviors) {
+						if (beh != behavior) {
+							for (String addCondition : beh.getAddList()) {
+								if (addCondition.equals(premise.getLabel())) {
+									extractLatentStates( beh, latentStates);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return latentStates;
+	}
 
-    private boolean checkIsRequired(String premise){
-        return premise.contains("-required");
-        //return premise.lastIndexOf("R") == premise.length() - 1;
-    }
+	private boolean checkIsRequired(String premise){
+		return premise.contains("-required");
+		//return premise.lastIndexOf("R") == premise.length() - 1;
+	}
 
-    public void addBehaviors(List<Behavior> behaviors) {
-        this.behaviors.addAll(behaviors);
-    }
+	public void addBehaviors(List<Behavior> behaviors) {
+		this.behaviors.addAll(behaviors);
+	}
 }
