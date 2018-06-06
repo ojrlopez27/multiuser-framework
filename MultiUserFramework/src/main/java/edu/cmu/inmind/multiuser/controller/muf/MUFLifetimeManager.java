@@ -1,6 +1,6 @@
 package edu.cmu.inmind.multiuser.controller.muf;
 
-import edu.cmu.inmind.multiuser.controller.common.ErrorMessages;
+import edu.cmu.inmind.multiuser.controller.exceptions.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.communication.ServiceInfo;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;

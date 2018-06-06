@@ -1,6 +1,6 @@
 package edu.cmu.inmind.multiuser.controller.orchestrator.bn;
 
-import edu.cmu.inmind.multiuser.controller.common.Utils;
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 
 import java.text.DecimalFormat;
 import java.util.*;
@@ -670,8 +670,8 @@ public class BehaviorNetwork {
         }
 		for( Behavior beh : behaviors){
 			if( verboseTree ) {
-				System.out.println(LEVEL_3 + Utils.padRight( beh.getName(), padBehaviorName)
-                        + Utils.padRight(beh.getActivation(), 10) + "("+beh.getNumMatches()+") -> "
+				System.out.println(LEVEL_3 + CommonUtils.padRight( beh.getName(), padBehaviorName)
+                        + CommonUtils.padRight(beh.getActivation(), 10) + "("+beh.getNumMatches()+") -> "
                         + beh.getStateMatches().toString());
 			}
 		}

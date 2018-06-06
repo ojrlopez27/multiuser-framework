@@ -2,10 +2,10 @@ package edu.cmu.inmind.multiuser.controller.plugin;
 
 import com.google.common.util.concurrent.AbstractIdleService;
 import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
-import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
+import edu.cmu.inmind.multiuser.controller.communication.DestroyableCallback;
 import edu.cmu.inmind.multiuser.controller.common.Constants;
-import edu.cmu.inmind.multiuser.controller.common.ErrorMessages;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
+import edu.cmu.inmind.multiuser.controller.exceptions.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardImpl;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardListener;
 import edu.cmu.inmind.multiuser.controller.communication.ClientController;
@@ -17,7 +17,6 @@ import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import edu.cmu.inmind.multiuser.controller.session.Session;
-import edu.cmu.inmind.multiuser.controller.session.SessionImpl;
 import edu.cmu.inmind.multiuser.controller.sync.SynchronizableEvent;
 
 import java.util.ArrayList;
@@ -49,7 +48,7 @@ public abstract class PluggableComponent extends AbstractIdleService
         callbacks = new CopyOnWriteArrayList();
         isShutDown.getAndSet(false);
         try {
-            type = Utils.getAnnotation(getClass(), StateType.class).state();
+            type = CommonUtils.getAnnotation(getClass(), StateType.class).state();
         }catch (Throwable e){
             e.printStackTrace();
         }

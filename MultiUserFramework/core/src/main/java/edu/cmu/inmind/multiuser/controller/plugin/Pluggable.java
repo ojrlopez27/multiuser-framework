@@ -2,7 +2,7 @@ package edu.cmu.inmind.multiuser.controller.plugin;
 
 import com.google.common.util.concurrent.Service;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardListener;
-import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
+import edu.cmu.inmind.multiuser.controller.communication.DestroyableCallback;
 import edu.cmu.inmind.multiuser.controller.communication.ClientController;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
 import edu.cmu.inmind.multiuser.controller.session.Session;

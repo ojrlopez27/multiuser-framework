@@ -1,7 +1,7 @@
 import java.util.concurrent.TimeUnit
 
 group 'edu.cmu.inmind.multiuser.framework'
-project.ext.set("muf_version", '3.0.15.8-core')
+project.ext.set("muf_version", '3.0.15.9')
 
 version "$project.muf_version"
 

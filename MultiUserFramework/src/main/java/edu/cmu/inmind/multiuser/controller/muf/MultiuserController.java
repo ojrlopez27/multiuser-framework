@@ -2,12 +2,13 @@ package edu.cmu.inmind.multiuser.controller.muf;
 
 
 import edu.cmu.inmind.multiuser.communication.ClientCommController;
-import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
-import edu.cmu.inmind.multiuser.controller.common.ErrorMessages;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
+import edu.cmu.inmind.multiuser.controller.communication.DestroyableCallback;
+import edu.cmu.inmind.multiuser.controller.exceptions.ErrorMessages;
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.communication.ServiceInfo;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
+import edu.cmu.inmind.multiuser.controller.log.FileLogger;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
@@ -37,13 +38,13 @@ public class MultiuserController implements DestroyableCallback {
 
     MultiuserController(String id, PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws MultiuserException{
         ClassLoader.getSystemClassLoader().setPackageAssertionStatus("zmq",false);
-        Utils.initThreadExecutor( config.getCorePoolSize() );
+        CommonUtils.initThreadExecutor( config.getCorePoolSize() );
         this.id = id;
         this.config = config;
 
         addShutDown();
         if( config.getPathExceptionLogger() != null ){
-            ExceptionHandler.setLog( config.getPathExceptionLogger() );
+            ExceptionHandler.setLog( config.getPathExceptionLogger(), FileLogger.class);
         }else if( config.getExceptionLogger() != null ){
             ExceptionHandler.setLog( config.getExceptionLogger() );
         }

@@ -1,4 +1,4 @@
-package edu.cmu.inmind.multiuser.controller.common;
+package edu.cmu.inmind.multiuser.controller.exceptions;
 
 /**
  * Created by oscarr on 6/27/17.

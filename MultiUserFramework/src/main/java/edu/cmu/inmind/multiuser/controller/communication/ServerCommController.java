@@ -1,13 +1,11 @@
 package edu.cmu.inmind.multiuser.controller.communication;
 
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.common.Constants;
-import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
-import edu.cmu.inmind.multiuser.controller.common.ErrorMessages;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
+import edu.cmu.inmind.multiuser.controller.exceptions.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
-import edu.cmu.inmind.multiuser.controller.plugin.Const;
 import edu.cmu.inmind.multiuser.controller.resources.CommonsResourceLocator;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.zeromq.ZContext;
@@ -137,7 +135,7 @@ public class ServerCommController implements DestroyableCallback {
                         command.destroy();
                         msg.destroy();
                     } else if (--liveness == 0) {
-                        boolean result = Utils.sleep(reconnect);
+                        boolean result = CommonUtils.sleep(reconnect);
                         if( !result )
                             break;
                         reconnectToBroker();
@@ -148,7 +146,7 @@ public class ServerCommController implements DestroyableCallback {
                         heartbeatAt = System.currentTimeMillis() + heartbeat;
                     }
                 } catch (Throwable error) {
-                    if( stop.get() || Utils.isZMQException(error) ) {
+                    if( stop.get() || CommonUtils.isZMQException(error) ) {
                         ResourceLocator.setIamDone(this);
                         destroyInCascade(this);
                         break;
@@ -160,7 +158,7 @@ public class ServerCommController implements DestroyableCallback {
             return null;
         }catch (Throwable e){
             try {
-                if( Utils.isZMQException(e) ) {
+                if( CommonUtils.isZMQException(e) ) {
                     ResourceLocator.setIamDone(this);
                     destroyInCascade(this); // interrupted
                 }else{
@@ -182,7 +180,7 @@ public class ServerCommController implements DestroyableCallback {
         sessionMessage.setRequestType(Constants.REQUEST_DISCONNECT);
         sessionMessage.setSessionId(service);
         ZMsg msg = new ZMsg();
-        msg.addFirst(new ZFrame( Utils.toJson(sessionMessage) ));
+        msg.addFirst(new ZFrame( CommonUtils.toJson(sessionMessage) ));
         msg.wrap(msgTemplate.getReplyTo());
         sendToBroker(MDP.S_DISCONNECT, null, msg);
         msg.destroy();
@@ -215,9 +213,9 @@ public class ServerCommController implements DestroyableCallback {
                 }
                 reply.getMsg().wrap(replyTo);
                 if (reply.getMsg().peekLast() != null) {
-                    reply.getMsg().peekLast().reset( message instanceof String? (String) message : Utils.toJson(message));
+                    reply.getMsg().peekLast().reset( message instanceof String? (String) message : CommonUtils.toJson(message));
                 } else {
-                    reply.getMsg().addLast(Utils.toJson(message));
+                    reply.getMsg().addLast(CommonUtils.toJson(message));
                 }
                 sendToBroker(command, null, reply.getMsg());
                 reply.destroy();
@@ -226,7 +224,7 @@ public class ServerCommController implements DestroyableCallback {
                         "reply: " + reply, "message: " + message));
             }
         }catch (Throwable e){
-            if( Utils.isZMQException(e) ) {
+            if( CommonUtils.isZMQException(e) ) {
                 destroyInCascade(this); // interrupted
             }else{
                 ExceptionHandler.handle(e);

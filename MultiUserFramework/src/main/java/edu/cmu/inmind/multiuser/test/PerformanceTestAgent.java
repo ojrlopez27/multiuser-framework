@@ -1,8 +1,8 @@
 package edu.cmu.inmind.multiuser.test;
 
 import edu.cmu.inmind.multiuser.communication.ClientCommController;
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.common.Constants;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ClientController;
 import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * This class wraps the agent/client that sends requests to and receives responses from MUF
  */
-public class PerformanceTestAgent implements Utils.NamedRunnable {
+public class PerformanceTestAgent implements CommonUtils.NamedRunnable {
     private String agentId;
     private int id;
     private ClientController ccc;
@@ -52,7 +52,7 @@ public class PerformanceTestAgent implements Utils.NamedRunnable {
         this.receivedMsgs = receivedMsgs;
         this.verbose = verbose;
         this.ids = ids;
-        ccc = new ClientCommController.Builder()
+        ccc = new ClientCommController.Builder(Log4J.getInstance())
                 .setServerAddress(url + ":" + port)
                 .setServiceName( agentId )
                 .setRequestType(Constants.REQUEST_CONNECT)
@@ -65,7 +65,7 @@ public class PerformanceTestAgent implements Utils.NamedRunnable {
         public void process(String message) {
             try {
                 if( verbose ) {
-                    Utils.printNewAddedThreads();
+                    CommonUtils.printNewAddedThreads();
                     Log4J.track(this, "Active: " + Thread.activeCount());
                 }
                 if( message.contains(Constants.SESSION_INITIATED) ){
@@ -108,7 +108,7 @@ public class PerformanceTestAgent implements Utils.NamedRunnable {
         try {
             // let's wait until it connects
             while( stop.get() ){
-                Utils.sleep(100);
+                CommonUtils.sleep(100);
             }
             String message = "";
             for (int i = 0; i < numMessages; i++) {
@@ -118,12 +118,12 @@ public class PerformanceTestAgent implements Utils.NamedRunnable {
                 times.put( (i + 1), System.nanoTime() );
                 ccc.send(agentId, message);
                 int sent = sentMessages.incrementAndGet();
-                Utils.sleep(delaySendMsg);
+                CommonUtils.sleep(delaySendMsg);
                 //if (verbose)
                 Log4J.debug(this, String.format("%s sends: %s Total sent: %s", agentId, message, sent));
             }
             while( !stop.get() ){
-                Utils.sleep(100);
+                CommonUtils.sleep(100);
             }
             Log4J.track(this, "37:" + message);
         }catch (Exception e){

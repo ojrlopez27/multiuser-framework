@@ -1,8 +1,9 @@
 package edu.cmu.inmind.multiuser.controller.blackboard;
 
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.common.Constants;
-import edu.cmu.inmind.multiuser.controller.common.ErrorMessages;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
+import edu.cmu.inmind.multiuser.controller.commons.Utils;
+import edu.cmu.inmind.multiuser.controller.exceptions.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.communication.ConnectRemoteService;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
@@ -185,7 +186,7 @@ public class BlackboardImpl implements Blackboard {
             checkException( new MultiuserException(ErrorMessages.BLACKBOARD_SUBSCRIBER_NULL) );
         }
         subscribers.add( subscriber );
-        Class subsClass = Utils.getClass( subscriber );
+        Class subsClass = CommonUtils.getClass( subscriber );
         if( subscriber instanceof ExternalComponent ){
             //If the component is a ExternalComponent, we cannot modify its annotations because the subscription message
             // list will be overriden.
@@ -258,7 +259,7 @@ public class BlackboardImpl implements Blackboard {
                                             sessionMessage.setSessionId(sender.getSessionId());
                                             sessionMessage.setRequestType(status);
                                             sessionMessage.setMessageId(key);
-                                            sessionMessage.setPayload(Utils.toJson(event.getElement()));
+                                            sessionMessage.setPayload(CommonUtils.toJson(event.getElement()));
                                             ((PluggableComponent) subscriber).send(sessionMessage);
                                         }
                                     } catch (Throwable e) {

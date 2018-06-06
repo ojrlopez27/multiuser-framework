@@ -1,10 +1,11 @@
 package edu.cmu.inmind.multiuser.communication;
 
-import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
+import edu.cmu.inmind.multiuser.controller.communication.DestroyableCallback;
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.communication.MDP;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.resources.CommonsResourceLocator;
+import edu.cmu.inmind.multiuser.log.LogC;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
@@ -106,7 +107,7 @@ public class ClientCommAPI implements DestroyableCallback {
             }
         } catch (Throwable e) {
             try {
-                if( Utils.isZMQException(e) ) {
+                if( CommonUtils.isZMQException(e) ) {
                     destroyInCascade(this); // interrupted
                 }else{
                     ExceptionHandler.handle(e);
@@ -142,7 +143,7 @@ public class ClientCommAPI implements DestroyableCallback {
             return true;
         }catch (Throwable e){
             try {
-                if( Utils.isZMQException(e) ) {
+                if( CommonUtils.isZMQException(e) ) {
                     destroyInCascade(this); // interrupted
                 }else{
                     ExceptionHandler.handle(e);
@@ -164,7 +165,7 @@ public class ClientCommAPI implements DestroyableCallback {
         if( !isDestroyed.getAndSet(true) ) {
             checkAndSleep();
             ctx = null;
-            System.out.println("Gracefully destroying...");
+            LogC.info(this,"Gracefully destroying...");
         }
         CommonsResourceLocator.setIamDone(this);
         if(callback != null) callback.destroyInCascade( this );
@@ -175,7 +176,7 @@ public class ClientCommAPI implements DestroyableCallback {
         try {
             int times = 0;
             while (!canUseSocket.get() && times++ < maxNumTries) { // 200 * 5 = 1000 milliseconds
-                Utils.sleep(delayCheckAndSleep);
+                CommonUtils.sleep(delayCheckAndSleep);
             }
             canUseSocket.getAndSet(false);
         }catch (Exception e){

@@ -1,6 +1,6 @@
 package edu.cmu.inmind.multiuser.test;
 
-import edu.cmu.inmind.multiuser.controller.common.Utils;
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.muf.MUFLifetimeManager;
 import edu.cmu.inmind.multiuser.controller.muf.MultiuserController;
 
@@ -45,7 +45,7 @@ public class PerformanceTestMain {
             muf = MUFLifetimeManager.startFramework(
                     TestUtils.getModulesPerf(PerformanceTestOrchestrator.class),
                     TestUtils.createConfig(url, portMUF));
-            Utils.sleep(delayMUF); //give some time to initialize the MUF
+            CommonUtils.sleep(delayMUF); //give some time to initialize the MUF
         }
 
         // let's create a client(s) that sends messages to MUF
@@ -54,7 +54,7 @@ public class PerformanceTestMain {
             agents[i - offset] = new PerformanceTestAgent( agentId, numMessages, url, portMUF, delaySendMsg,
                     initializedAgents, sentMessages, receivedMsgs, ids, verbose);
             ids[i - offset] = new AtomicInteger(i - offset);
-            Utils.sleep(delayAgentCreation);
+            CommonUtils.sleep(delayAgentCreation);
         }
 
         if( useScanner ) {
@@ -67,7 +67,7 @@ public class PerformanceTestMain {
         time = System.currentTimeMillis();
         for(int i = 0; i < numAgents; i++ ) {
             final int idx = i;
-            Utils.execute(agents[idx]);
+            CommonUtils.execute(agents[idx]);
         }
     }
 
@@ -111,7 +111,7 @@ public class PerformanceTestMain {
         ptm.runAgents();
 
         do{
-            Utils.sleep(50);
+            CommonUtils.sleep(50);
         }while( ptm.getReceivedMsgs() < ptm.getTotalMessages() );
 
         ptm.getTimesAndRelease(false, null);

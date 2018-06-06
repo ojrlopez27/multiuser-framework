@@ -1,7 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.resources;
 
 import edu.cmu.inmind.multiuser.controller.common.Constants;
-import edu.cmu.inmind.multiuser.controller.common.ErrorMessages;
+import edu.cmu.inmind.multiuser.controller.exceptions.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
@@ -44,6 +44,7 @@ public class Config {
         this.serviceConfigPath = builder.serviceConfigPath;
         this.numOfSockets = builder.numOfSockets;
         this.corePoolSize = builder.corePoolSize;
+        ExceptionHandler.setExceptionTraceLevel(this.exceptionTraceLevel);
     }
 
     public int getSessionManagerPort() {

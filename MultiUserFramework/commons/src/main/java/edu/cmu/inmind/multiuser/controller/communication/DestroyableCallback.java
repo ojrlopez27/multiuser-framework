@@ -1,4 +1,4 @@
-package edu.cmu.inmind.multiuser.controller.common;
+package edu.cmu.inmind.multiuser.controller.communication;
 
 /**
  * Created by oscarr on 10/5/17.

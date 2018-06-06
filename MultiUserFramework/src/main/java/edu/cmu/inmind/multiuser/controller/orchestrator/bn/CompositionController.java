@@ -1,7 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.orchestrator.bn;
 
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.common.Pair;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.orchestrator.devices.Device;
 import edu.cmu.inmind.multiuser.controller.orchestrator.devices.PhoneDevice;
 import edu.cmu.inmind.multiuser.controller.orchestrator.devices.ServerDevice;
@@ -28,7 +28,7 @@ public class CompositionController {
 
     public CompositionController(String bnJsonFile){
         try {
-            network = Utils.fromJsonFile(bnJsonFile, BehaviorNetwork.class);
+            network = CommonUtils.fromJsonFile(bnJsonFile, BehaviorNetwork.class);
             serviceMap = network.map();
             devices = new ArrayList<>();
             usersMap = new HashMap<>();

@@ -4,16 +4,13 @@ package edu.cmu.inmind.multiuser.controller.communication;
  * Created by oscarr on 3/28/17.
  */
 
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.common.Constants;
-import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.resources.CommonsResourceLocator;
-import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.zeromq.*;
 
-import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *  Majordomo Protocol broker
  *  A minimal implementation of http://rfc.zeromq.org/spec:7 and spec:8
  */
-public class Broker implements Utils.NamedRunnable, DestroyableCallback {
+public class Broker implements CommonUtils.NamedRunnable, DestroyableCallback {
 
     // We'd normally pull these from config data
     private static final String INTERNAL_SERVICE_PREFIX = "mmi.";
@@ -156,7 +153,7 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
                 sendHeartbeats();
             }catch (Throwable e){
                 try {
-                    if( Utils.isZMQException(e) ) {
+                    if( CommonUtils.isZMQException(e) ) {
                         destroyInCascade(this); // interrupted
                     }else{
                         ExceptionHandler.handle(e);

@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import edu.cmu.inmind.multiuser.controller.common.*;
 import edu.cmu.inmind.multiuser.controller.communication.*;
+import edu.cmu.inmind.multiuser.controller.exceptions.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
@@ -23,7 +24,6 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -77,11 +77,11 @@ public class ResourceLocator {
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.MASTER_SLAVE_NOT_NULL, "Master MUF address: "
                     + serviceInfo.getMasterMUFAddress(), "Slave MUF address: " + serviceInfo.getSlaveMUFAddress() ) );
         }
-        if( !Utils.isURLvalid( serviceInfo.getMasterMUFAddress() ) ){
+        if( !CommonUtils.isURLvalid( serviceInfo.getMasterMUFAddress() ) ){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.INCORRECT_IP_ADDRESS,
                     serviceInfo.getMasterMUFAddress()));
         }
-        if( !Utils.isURLvalid( serviceInfo.getSlaveMUFAddress() ) ){
+        if( !CommonUtils.isURLvalid( serviceInfo.getSlaveMUFAddress() ) ){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.INCORRECT_IP_ADDRESS,
                     serviceInfo.getSlaveMUFAddress()));
         }
@@ -308,7 +308,7 @@ public class ResourceLocator {
                         }
                     }
                 },
-                Utils.getExecutor() );
+                CommonUtils.getExecutor() );
             serviceManager.startAsync();
             addServiceManager(serviceManager, Constants.SERVICE_MANAGER_STARTED);
         }
@@ -370,7 +370,7 @@ public class ResourceLocator {
                         if (!CommonsResourceLocator.destroyables.get(key)) {
                             key.close(null);
                             allTerminated = false;
-                            Utils.sleep(50);
+                            CommonUtils.sleep(50);
                             break;
                         }
                     }

@@ -1,7 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.plugin;
 
 import com.google.inject.Provider;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -27,7 +27,7 @@ public class ComponentPoolProvider implements Provider<PluggableComponent> {
             position = position == (size - 1)? 0 : ++position;
             return pool.get( position);
         }
-        PluggableComponent component = (PluggableComponent)Utils.createInstance( poolType );
+        PluggableComponent component = (PluggableComponent) CommonUtils.createInstance( poolType );
         pool.add( component );
         return component;
     }

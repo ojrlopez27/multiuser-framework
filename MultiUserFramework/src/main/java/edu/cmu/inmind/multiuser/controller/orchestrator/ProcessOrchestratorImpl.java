@@ -5,7 +5,9 @@ import com.google.inject.Inject;
 import edu.cmu.inmind.multiuser.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.blackboard.*;
 import edu.cmu.inmind.multiuser.controller.common.*;
+import edu.cmu.inmind.multiuser.controller.communication.DestroyableCallback;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
+import edu.cmu.inmind.multiuser.controller.exceptions.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.FileLogger;
@@ -125,7 +127,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
             while (status != null && (status.equals(Constants.ORCHESTRATOR_STOPPED)
                     || status.equals(Constants.ORCHESTRATOR_PAUSED))) {
                 //we need to wait until the orchestrator is ready to process messages
-                Utils.sleep(100);
+                CommonUtils.sleep(100);
             }
         }catch (Throwable e){
             ExceptionHandler.handle(e);
@@ -144,7 +146,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
                 try {
                     Log4J.track("ProcessOrchestratorImpl", "25:" + output);
                     // we need a delay in order to avoid consecutive messages to block the sender socket
-                    Utils.sleep( Utils.getProperty("orchestrator.send.response.delay", 5L));
+                    CommonUtils.sleep( CommonUtils.getProperty("orchestrator.send.response.delay", 5L));
                     listener.processOutput(output);
                 } catch (Throwable throwable) {
                     ExceptionHandler.handle(throwable);
@@ -176,7 +178,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
         List<Pair<Pluggable, ServiceComponent>> srvcs = ResourceLocator.addServiceToComponent(components, sessionId, fullAddress );
         for(Pair pair : srvcs ){
             if( pair != null ){
-                ((Pluggable) pair.fst).setClientCommController( new ClientCommController.Builder()
+                ((Pluggable) pair.fst).setClientCommController( new ClientCommController.Builder(Log4J.getInstance())
                         .setServerAddress( ((ServiceComponent)pair.snd).getServiceURL())
                         .setServiceName(sessionId)
                         .setRequestType( Constants.REQUEST_CONNECT )
@@ -208,7 +210,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
 
     private void addOnlyStatefullToCloseable() throws Throwable{
         for(Pluggable component : components) {
-            if( Utils.getAnnotation(component.getClass(), StateType.class).state().equals(Constants.STATEFULL) ){
+            if( CommonUtils.getAnnotation(component.getClass(), StateType.class).state().equals(Constants.STATEFULL) ){
                 closeableObjects.add( component );
             }
         }
@@ -340,7 +342,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
         try{
             for (final Pluggable component : components) {
                 component.setActiveSession( session );
-                Utils.execute(new Runnable() {
+                CommonUtils.execute(new Runnable() {
                     @Override
                     public void run() {
                         try{

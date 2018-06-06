@@ -1,7 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.blackboard;
 
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.common.Constants;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
@@ -37,7 +37,7 @@ public class BlackboardTest {
     private static final String MUF_RESPONSE_BLANK = "Blank Response from MUF";
 
     // logs
-    private static final String LOG_PATH = Utils.getProperty("pathLogs", "/logs");
+    private static final String LOG_PATH = CommonUtils.getProperty("pathLogs", "/logs");
     private static final String LOG_RECEIVED_EVENT = "Received Event: ";
     private static final String UNIQUE_MSG_ID = "uniqueMsgID: ";
 
@@ -51,7 +51,7 @@ public class BlackboardTest {
     @Before
     public void setUp() throws Throwable {
 
-        Utils.initThreadExecutor();
+        CommonUtils.initThreadExecutor();
 
         // create a blackboard object
         // and set the loggers
@@ -613,7 +613,7 @@ public class BlackboardTest {
 
     private static void setExceptionHandlerLogger () {
         ExceptionHandler.checkPath(LOG_PATH);
-        ExceptionHandler.setLog(LOG_PATH);
+        ExceptionHandler.setLog(LOG_PATH, FileLogger.class);
     }
 
     /*

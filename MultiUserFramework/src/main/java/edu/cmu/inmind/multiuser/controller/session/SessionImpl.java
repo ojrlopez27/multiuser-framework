@@ -1,9 +1,9 @@
 package edu.cmu.inmind.multiuser.controller.session;
 
-import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
+import edu.cmu.inmind.multiuser.controller.communication.DestroyableCallback;
 import edu.cmu.inmind.multiuser.controller.common.Constants;
-import edu.cmu.inmind.multiuser.controller.common.ErrorMessages;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
+import edu.cmu.inmind.multiuser.controller.exceptions.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.communication.ClientController;
 import edu.cmu.inmind.multiuser.controller.communication.ServerCommController;
 import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Created by oscarr on 3/3/17.
  * This class controls all the interaction between a client and a set of specific components.
  */
-public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorListener, DestroyableCallback {
+public class SessionImpl implements Session, CommonUtils.NamedRunnable, OrchestratorListener, DestroyableCallback {
     private String id;
     private String status;
     private ProcessOrchestrator orchestrator;
@@ -41,7 +41,7 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
     private DestroyableCallback callback;
     private CopyOnWriteArrayList closeableObjects;
     private boolean useSessionTimeout = false;
-    private boolean useAutomaticAck = Utils.getProperty("session.receive.automatic.ack", false);
+    private boolean useAutomaticAck = CommonUtils.getProperty("session.receive.automatic.ack", false);
     /** we use this controller to communicate back with the client who made a request **/
     private ServerCommController sessionCommController;
     /** we use this controller to communicate back with the client when TCP is off **/
@@ -115,7 +115,7 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
             }
         }
         this.id = id;
-        if(shouldExecute) Utils.execute(this);
+        if(shouldExecute) CommonUtils.execute(this);
     }
 
     @Override
@@ -259,7 +259,7 @@ public class SessionImpl implements Session, Utils.NamedRunnable, OrchestratorLi
             Log4J.track("ProcessOrchestratorImpl", "26:" + output);
             sessionCommController.send(output);
         }else{
-            client.getResponseListener().process( Utils.toJson(output) );
+            client.getResponseListener().process( CommonUtils.toJson(output) );
         }
         if(useSessionTimeout) timer.schedule(new InactivityCheck(), config.getSessionTimeout());
     }

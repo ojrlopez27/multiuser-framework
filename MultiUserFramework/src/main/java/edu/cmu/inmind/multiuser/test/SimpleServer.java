@@ -1,7 +1,7 @@
 package edu.cmu.inmind.multiuser.test;
 
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.common.Constants;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.muf.MUFLifetimeManager;
 import edu.cmu.inmind.multiuser.controller.muf.MultiuserController;
 import edu.cmu.inmind.multiuser.controller.muf.ShutdownHook;
@@ -49,7 +49,7 @@ public class SimpleServer {
                 .setExceptionTraceLevel( Constants.SHOW_ALL_EXCEPTIONS)
                 .setSessionManagerPort(5555)
                 .setDefaultNumOfPoolInstances(10)
-                .setPathLogs(Utils.getProperty("pathLogs"))
+                .setPathLogs(CommonUtils.getProperty("pathLogs"))
                 .setSessionTimeout(5, TimeUnit.MINUTES)
                 .setServerAddress("tcp://"+ipaddress) //use IP instead of 'localhost'
                 .build();

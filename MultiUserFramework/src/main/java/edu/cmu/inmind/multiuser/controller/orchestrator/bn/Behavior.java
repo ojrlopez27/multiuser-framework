@@ -1,6 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.orchestrator.bn;
 
-import edu.cmu.inmind.multiuser.controller.common.Utils;
+
+import edu.cmu.inmind.multiuser.controller.commons.Utils;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;

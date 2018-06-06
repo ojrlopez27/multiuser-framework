@@ -1,7 +1,5 @@
 package edu.cmu.inmind.multiuser.controller.communication;
 
-import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
-
 /**
  * Created by oscarr on 11/6/17.
  */

@@ -1,5 +1,6 @@
 package edu.cmu.inmind.multiuser.controller.common;
 
+import edu.cmu.inmind.multiuser.controller.exceptions.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 
 import java.util.Objects;

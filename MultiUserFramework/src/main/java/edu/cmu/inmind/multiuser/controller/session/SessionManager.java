@@ -2,10 +2,10 @@ package edu.cmu.inmind.multiuser.controller.session;
 
 import com.google.common.util.concurrent.ServiceManager;
 import edu.cmu.inmind.multiuser.communication.ClientCommController;
-import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
+import edu.cmu.inmind.multiuser.controller.communication.DestroyableCallback;
 import edu.cmu.inmind.multiuser.controller.common.Constants;
-import edu.cmu.inmind.multiuser.controller.common.ErrorMessages;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
+import edu.cmu.inmind.multiuser.controller.exceptions.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.communication.*;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Created by oscarr on 3/3/17.
  * This class will control the sessions lifecycle (connect, disconnect, pause, resume)
  */
-public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionObserver, DestroyableCallback {
+public class SessionManager implements CommonUtils.NamedRunnable, SessionImpl.SessionObserver, DestroyableCallback {
     /** sessions handled by the session manager */
     private ConcurrentHashMap<String, SessionImpl> sessions;
     private CopyOnWriteArrayList<Object> closeableObjects;
@@ -112,12 +112,12 @@ public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionO
             for (int i = 0; i < numOfPorts; i++) {
                 // Can be called multiple times with different endpoints
                 brokers[i] = new Broker(sessionMngPort + (i + 1));
-                Utils.execute(brokers[i]);
+                CommonUtils.execute(brokers[i]);
                 closeableObjects.add(brokers[i]);
             }
         }
         managerBroker = new Broker(sessionMngPort);
-        Utils.execute( managerBroker );
+        CommonUtils.execute( managerBroker );
         closeableObjects.add(managerBroker);
     }
 
@@ -204,7 +204,7 @@ public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionO
 
     private void loadRemoteServices() throws Throwable{
         try {
-            ServiceInfoContainer container = Utils.fromJsonFile(config.getServiceConfigPath(), ServiceInfoContainer.class);
+            ServiceInfoContainer container = CommonUtils.fromJsonFile(config.getServiceConfigPath(), ServiceInfoContainer.class);
             if( config.getServiceConfigPath() != null && (container.getServices() == null
                     || container.getServices().isEmpty()) ){
                 ExceptionHandler.handle( new MultiuserException(ErrorMessages.SERVICES_FILE_EMPTY, config.getServiceConfigPath()) );
@@ -281,7 +281,7 @@ public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionO
      */
     private SessionMessage getServerRequest(ZMsgWrapper msgRequest) throws Throwable{
         if( msgRequest != null && msgRequest.getMsg().peekLast() != null ) {
-            return Utils.fromJson(msgRequest.getMsg().peekLast().toString(), SessionMessage.class);
+            return CommonUtils.fromJson(msgRequest.getMsg().peekLast().toString(), SessionMessage.class);
         }
         return new SessionMessage();
     }
@@ -306,7 +306,7 @@ public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionO
         closeableObjects.add(session);
         SessionMessage sm = new SessionMessage( Constants.SESSION_INITIATED);
         //sm.setPayload(address);
-        sm.setPayload( String.format("tcp://%s:%s", Utils.getPublicIP(), port) );
+        sm.setPayload( String.format("tcp://%s:%s", CommonUtils.getPublicIP(), port) );
         send( msgRequest, sm );
     }
 
@@ -317,7 +317,7 @@ public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionO
      */
     private void createFrameworkAsService(final ServiceInfo serviceInfo) {
         try {
-            final ClientCommController clientCommController = new ClientCommController.Builder()
+            final ClientCommController clientCommController = new ClientCommController.Builder(Log4J.getInstance())
                     .setServerAddress(serviceInfo.getMasterMUFAddress())
                     .setServiceName(serviceInfo.getServiceName())
                     .setSubscriptionMessages(serviceInfo.getMsgSubscriptions())
@@ -330,10 +330,10 @@ public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionO
                 @Override
                 public void process(String message) {
                     try {
-                        SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
+                        SessionMessage sessionMessage = CommonUtils.fromJson(message, SessionMessage.class);
                         String messageId = sessionMessage.getMessageId();
                         sessionMessage.setMessageId("");
-                        serviceInfo.getResponseListener().process(Utils.toJson(sessionMessage));
+                        serviceInfo.getResponseListener().process(CommonUtils.toJson(sessionMessage));
                         if (sessionMessage.getRequestType().equals(Constants.REQUEST_SHUTDOWN_SYSTEM)
                                 && messageId.equals(Constants.SESSION_MANAGER_SERVICE)) {
                             clientCommController.close(SessionManager.this);
@@ -370,7 +370,7 @@ public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionO
      * MUF runs on its own separate thread
      */
     public void start() throws Throwable{
-        Utils.execute(this);
+        CommonUtils.execute(this);
     }
 
     @Override
@@ -414,7 +414,7 @@ public class SessionManager implements Utils.NamedRunnable, SessionImpl.SessionO
         closeableObjects.remove(destroyedObj);
         if (closeableObjects.isEmpty()) {
             ResourceLocator.stopStatlessComp();
-            Utils.shutdownThreadExecutor();
+            CommonUtils.shutdownThreadExecutor();
             ResourceLocator.setIamDone(this);
             DependencyManager.getInstance().release();
             ResourceLocator.closeContexts();

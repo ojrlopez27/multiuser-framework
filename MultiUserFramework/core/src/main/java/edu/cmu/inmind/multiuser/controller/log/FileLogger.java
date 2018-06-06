@@ -1,7 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.log;
 
 
-import edu.cmu.inmind.multiuser.controller.common.Utils;
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 
 import java.io.File;
@@ -37,12 +37,12 @@ public class FileLogger implements MessageLog {
 
     @Override
     public void store() throws Throwable{
-        Utils.execute(new Runnable() {
+        CommonUtils.execute(new Runnable() {
             @Override
             public void run() {
                 try {
                     if (turnedOn && !log.toString().isEmpty()) {
-                        File file = new File(path + id + "-" + Utils.getDateString() + ".log");
+                        File file = new File(path + id + "-" + CommonUtils.getDateString() + ".log");
                         PrintWriter printWriter = new PrintWriter(file);
                         printWriter.write(log.toString());
                         printWriter.flush();

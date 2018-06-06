@@ -1,7 +1,6 @@
 package edu.cmu.inmind.multiuser.controller.resources;
 
-import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
-import org.apache.logging.log4j.Logger;
+import edu.cmu.inmind.multiuser.controller.communication.DestroyableCallback;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 

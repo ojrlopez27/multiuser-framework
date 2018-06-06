@@ -2,8 +2,8 @@ package edu.cmu.inmind.multiuser.controller.plugin;
 
 import edu.cmu.inmind.multiuser.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.common.Constants;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.communication.*;
@@ -28,7 +28,7 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
             //ExternalComponent will have the same subscription messages
             //Utils.addOrChangeAnnotation(getClass().getAnnotation(BlackboardSubscription.class), "messages", messages);
             ResourceLocator.addComponentSubscriptions( this.hashCode(), messages );
-            setClientCommController( new ClientCommController.Builder()
+            setClientCommController( new ClientCommController.Builder(Log4J.getInstance())
                 .setServerAddress(serviceInfo.getSlaveMUFAddress())
                 .setServiceName(serviceInfo.getServiceName())
                 .setSessionId(sessionId)
@@ -64,7 +64,7 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
             sessionMessage.setSessionId( sessionId );
             sessionMessage.setRequestType(event.getStatus());
             sessionMessage.setMessageId(event.getId());
-            sessionMessage.setPayload( Utils.toJson(event.getElement() ));
+            sessionMessage.setPayload( CommonUtils.toJson(event.getElement() ));
             send( sessionMessage, true );
         }catch (Throwable e){
             ExceptionHandler.handle( e );
@@ -74,7 +74,7 @@ public class ExternalComponent extends PluggableComponent implements ResponseLis
     @Override
     public void process(String message) {
         try {
-            SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
+            SessionMessage sessionMessage = CommonUtils.fromJson(message, SessionMessage.class);
             if (sessionMessage.getMessageId() == null || sessionMessage.getMessageId().isEmpty()) {
                 String msg = "This message from Python (or any other external server) has an empty or null id. Make " +
                         "sure you send a message with a proper id, otherwise it won't be delivered through the Blackboard. " +

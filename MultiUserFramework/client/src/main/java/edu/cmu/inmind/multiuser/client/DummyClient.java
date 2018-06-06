@@ -2,11 +2,10 @@ package edu.cmu.inmind.multiuser.client;
 
 import edu.cmu.inmind.multiuser.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.common.Constants;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
-
-import java.util.concurrent.atomic.AtomicBoolean;
+import edu.cmu.inmind.multiuser.log.LogC;
 
 /**
  * Created by oscarr on 5/8/18.
@@ -25,7 +24,7 @@ public class DummyClient {
         }else{
             this.responseListener = new MyResponseListener();
         }
-        commController = new ClientCommController.Builder()
+        commController = new ClientCommController.Builder(new LogC())
                 .setServerAddress(this.serverAddress)
                 .setSessionId(this.sessionId)
                 .setRequestType(Constants.REQUEST_CONNECT)
@@ -39,8 +38,8 @@ public class DummyClient {
 
     public void test() {
         send("test");
-        Utils.sleep(3000);
-        System.out.println("Done!");
+        CommonUtils.sleep(3000);
+        LogC.info(this, "Done!");
     }
 
     public void send(Object message){
@@ -48,7 +47,7 @@ public class DummyClient {
             SessionMessage sessionMessage = new SessionMessage();
             sessionMessage.setPayload(message.toString());
             sessionMessage.setSessionId(sessionId);
-            commController.send(sessionId, Utils.toJson(sessionMessage));
+            commController.send(sessionId, CommonUtils.toJson(sessionMessage));
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -69,7 +68,7 @@ public class DummyClient {
     class MyResponseListener implements ResponseListener {
         @Override
         public void process(String message) {
-            System.out.println("Response from server: " + message);
+            LogC.info(this, "Response from server: " + message);
         }
     }
 }
