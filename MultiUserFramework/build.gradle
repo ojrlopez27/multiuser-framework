@@ -1,7 +1,7 @@
 import java.util.concurrent.TimeUnit
 
 group 'edu.cmu.inmind.multiuser.framework'
-project.ext.set("muf_version", '3.0.15.6-core')
+project.ext.set("muf_version", '3.0.15.8-core')
 
 version "$project.muf_version"
 
@@ -21,7 +21,7 @@ repositories {
     maven {
         credentials {
             username 'inmind'
-            password '2015InMindYahoo'
+            password '2018InMindOath'
         }
         url "http://www.cs.cmu.edu/afs/cs/project/inmind-cmu-yahoo/www/maven2"
     }
