@@ -9,6 +9,7 @@ import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
+import edu.cmu.inmind.multiuser.controller.resources.CommonsResourceLocator;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.zeromq.*;
 
@@ -98,8 +99,8 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
         this.workers = new ConcurrentHashMap<>();
         this.waiting = new ArrayDeque<>();
         this.heartbeatAt = System.currentTimeMillis() + HEARTBEAT_INTERVAL;
-        this.ctx = ResourceLocator.getContext(this);
-        this.socket = ResourceLocator.createSocket(ctx, ZMQ.ROUTER);
+        this.ctx = CommonsResourceLocator.getContext(this);
+        this.socket = CommonsResourceLocator.createSocket(ctx, ZMQ.ROUTER);
         this.port = port;
         this.items = ctx.createPoller(1);
         this.items.register(socket, ZMQ.Poller.POLLIN);
@@ -189,7 +190,7 @@ public class Broker implements Utils.NamedRunnable, DestroyableCallback {
             isDestroyed.getAndSet(true);
             Log4J.info(this, "Gracefully destroying...");
         }
-        ResourceLocator.setIamDone(this);
+        CommonsResourceLocator.setIamDone(this);
         if(callback != null) callback.destroyInCascade(this);
     }
 

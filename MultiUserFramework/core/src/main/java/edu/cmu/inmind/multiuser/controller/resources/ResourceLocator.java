@@ -331,43 +331,43 @@ public class ResourceLocator {
      * fastest way to connect threads in one process. If at runtime a process has two contexts, these are like separate
      * ZeroMQ instances
      */
-    private static ZContext context;
-    private static ConcurrentHashMap<DestroyableCallback, Boolean> destroyables = new ConcurrentHashMap<>();
-    private static CopyOnWriteArrayList<ZMQ.Socket> sockets = new CopyOnWriteArrayList<>();
-    private static CopyOnWriteArrayList<ZContext> contexts = new CopyOnWriteArrayList<>();
+    //private static ZContext context;
+    //private static ConcurrentHashMap<DestroyableCallback, Boolean> destroyables = new ConcurrentHashMap<>();
+    //private static CopyOnWriteArrayList<ZMQ.Socket> sockets = new CopyOnWriteArrayList<>();
+    //private static CopyOnWriteArrayList<ZContext> contexts = new CopyOnWriteArrayList<>();
 
 
     public static ZContext getContext(DestroyableCallback contextOwner) {
-        if( context == null ){
-            context = new ZContext();
+        if( CommonsResourceLocator.context == null ){
+            CommonsResourceLocator.context = new ZContext();
         }
         // contexts keeps a record about which owner has released its context.
         // at initialization, nobody has released it.
-        destroyables.put(contextOwner, false);
-        ZContext ctx = ZContext.shadow(context);
-        contexts.add(ctx);
+        CommonsResourceLocator.destroyables.put(contextOwner, false);
+        ZContext ctx = ZContext.shadow(CommonsResourceLocator.context);
+        CommonsResourceLocator.contexts.add(ctx);
         return ctx;
     }
 
     public static void setIamDone(DestroyableCallback contextOwner){
-        if( destroyables.get(contextOwner) != null )
-            destroyables.put(contextOwner, true);
+        if( CommonsResourceLocator.destroyables.get(contextOwner) != null )
+            CommonsResourceLocator.destroyables.put(contextOwner, true);
     }
 
     public static ZMQ.Socket createSocket(ZContext ctx, int type){
         ZMQ.Socket socket = ctx.createSocket(type);
-        sockets.add(socket);
+        CommonsResourceLocator.sockets.add(socket);
         return socket;
     }
 
     public static void closeContexts(){
         try {
-            if (context != null && destroyables != null) {
+            if (CommonsResourceLocator.getContext(null) != null && CommonsResourceLocator.destroyables != null) {
                 boolean allTerminated;
                 do {
                     allTerminated = true;
-                    for (DestroyableCallback key : destroyables.keySet()) {
-                        if (!destroyables.get(key)) {
+                    for (DestroyableCallback key : CommonsResourceLocator.destroyables.keySet()) {
+                        if (!CommonsResourceLocator.destroyables.get(key)) {
                             key.close(null);
                             allTerminated = false;
                             Utils.sleep(50);
@@ -377,7 +377,7 @@ public class ResourceLocator {
                 } while (!allTerminated);
 
                 try {
-                    for (ZContext ctx : contexts) {
+                    for (ZContext ctx : CommonsResourceLocator.contexts) {
                         ctx.destroy();
                     }
                 } catch (Exception e) {

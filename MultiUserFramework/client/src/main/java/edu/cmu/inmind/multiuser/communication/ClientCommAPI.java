@@ -4,8 +4,7 @@ import edu.cmu.inmind.multiuser.controller.common.DestroyableCallback;
 import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.MDP;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
-import edu.cmu.inmind.multiuser.controller.log.Log4J;
-import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
+import edu.cmu.inmind.multiuser.controller.resources.CommonsResourceLocator;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
@@ -34,7 +33,7 @@ public class ClientCommAPI implements DestroyableCallback {
 
     public ClientCommAPI(String broker) throws Throwable{
         this.broker = broker;
-        ctx = ResourceLocator.getContext(this);
+        ctx = CommonsResourceLocator.getContext(this);
         reconnectToBroker();
     }
 
@@ -46,7 +45,7 @@ public class ClientCommAPI implements DestroyableCallback {
         if (clientSocket != null) {
             ctx.destroySocket(clientSocket);
         }
-        clientSocket = ResourceLocator.createSocket(ctx, ZMQ.DEALER);
+        clientSocket = CommonsResourceLocator.createSocket(ctx, ZMQ.DEALER);
         clientSocket.setSendTimeOut(0); //  Send messages immediately or return EAGAIN  ojrl
         clientSocket.setHWM(highWaterMark); //  Set a high-water mark that allows for reasonable activity
         clientSocket.setRcvHWM(highWaterMark);
@@ -165,9 +164,9 @@ public class ClientCommAPI implements DestroyableCallback {
         if( !isDestroyed.getAndSet(true) ) {
             checkAndSleep();
             ctx = null;
-            Log4J.info(this, "Gracefully destroying...");
+            System.out.println("Gracefully destroying...");
         }
-        ResourceLocator.setIamDone(this);
+        CommonsResourceLocator.setIamDone(this);
         if(callback != null) callback.destroyInCascade( this );
         canUseSocket.getAndSet(true);
     }
