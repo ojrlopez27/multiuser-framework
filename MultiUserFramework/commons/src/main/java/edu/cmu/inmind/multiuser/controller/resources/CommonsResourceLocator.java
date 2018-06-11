@@ -31,7 +31,8 @@ public class CommonsResourceLocator {
         }
         // contexts keeps a record about which owner has released its context.
         // at initialization, nobody has released it.
-        destroyables.put(contextOwner, false);
+        if(contextOwner!=null )
+            destroyables.put(contextOwner, false);
         ZContext ctx = ZContext.shadow(context);
         contexts.add(ctx);
         return ctx;
