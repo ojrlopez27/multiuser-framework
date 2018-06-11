@@ -1,14 +1,10 @@
 import java.util.concurrent.TimeUnit
 
 group 'edu.cmu.inmind.multiuser.framework'
-project.ext.set("muf_version", '3.0.15.12')
-
 version "$project.muf_version"
 
-
 apply plugin: 'java'
-apply plugin: 'maven'
-apply plugin: "com.github.johnrengelman.shadow"
+apply plugin: 'com.github.johnrengelman.shadow'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -21,40 +17,23 @@ repositories {
     maven {
         credentials {
             username 'inmind'
-            password '2018InMindOath'
+            password '2015InMindYahoo'
         }
         url "http://www.cs.cmu.edu/afs/cs/project/inmind-cmu-yahoo/www/maven2"
     }
-    jcenter()
-    maven {
-        url 'https://oss.jfrog.org/libs-snapshot'
-    }
+    maven { url 'https://oss.jfrog.org/libs-snapshot' }
 }
 
-buildscript {
-    repositories {
-        jcenter()
-        maven{
-            url "https://plugins.gradle.org/m2/"
-        }
-    }
-    dependencies {
-        // used for zip big files
-        classpath "com.github.jengelman.gradle.plugins:shadow:2.0.1"
-    }
-}
 
 configurations {
     deployerJars
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.11'
-    testCompile group: 'org.awaitility', name: 'awaitility', version: '3.0.0'
-    compile project(':client')
-    compile project(':core')
+    testCompile group: 'junit', name: 'junit', version: '4.12'
     compile project(':server')
     deployerJars 'org.apache.maven.wagon:wagon-ssh:2.9'
+    testCompile group: 'org.awaitility', name: 'awaitility', version: '3.0.0'
 }
 
 task sourceJar(type: Jar) {
@@ -63,7 +42,7 @@ task sourceJar(type: Jar) {
 }
 
 shadowJar {
-    baseName = "muf" + '-all'
+    baseName = project.name
 }
 tasks.getByPath('build').dependsOn(shadowJar)
 
@@ -90,7 +69,7 @@ uploadShadow {
                         'pretty stable - problems should be relatively rare and minor, but worth reporting to try to ' +
                         'get them fixed for release.'
                 pom.version = "$project.muf_version"
-                pom.artifactId = 'muf'
+                pom.artifactId = 'composition'
                 pom.groupId = "edu.cmu.inmind.framework.multiuser"
 
                 licenses {

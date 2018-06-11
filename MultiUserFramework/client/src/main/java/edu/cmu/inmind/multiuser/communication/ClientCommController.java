@@ -244,25 +244,31 @@ public class ClientCommController implements ClientController, DestroyableCallba
                 SessionMessage sessionMessage = new SessionMessage();
                 sessionMessage.setSessionId(sessionId);
                 sessionMessage.setRequestType(requestType);
+                LogC.info(this, "2");
                 //sessionMessage.setUrl(clientAddress);
                 sessionMessage.setPayload(Arrays.toString(subscriptionMessages));
                 CommonUtils.setAtom( stop, !sendToBroker( sessionManagerService, CommonUtils.toJson(sessionMessage)) );
+                LogC.info(this, "3");
                 if (!stop.get()) {
                     timer.schedule(new ResponseCheck(), timeout);
                     String replyString = receive(sessionMngrCommAPI);
+                    LogC.info(this, "4");
                     timer.stopTimer();
                     if( replyString.equals(STOP_FLAG) ){
                         stop.getAndSet(true);
                     }else{
+                        LogC.info(this, "5");
                         SessionMessage reply = CommonUtils.fromJson(replyString, SessionMessage.class);
                         if (reply != null) {
                             if (reply.getRequestType().equals(Constants.RESPONSE_ALREADY_CONNECTED)
                                     || reply.getRequestType().equals(Constants.RESPONSE_NOT_VALID_OPERATION)
                                     || reply.getRequestType().equals(Constants.RESPONSE_UNKNOWN_SESSION)) {
+                                LogC.info(this, "5.1");
                                 throw new Exception(reply.getRequestType());
                             } else {
-                                if (reply.getRequestType().equals(Constants.SESSION_INITIATED)) {
-
+                                if (reply.getRequestType().equals(Constants.SESSION_INITIATED) ||
+                                        reply.getRequestType().equals(Constants.SESSION_RECONNECTED)) {
+                                    LogC.info(this, "6");
                                     if(reply.getPayload() != null && Constants.NO_SESSION.equals(reply.getPayload()) ){
                                         this.sessionCommAPI = sessionMngrCommAPI;
                                     }else if( reply.getPayload() != null && CommonUtils.isURLvalid( reply.getPayload() )) {
@@ -271,11 +277,13 @@ public class ClientCommController implements ClientController, DestroyableCallba
                                         this.sessionCommAPI = new ClientCommAPI( sessionMngrCommAPI.getBroker() );
                                     }
                                     closeableObjects.add( sessionCommAPI );
+                                    LogC.info(this, "7");
                                 }
                                 if( responseListener == null ){
                                     ExceptionHandler.handle(new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
                                             "responseListener: " + responseListener ));
                                 }else {
+                                    LogC.info(this, "8");
                                     responseListener.process(replyString);
                                 }
                             }
@@ -397,7 +405,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
 
     private void checkFrequency() {
         long delay = elapsedTime - (System.currentTimeMillis() - lastMessage.get() );
-        CommonUtils.sleep( delay );
+        if(delay > 0) CommonUtils.sleep( delay );
     }
 
     private boolean sendToBroker(String id, String message) throws Throwable{
@@ -440,16 +448,21 @@ public class ClientCommController implements ClientController, DestroyableCallba
         @Override
         public void run() {
             try{
+                LogC.info(this, "1");
                 connect();
+                LogC.info(this, "9");
                 isSendThreadAlive.getAndSet(true);
                 senderSocket = CommonsResourceLocator.createSocket(context, ZMQ.PAIR);
                 senderSocket.connect(inprocName);
                 senderSocket.send(String.valueOf(Constants.CONNECTION_STARTED), 0);
+                LogC.info(this, "10");
                 while( !stop.get() && !Thread.currentThread().isInterrupted() ) {
                     try{
                         isConnected.set(true);
                         processMsgQueue();
+                        LogC.info(this, "11");
                         String strMsg = senderSocket.recvStr(); //ZMQ.DONTWAIT);
+                        LogC.info(this, "12");
                         if( strMsg != null ) {
                             String[] msg = strMsg.split(TOKEN);
                             CommonUtils.setAtom( stop, !sendToBroker(msg[0], msg[1])
@@ -457,20 +470,25 @@ public class ClientCommController implements ClientController, DestroyableCallba
                             if (stop.get()) {
                                 continue;
                             }
+                            LogC.info(this, "13");
                             sentMessages.incrementAndGet();
                             //  Signal downstream to client-thread
                             senderSocket.send("ACK", 0);
                         }else{
+                            LogC.info(this, "14");
                             CommonUtils.sleep(10);
                         }
                     } catch (Throwable e) {
+                        LogC.info(this, "15");
                         if( !CommonUtils.isZMQException(e) ) {
                             ExceptionHandler.handle(e);
                         }
                     }
                 }
+                LogC.info(this, "16");
                 destroyInCascade(this);
             }catch (Throwable e){
+                LogC.info(this, "17");
                 try {
                     if( CommonUtils.isZMQException(e) ) {
                         destroyInCascade(this); // interrupted

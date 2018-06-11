@@ -87,7 +87,7 @@ public class LogC implements ILog4J {
     }
 
     private void print(String level, Object caller, String message){
-        System.out.println( String.format("[$s] %s - %s", level, caller, message) );
+        System.out.println( String.format("[%s] %s - %s", level, caller.getClass().getSimpleName(), message) );
     }
 
     @Override

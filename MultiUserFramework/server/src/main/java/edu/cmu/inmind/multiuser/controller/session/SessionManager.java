@@ -350,8 +350,7 @@ public class SessionManager implements CommonUtils.NamedRunnable, SessionImpl.Se
     }
 
     private void reconnect(ZMsgWrapper msgRequest, SessionMessage request, SessionImpl session) throws Throwable{
-        Log4J.info(this, "Reconnecting session: " + session.getId() + " as per request "
-                + request.getSessionId());
+        Log4J.info(this, "Reconnecting session: " + session.getId());
         if(request.getSessionId().equals(session.getId())){
             send( msgRequest, new SessionMessage(Constants.SESSION_RECONNECTED) );
         } else {
