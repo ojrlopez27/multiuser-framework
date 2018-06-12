@@ -1,8 +1,8 @@
 package edu.cmu.inmind.multiuser.test;
 
 import edu.cmu.inmind.multiuser.communication.ClientCommController;
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.common.Constants;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
@@ -18,7 +18,7 @@ public class MockClient {
         try {
             String sessionId = args[0];
             String ipAddress = args[1];
-            ClientCommController client = new ClientCommController.Builder()
+            ClientCommController client = new ClientCommController.Builder(Log4J.getInstance())
 //                    .setServerAddress("tcp://34.203.160.208:5666") //5666
 //                    .setClientAddress("tcp://34.203.160.208:5666")
                     //.setServerAddress("tcp://127.0.0.1:5555")
@@ -31,8 +31,7 @@ public class MockClient {
                     .setResponseListener(new ResponseListener() {
                         @Override
                         public void process(String message) {
-                            System.out.println(message);
-                            SessionMessage sessionMessage = Utils.fromJson(message, SessionMessage.class);
+                            SessionMessage sessionMessage = CommonUtils.fromJson(message, SessionMessage.class);
                             Log4J.info(ResponseListener.class, "Received message: " + message);
                         }
                     })

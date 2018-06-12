@@ -1,0 +1,106 @@
+import java.util.concurrent.TimeUnit
+
+group 'edu.cmu.inmind.multiuser.framework'
+version "$project.muf_version"
+
+apply plugin: 'java'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs 'libs'
+    }
+    maven {
+        credentials {
+            username 'inmind'
+            password '2015InMindYahoo'
+        }
+        url "http://www.cs.cmu.edu/afs/cs/project/inmind-cmu-yahoo/www/maven2"
+    }
+    maven { url 'https://oss.jfrog.org/libs-snapshot' }
+}
+
+
+configurations {
+    deployerJars
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile project(':server')
+    deployerJars 'org.apache.maven.wagon:wagon-ssh:2.9'
+    testCompile group: 'org.awaitility', name: 'awaitility', version: '3.0.0'
+}
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+    classifier "sources"
+}
+
+shadowJar {
+    baseName = project.name
+}
+tasks.getByPath('build').dependsOn(shadowJar)
+
+apply plugin: 'maven'
+
+uploadShadow {
+    repositories {
+        mavenDeployer {
+            configuration = configurations.deployerJars
+            repository(url: "scp://linux.gp.cs.cmu.edu:/afs/cs/project/inmind-cmu-yahoo/www/maven2/") {
+                // NOTE: The properties "mavenUser" and "mavenPassword" should be set in the file "gradle.properties" in one's local Gradle home directory,
+                // not in the root directory of this project:
+                // http://stackoverflow.com/questions/12749225/where-to-put-gradle-configuration-i-e-credentials-that-should-not-be-committe
+                // TODO: Use gradle-credentials-plugin to encrypt stored password instead of using plain text: https://github.com/etiennestuder/gradle-credentials-plugin
+                authentication(userName: mavenUser, password: mavenPassword)
+            }
+            //deploy locally
+            //repository(url: "file:///Users/oscarr/.m2/repository/")
+
+            pom.project {
+                name 'MultiuserFramework'
+                packaging 'jar'
+                description 'Multiuser Framework. rc = Release Candidate, probably feature complete and should be ' +
+                        'pretty stable - problems should be relatively rare and minor, but worth reporting to try to ' +
+                        'get them fixed for release.'
+                pom.version = "$project.muf_version"
+                pom.artifactId = 'composition'
+                pom.groupId = "edu.cmu.inmind.framework.multiuser"
+
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        distribution 'repo'
+                    }
+                }
+
+                developers {
+                    developer {
+                        name 'Oscar Romero'
+                        email 'oscarr@andrew.cmu.edu'
+                    }
+                }
+            }
+        }
+    }
+}
+
+task showMeCache {
+    doLast{
+        configurations.compile.each { println it }
+    }
+}
+
+
+configurations.all {
+    // Check for updates every hour.
+    // You can force it to an immediate update by passing 0 instead of 3600
+    resolutionStrategy.cacheChangingModulesFor(0, TimeUnit.MINUTES)
+    resolutionStrategy.cacheDynamicVersionsFor(0, TimeUnit.MINUTES)
+}

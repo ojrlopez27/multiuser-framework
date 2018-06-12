@@ -1,7 +1,7 @@
 package edu.cmu.inmind.multiuser.test;
 
 import edu.cmu.inmind.multiuser.client.DummyClient;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 
 import java.util.Scanner;
 
@@ -19,7 +19,7 @@ public class DummyTest {
             String command = scanner.nextLine();
             if(command.equals("stop"))
                 dummy.disconnect();
-            Utils.sleep(10);
+            CommonUtils.sleep(10);
         }
     }
 }

@@ -1,13 +1,15 @@
 package edu.cmu.inmind.multiuser.test;
 
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.common.Constants;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
 import edu.cmu.inmind.multiuser.controller.muf.MUFLifetimeManager;
 import edu.cmu.inmind.multiuser.controller.muf.MultiuserController;
 import edu.cmu.inmind.multiuser.controller.muf.ShutdownHook;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -36,7 +38,7 @@ public class SimpleServer {
                 .setExceptionTraceLevel( Constants.SHOW_ALL_EXCEPTIONS)
                 .setSessionManagerPort(5555)
                 .setDefaultNumOfPoolInstances(10)
-                .setPathLogs(Utils.getProperty("pathLogs"))
+                .setPathLogs(CommonUtils.getProperty("pathLogs"))
                 .setSessionTimeout(5, TimeUnit.MINUTES)
                 .setServerAddress("tcp://127.0.0.1") //use IP instead of 'localhost'
                 .build();

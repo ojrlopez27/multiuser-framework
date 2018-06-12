@@ -6,7 +6,6 @@ import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.session.Session;
-import edu.cmu.inmind.multiuser.controller.session.SessionImpl;
 
 /**
  * Created by oscarr on 10/17/17.

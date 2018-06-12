@@ -1,12 +1,8 @@
 package edu.cmu.inmind.multiuser.controller.exceptions;
 
-import com.google.common.base.Throwables;
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.common.Constants;
-import edu.cmu.inmind.multiuser.controller.common.ErrorMessages;
-import edu.cmu.inmind.multiuser.controller.common.Utils;
-import edu.cmu.inmind.multiuser.controller.log.FileLogger;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
-import edu.cmu.inmind.multiuser.controller.resources.Config;
 
 import java.io.File;
 import java.nio.channels.ClosedByInterruptException;
@@ -18,11 +14,12 @@ public class ExceptionHandler {
     private static MessageLog logger;
     private static boolean loggerOn = false;
     private static String messageId = "ExceptionHandler";
+    private static int exceptionTraceLevel;
 
-    public static void setLog(String path){
+    public static void setLog(String path, Class<? extends MessageLog> mLogger){
         loggerOn = path != null;
         if( loggerOn ) {
-            logger = new FileLogger();
+            logger = CommonUtils.createInstance(mLogger);
             logger.setPath(path);
             logger.setId("exception-handler");
         }
@@ -33,6 +30,10 @@ public class ExceptionHandler {
         if( loggerOn ) {
             logger = log;
         }
+    }
+
+    public static void setExceptionTraceLevel(int exceptionTraceLevel) {
+        ExceptionHandler.exceptionTraceLevel = exceptionTraceLevel;
     }
 
     public static void storeLog(){
@@ -49,12 +50,12 @@ public class ExceptionHandler {
         if( !(e instanceof org.zeromq.ZMQException) && !(e instanceof ClosedByInterruptException ) &&
                 !e.getClass().getPackage().getName().startsWith("java.nio") ) {
             if (loggerOn) {
-                logger.add(messageId, Throwables.getStackTraceAsString(e));
+                logger.add(messageId, e.getMessage()); //Throwables.getStackTraceAsString(e)  -> requires guava
                 if (e instanceof OutOfMemoryError)
                     addOutOfMemoryLog();
                 storeLog();
             }
-            switch (Config.getExceptionTraceLevel()) {
+            switch (exceptionTraceLevel) {
                 case Constants.SHOW_ALL_EXCEPTIONS:
                     e.printStackTrace();
                     break;
@@ -129,7 +130,7 @@ public class ExceptionHandler {
     }
 
     public static void checkIpAddress(String address){
-        if( address == null || address.isEmpty() || !Utils.isURLvalid(address)){
+        if( address == null || address.isEmpty() || !CommonUtils.isURLvalid(address)){
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.INCORRECT_IP_ADDRESS, address));
         }
     }
