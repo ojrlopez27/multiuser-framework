@@ -15,6 +15,7 @@ import edu.cmu.inmind.multiuser.test.TestPluggableComponent;
 import edu.cmu.inmind.multiuser.test.TestUtils;
 import org.junit.Test;
 
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -62,6 +63,8 @@ public class MUFTestSuite {
      */
     @Test
     public void testStartAndStopTwoMUFs() throws Throwable{
+        serverAddress = "tcp://"+InetAddress.getLocalHost().getHostAddress().toString()+":";
+        Log4J.info(this, serverAddress);
         MultiuserController muf1 = MUFLifetimeManager.startFramework(
                 TestUtils.getModules(TestOrchestrator.class ),
                 TestUtils.createConfig( serverAddress, ports[1] ) );
@@ -73,8 +76,10 @@ public class MUFTestSuite {
         assertNotSame( muf1, muf2 );
         CommonUtils.sleep(delay); //give some time to initialize the MUF
         MUFLifetimeManager.stopFramework( muf1 );
+        CommonUtils.sleep(delay); //give some time to initialize the MUF
         assertNull( MUFLifetimeManager.get( muf1.getId() ) );
         MUFLifetimeManager.stopFramework( muf2 );
+        CommonUtils.sleep(delay); //give some time to initialize the MUF
         assertNull( MUFLifetimeManager.get( muf2.getId() ) );
     }
 
@@ -86,7 +91,7 @@ public class MUFTestSuite {
      * If you want to test multiple users, you MUST use TCP/IP of course.
      * @throws Throwable
      */
-    @Test
+    //@Test
     public void testMUFwithTCPIPoff() throws Throwable{
         //testOneClientCommunication( false );
     }
@@ -141,8 +146,11 @@ public class MUFTestSuite {
         }
 
 
-        await().atMost(timeout, TimeUnit.MILLISECONDS).until( () -> ((ProcessResponse)responseListenerHashMap.values().toArray()[0]).allConnected.get() );
-        await().atMost(timeout, TimeUnit.MILLISECONDS).until( () -> ((ProcessResponse)responseListenerHashMap.values().toArray()[1]).allConnected.get() );
+        for (ProcessResponse p:responseListenerHashMap.values()) {
+            await().atMost(timeout, TimeUnit.MILLISECONDS).until( () -> p.allConnected.get() );
+        }
+        //await().atMost(timeout, TimeUnit.MILLISECONDS).until( () -> ((ProcessResponse)responseListenerHashMap.values().toArray()[0]).allConnected.get() );
+        //await().atMost(timeout, TimeUnit.MILLISECONDS).until( () -> ((ProcessResponse)responseListenerHashMap.values().toArray()[1]).allConnected.get() );
 
         for(String sessionId : sessionIds){
             SessionMessage message = new SessionMessage( messageId1, "Message from client : " + uniqueMsgId, sessionId );
@@ -151,10 +159,10 @@ public class MUFTestSuite {
         CommonUtils.sleep( delay * 2 );
         await().untilTrue( new AtomicBoolean( checkAsyncCall));
 
-        for(String sessionId : sessionIds){
+       /* for(String sessionId : sessionIds){
             SessionMessage message = new SessionMessage( Constants.REQUEST_DISCONNECT, "Message from client : " + uniqueMsgId, sessionId );
             clientCommControllerHashMap.get(sessionId).disconnect(sessionId);
-        }
+        }*/
         MUFLifetimeManager.stopFramework( muf );
     }
 
