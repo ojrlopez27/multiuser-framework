@@ -1,6 +1,6 @@
 package edu.cmu.inmind.multiuser.controller.log;
 
-import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
+import edu.cmu.inmind.multiuser.controller.composer.ProcessOrchestrator;
 import edu.cmu.inmind.multiuser.controller.plugin.Pluggable;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;

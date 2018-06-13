@@ -198,4 +198,9 @@ public class LogC implements ILog4J {
     public void turnOnI(boolean shouldTurnOn){
         turnedOn = shouldTurnOn;
     }
+
+    @Override
+    public boolean isTurnedOn() {
+        return turnedOn;
+    }
 }

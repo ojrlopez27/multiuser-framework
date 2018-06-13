@@ -20,4 +20,5 @@ public interface ILog4J {
     void warnI(Object caller, String sessionId, String message);
     void trackI(Object caller, String sessionId, String message);
     void turnOnI(boolean shouldTurnOn);
+    boolean isTurnedOn();
 }

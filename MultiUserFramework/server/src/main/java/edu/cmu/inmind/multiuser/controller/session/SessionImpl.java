@@ -10,8 +10,8 @@ import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
-import edu.cmu.inmind.multiuser.controller.orchestrator.OrchestratorListener;
-import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
+import edu.cmu.inmind.multiuser.controller.composer.OrchestratorListener;
+import edu.cmu.inmind.multiuser.controller.composer.ProcessOrchestrator;
 import edu.cmu.inmind.multiuser.controller.plugin.Pluggable;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
@@ -142,7 +142,7 @@ public class SessionImpl implements Session, CommonUtils.NamedRunnable, Orchestr
     }
 
     /**
-     * it clises the session and all its subcomponents: orchestrator, pluggable components and
+     * it clises the session and all its subcomponents: composer, pluggable components and
      * communication controllers
      * @throws Throwable
      */
@@ -182,7 +182,7 @@ public class SessionImpl implements Session, CommonUtils.NamedRunnable, Orchestr
     }
 
     /**
-     * this method creates a new orchestrator and injects a set of pre-defined components
+     * this method creates a new composer and injects a set of pre-defined components
      * @throws Throwable
      */
     public void initialize() throws Throwable{

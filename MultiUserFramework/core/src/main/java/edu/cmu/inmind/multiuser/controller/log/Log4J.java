@@ -2,7 +2,7 @@ package edu.cmu.inmind.multiuser.controller.log;
 
 import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
-import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
+import edu.cmu.inmind.multiuser.controller.composer.ProcessOrchestrator;
 import edu.cmu.inmind.multiuser.controller.plugin.Pluggable;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 import org.apache.logging.log4j.Level;
@@ -234,6 +234,11 @@ public class Log4J implements ILog4J{
     @Override
     public void turnOnI(boolean shouldTurnOn){
         turnedOn = shouldTurnOn;
+    }
+
+    @Override
+    public boolean isTurnedOn() {
+        return turnedOn;
     }
 
     public static ILog4J getInstance() {

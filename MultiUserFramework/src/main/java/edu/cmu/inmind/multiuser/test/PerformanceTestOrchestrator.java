@@ -4,7 +4,7 @@ import edu.cmu.inmind.multiuser.controller.blackboard.Blackboard;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
-import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
+import edu.cmu.inmind.multiuser.controller.composer.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.session.Session;
 
 /**

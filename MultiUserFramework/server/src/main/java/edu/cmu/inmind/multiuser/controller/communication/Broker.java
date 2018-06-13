@@ -56,7 +56,7 @@ public class Broker implements CommonUtils.NamedRunnable, DestroyableCallback {
     }
 
     /**
-     * This defines one worker, idle or active (orchestrator).
+     * This defines one worker, idle or active (composer).
      */
     private static class Worker{
         String identity;// Identity of worker
@@ -202,7 +202,7 @@ public class Broker implements CommonUtils.NamedRunnable, DestroyableCallback {
         if (serviceFrame.toString().startsWith(INTERNAL_SERVICE_PREFIX))
             serviceInternal(serviceFrame, msg);
         else {
-            // if orchestrator hasn't sent a response back but receives a new message, then
+            // if composer hasn't sent a response back but receives a new message, then
             // it has to inform that is ready to receive new messages
             Service service = requireService(serviceFrame);
             Worker worker = reactivateWorker(service, msg == null? null : msg.peekFirst() );
@@ -216,7 +216,7 @@ public class Broker implements CommonUtils.NamedRunnable, DestroyableCallback {
     }
 
     private Worker reactivateWorker(Service service, ZFrame sender) throws Throwable{
-        // if broker hasn't received a message back from orchestrator, then reactivate
+        // if broker hasn't received a message back from composer, then reactivate
         // the worker automatically
         Boolean status = statusResponseMsgs.get( service );
         if( status != null && !status ) {

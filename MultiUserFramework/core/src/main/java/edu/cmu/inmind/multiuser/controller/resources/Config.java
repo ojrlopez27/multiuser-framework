@@ -5,7 +5,7 @@ import edu.cmu.inmind.multiuser.controller.exceptions.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.MessageLog;
-import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
+import edu.cmu.inmind.multiuser.controller.composer.ProcessOrchestrator;
 
 import java.util.concurrent.TimeUnit;
 
@@ -283,7 +283,7 @@ public class Config {
 
         public Builder setOrchestrator(Class<? extends ProcessOrchestrator> orchestrator) {
             if( orchestrator == null ){
-                ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "orchestrator: "
+                ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "composer: "
                         + orchestrator) );
             }
             this.orchestrator = orchestrator;

@@ -1,7 +1,7 @@
 import java.util.concurrent.TimeUnit
 
 group 'edu.cmu.inmind.multiuser.framework'
-project.ext.set("muf_version", '3.0.15.12')
+project.ext.set("muf_version", '3.0.16.1')
 
 version "$project.muf_version"
 
@@ -53,6 +53,7 @@ dependencies {
     testCompile group: 'org.awaitility', name: 'awaitility', version: '3.0.0'
     compile project(':client')
     compile project(':core')
+    compile project(':server')
     compile project(':server')
     deployerJars 'org.apache.maven.wagon:wagon-ssh:2.9'
 }

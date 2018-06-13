@@ -5,7 +5,7 @@ import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
 import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardEvent;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
-import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
+import edu.cmu.inmind.multiuser.controller.composer.ProcessOrchestratorImpl;
 
 /**
  * Created by oscarr on 6/27/17.

@@ -10,7 +10,7 @@ import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.FileLogger;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
-import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
+import edu.cmu.inmind.multiuser.controller.composer.ProcessOrchestrator;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 import edu.cmu.inmind.multiuser.controller.resources.DependencyManager;
@@ -103,7 +103,7 @@ public class MultiuserController implements DestroyableCallback {
             if (config.isTCPon()) {
                 sessionManager.start();
             } else {
-                Log4J.info(this, "start orchestrator");
+                Log4J.info(this, "start composer");
             }
         }catch (Throwable e){
             ExceptionHandler.handle( e );

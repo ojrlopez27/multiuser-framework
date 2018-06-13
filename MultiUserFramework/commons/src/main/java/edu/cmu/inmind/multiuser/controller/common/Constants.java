@@ -51,7 +51,7 @@ public class Constants {
     public static final String ELEMENT_ADDED = "ELEMENT_ADDED";
     public static final String ELEMENT_REMOVED = "ELEMENT_REMOVED";
 
-    //orchestrator
+    //composer
     public static final String ORCHESTRATOR_STARTED = "ORCHESTRATOR_STARTED";
     public static final String ORCHESTRATOR_PAUSED = "ORCHESTRATOR_PAUSED";
     public static final String ORCHESTRATOR_RESUMED = "ORCHESTRATOR_RESUMED";

@@ -56,7 +56,7 @@ public class ErrorMessages {
     public static final String INCORRECT_NUM_SOCKETS = "A valid number of sockets should be a value between 1 - 200";
     public static final String INCORRECT_CORE_POOL_SIZE = "A minimum of 100 threads is required to properly execute the MUF";
     public static final String SESSION_MESSAGE_IS_EMPTY = "you are passing an empty string message when calling your " +
-            "process orchestrator's sendResponse method. You should send a non-empty string message.";
+            "process composer's sendResponse method. You should send a non-empty string message.";
     public static final String MASTER_SLAVE_NOT_NULL = "Both Master and Slave MUF address cannot be null nor empty. " +
             "Current values are: %s and %s.";
     public static final String CLIENT_NOT_CONNECTED = "The client is disconnected because server has been shutdown or you " +

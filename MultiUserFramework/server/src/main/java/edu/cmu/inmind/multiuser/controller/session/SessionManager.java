@@ -415,7 +415,8 @@ public class SessionManager implements CommonUtils.NamedRunnable, SessionImpl.Se
             ResourceLocator.stopStatlessComp();
             CommonUtils.shutdownThreadExecutor();
             ResourceLocator.setIamDone(this);
-            DependencyManager.getInstance().release();
+            if(DependencyManager.getInstance() != null)
+                DependencyManager.getInstance().release();
             ResourceLocator.closeContexts();
             isDestroyed.getAndSet(true);
             Log4J.info(this, "Gracefully destroying...");

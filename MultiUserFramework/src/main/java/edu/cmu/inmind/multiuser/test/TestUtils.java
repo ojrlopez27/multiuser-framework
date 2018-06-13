@@ -2,7 +2,7 @@ package edu.cmu.inmind.multiuser.test;
 
 import edu.cmu.inmind.multiuser.controller.common.Constants;
 import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
-import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorImpl;
+import edu.cmu.inmind.multiuser.controller.composer.ProcessOrchestratorImpl;
 import edu.cmu.inmind.multiuser.controller.plugin.PluginModule;
 import edu.cmu.inmind.multiuser.controller.resources.Config;
 

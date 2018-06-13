@@ -7,8 +7,8 @@ import com.google.inject.Injector;
 import edu.cmu.inmind.multiuser.controller.exceptions.ErrorMessages;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
-import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
-import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorFactory;
+import edu.cmu.inmind.multiuser.controller.composer.ProcessOrchestrator;
+import edu.cmu.inmind.multiuser.controller.composer.ProcessOrchestratorFactory;
 
 /**
  * Created by oscarr on 3/7/17.
