@@ -1,7 +1,10 @@
 rootProject.name = 'muf'
 include 'client'
-include 'commons'
+include 'commons-1.7'
+include 'commons-1.8'
 include 'core'
 include 'server'
 include 'composition'
+include 'commons-1.8'
+include 'commons-1.8'
 

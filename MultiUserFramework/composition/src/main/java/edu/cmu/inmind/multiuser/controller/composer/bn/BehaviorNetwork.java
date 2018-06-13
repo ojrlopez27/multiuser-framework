@@ -1008,7 +1008,6 @@ public class BehaviorNetwork {
 
 	private boolean checkIsRequired(String premise){
 		return premise.contains("-required");
-		//return premise.lastIndexOf("R") == premise.length() - 1;
 	}
 
 	public void addBehaviors(List<Behavior> behaviors) {
@@ -1020,8 +1019,9 @@ public class BehaviorNetwork {
 	}
 
 	private void notifyStateObservers(){
+		String stateStr = getStateString();
 		for(StateObserver observer : stateObservers){
-			observer.updateState();
+			observer.updateState( stateStr );
 		}
 	}
 

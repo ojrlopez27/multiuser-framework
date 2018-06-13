@@ -1,4 +1,4 @@
-package edu.cmu.inmind.multiuser.controller.composer;
+package edu.cmu.inmind.multiuser.controller.orchestrator;
 
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.Inject;
@@ -126,7 +126,7 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
         try {
             while (status != null && (status.equals(Constants.ORCHESTRATOR_STOPPED)
                     || status.equals(Constants.ORCHESTRATOR_PAUSED))) {
-                //we need to wait until the composer is ready to process messages
+                //we need to wait until the orchestrator is ready to process messages
                 CommonUtils.sleep(100);
             }
         }catch (Throwable e){

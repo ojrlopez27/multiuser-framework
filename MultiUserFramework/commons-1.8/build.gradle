@@ -24,9 +24,8 @@ configurations {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     deployerJars 'org.apache.maven.wagon:wagon-ssh:2.9'
-    compile group: 'com.google.code.gson', name: 'gson', version: '2.8.2'
-    // libraries for jeromq
-    compile group: 'org.zeromq', name: 'jnacl', version: '0.1.0'
+    compile group: 'uk.com.robust-it', name: 'cloning', version: '1.9.3'
+    compile project(':commons-1.7')
 }
 
 task sourceJar(type: Jar) {
@@ -67,7 +66,7 @@ uploadShadow {
                         'pretty stable - problems should be relatively rare and minor, but worth reporting to try to ' +
                         'get them fixed for release.'
                 pom.version = "$project.muf_version"
-                pom.artifactId = 'commons'
+                pom.artifactId = 'commons-1.8'
                 pom.groupId = "edu.cmu.inmind.framework.multiuser"
 
                 licenses {

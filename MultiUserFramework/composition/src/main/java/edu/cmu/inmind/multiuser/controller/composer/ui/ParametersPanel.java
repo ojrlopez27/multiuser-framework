@@ -11,7 +11,7 @@ import java.awt.*;
  * Created by oscarr on 6/11/18.
  */
 public class ParametersPanel extends JPanel implements StateObserver{
-    private StatePane stateText;
+    private GuiHelper.StatePane stateText;
     private BehaviorNetwork network;
 
     public ParametersPanel(LayoutManager layout, double width, double height, BehaviorNetwork network) {
@@ -32,7 +32,7 @@ public class ParametersPanel extends JPanel implements StateObserver{
 
 
         //create the model
-        ParametersModel model = new ParametersModel(network);
+        ParametersModel model = new ParametersModel(this.network);
         //create the table
         JTable table = new JTable(model);
         //width
@@ -65,7 +65,7 @@ public class ParametersPanel extends JPanel implements StateObserver{
         c.insets = new Insets(10,0,0,0);
         c.gridx = 0;
         c.gridy = 3;
-        stateText = new StatePane( );
+        stateText = new GuiHelper.StatePane();
         stateText.addText(network.getStateString());
         stateText.build();
         stateText.setBorder(BorderFactory.createEtchedBorder());
@@ -80,9 +80,9 @@ public class ParametersPanel extends JPanel implements StateObserver{
     }
 
     @Override
-    public void updateState() {
+    public void updateState(String state) {
         stateText.reset();
-        stateText.addText(network.getStateString());
+        stateText.addText(state);
         stateText.build();
     }
 }

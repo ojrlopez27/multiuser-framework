@@ -10,8 +10,8 @@ import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;
 import edu.cmu.inmind.multiuser.controller.log.Loggable;
 import edu.cmu.inmind.multiuser.controller.log.LoggerInterceptor;
-import edu.cmu.inmind.multiuser.controller.composer.ProcessOrchestrator;
-import edu.cmu.inmind.multiuser.controller.composer.ProcessOrchestratorFactory;
+import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestrator;
+import edu.cmu.inmind.multiuser.controller.orchestrator.ProcessOrchestratorFactory;
 import edu.cmu.inmind.multiuser.controller.resources.ResourceLocator;
 
 import java.util.ArrayList;

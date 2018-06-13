@@ -3,7 +3,6 @@ package edu.cmu.inmind.multiuser.controller.composer.ui;
 import edu.cmu.inmind.multiuser.controller.composer.bn.Behavior;
 import edu.cmu.inmind.multiuser.controller.composer.bn.BehaviorNetwork;
 import edu.cmu.inmind.multiuser.controller.composer.bn.Premise;
-import javafx.scene.control.TreeCell;
 
 import javax.swing.*;
 import javax.swing.event.CellEditorListener;
@@ -12,7 +11,6 @@ import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.EventObject;
 import java.util.List;
@@ -39,7 +37,7 @@ public class BehaviorsPanel extends JPanel {
 
         DefaultTreeCellRenderer renderer = (DefaultTreeCellRenderer) behaviorTree.getCellRenderer();
         BehaviorTreeCellEditor behaviorEditor = new BehaviorTreeCellEditor();
-        DefaultTreeCellEditor editor = new DefaultTreeCellEditor(behaviorTree, renderer, behaviorEditor);
+        BehaviorDefTreeCellEditor editor = new BehaviorDefTreeCellEditor(behaviorTree, renderer, behaviorEditor);
         behaviorTree.setCellEditor(editor);
         behaviorTree.setEditable(true);
 
@@ -99,12 +97,10 @@ public class BehaviorsPanel extends JPanel {
 
         @Override
         public Component getTreeCellEditorComponent(JTree tree, Object value, boolean isSelected, boolean expanded, boolean leaf, int row) {
+            currentEditor = leafEditor;
             if (leaf) {
                 leafEditor.setBehaviorName(((DefaultMutableTreeNode) value).getParent().toString());
-                currentEditor = leafEditor;
                 leafEditor.setText(value.toString());
-            } else {
-                System.out.println("");
             }
             return (Component) currentEditor;
         }
@@ -152,7 +148,7 @@ public class BehaviorsPanel extends JPanel {
 
         // Mimic all the constructors people expect with text fields.
         public BehaviorEditor() {
-            this("", 5);
+            this("", 20);
         }
 
         public String getBehaviorName() {
@@ -173,6 +169,8 @@ public class BehaviorsPanel extends JPanel {
 
         public BehaviorEditor(String s, int w) {
             super(s, w);
+            setPreferredSize(new Dimension(300, 26));
+
             // Listen to our own action events so that we know when to stop editing.
             addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent ae) {
@@ -207,12 +205,8 @@ public class BehaviorsPanel extends JPanel {
             return getText();
         }
 
-        // Start editing when the right mouse button is clicked.
         public boolean isCellEditable(EventObject eo) {
-            if ((eo == null) || ((eo instanceof MouseEvent) && (((MouseEvent) eo).isMetaDown()))) {
-                return true;
-            }
-            return false;
+            return true;
         }
 
         public boolean shouldSelectCell(EventObject eo) {
@@ -240,6 +234,26 @@ public class BehaviorsPanel extends JPanel {
                     ((CellEditorListener) listeners.elementAt(i)).editingStopped(ce);
                 }
             }
+        }
+    }
+
+
+    class BehaviorDefTreeCellEditor extends DefaultTreeCellEditor{
+        public BehaviorDefTreeCellEditor(JTree tree, DefaultTreeCellRenderer renderer) {
+            super(tree, renderer);
+        }
+
+        public BehaviorDefTreeCellEditor(JTree tree, DefaultTreeCellRenderer renderer, TreeCellEditor editor) {
+            super(tree, renderer, editor);
+        }
+
+        @Override
+        protected boolean canEditImmediately(EventObject event) {
+            if((event instanceof MouseEvent) && SwingUtilities.isLeftMouseButton((MouseEvent)event)) {
+                MouseEvent me = (MouseEvent)event;
+                return (inHitRegion(me.getX(), me.getY()));
+            }
+            return (event == null);
         }
     }
 }

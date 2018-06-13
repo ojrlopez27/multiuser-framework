@@ -2,8 +2,6 @@ package common;
 
 import edu.cmu.inmind.multiuser.communication.ClientCommController;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardSubscription;
-import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
-import edu.cmu.inmind.multiuser.controller.common.Constants;
 import edu.cmu.inmind.multiuser.controller.communication.ResponseListener;
 import edu.cmu.inmind.multiuser.controller.communication.SessionMessage;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
@@ -85,7 +83,7 @@ public class MUFTestSuite {
     /**
      * This unit test is intended to connect to MUF without performing TCP/IP communication.
      * The only possible scenario for NOT using TCP/IP is when we need to test different pipelines
-     * controlled by the composer, so this test only instantiates an composer (no session
+     * controlled by the orchestrator, so this test only instantiates an orchestrator (no session
      * manager nor sessions) and it only allows the creation of one pipeline at a time (one user).
      * If you want to test multiple users, you MUST use TCP/IP of course.
      * @throws Throwable
@@ -114,7 +112,7 @@ public class MUFTestSuite {
                 messageId3 = "MSG_SEND_RESPONSE";
         long uniqueMsgId = System.currentTimeMillis();
         checkAsyncCall = false;
-        // let's add some dynamic subcriptions to the composer
+        // let's add some dynamic subcriptions to the orchestrator
         CommonUtils.addOrChangeAnnotation(TestOrchestrator.class.getAnnotation(BlackboardSubscription.class), "messages",
                 new String[]{ messageId1, messageId3 });
         CommonUtils.addOrChangeAnnotation(TestPluggableComponent.class.getAnnotation(BlackboardSubscription.class), "messages",
@@ -169,7 +167,7 @@ public class MUFTestSuite {
                 messageId3 = "MSG_SEND_RESPONSE";
         long uniqueMsgId = System.currentTimeMillis();
         checkAsyncCall = false;
-        // let's add some dynamic subcriptions to the composer
+        // let's add some dynamic subcriptions to the orchestrator
         CommonUtils.addOrChangeAnnotation(TestOrchestrator.class.getAnnotation(BlackboardSubscription.class), "messages",
                 new String[]{ messageId1, messageId3 });
         CommonUtils.addOrChangeAnnotation(TestPluggableComponent.class.getAnnotation(BlackboardSubscription.class), "messages",
@@ -288,7 +286,7 @@ public class MUFTestSuite {
         long uniqueMsgId = System.currentTimeMillis();
         System.out.println("2");
         checkAsyncCall = false;
-        // let's add some dynamic subcriptions to the composer
+        // let's add some dynamic subcriptions to the orchestrator
         CommonUtils.addOrChangeAnnotation(TestOrchestrator.class.getAnnotation(BlackboardSubscription.class), "messages",
                 new String[]{ messageId1, messageId3 });
         CommonUtils.addOrChangeAnnotation(TestPluggableComponent.class.getAnnotation(BlackboardSubscription.class), "messages",

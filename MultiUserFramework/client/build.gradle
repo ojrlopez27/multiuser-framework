@@ -31,7 +31,7 @@ configurations {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    compile project(':commons')
+    compile project(':commons-1.7')
     deployerJars 'org.apache.maven.wagon:wagon-ssh:2.9'
     testCompile group: 'org.awaitility', name: 'awaitility', version: '3.0.0'
 }

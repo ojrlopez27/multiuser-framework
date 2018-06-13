@@ -1,4 +1,4 @@
-package edu.cmu.inmind.multiuser.controller.composer;
+package edu.cmu.inmind.multiuser.controller.orchestrator;
 
 import com.google.common.util.concurrent.ServiceManager;
 import edu.cmu.inmind.multiuser.controller.blackboard.BlackboardListener;

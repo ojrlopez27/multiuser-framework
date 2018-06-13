@@ -11,22 +11,6 @@ import java.awt.*;
  */
 public class GuiHelper {
 
-    public static final String TEXT_PANE_SEPATATOR = "\n▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔";//"\n===========";
-
-    public static final String NEW_GAME_SEPARATOR = "==> NEW GAME. *** GAME %s ***\n";
-    public static final String HIGHLIGHT_TOKEN = "$$$$";
-
-    // Constants for Colors
-    public static final Color BACKGROUND = Color.decode("#2B2B2B");
-    public static final Color NORMAL_TEXT = Color.WHITE; //Color.decode("#A9B7C6"); // Color.decode("#9876AA") //Color.WHITE;
-    public static final Color TITLE_TEXT = Color.GREEN;
-    public static final Color SUBTITLE_TEXT = Color.ORANGE;
-    public static final Color USER_TEXT = Color.GREEN;
-    public static final Color AGENT_TEXT = Color.ORANGE;
-    public static final Color SIGNAL_TEXT = Color.CYAN;
-    public static final Color HIGHLIGHTED_TEXT = Color.YELLOW;
-    public static final Color TREE_BACKGROUND = Color.RED;
-
     public static double widthFirstPanel;
     public static double heightFirstPanel;
     public static double widthSecondPanel;
@@ -52,68 +36,36 @@ public class GuiHelper {
         formattedText += "</HTML>";
         return formattedText;
     }
-}
 
 
-class StatePane extends JTextPane {
-    private HTMLDocument doc;
-    private StringBuilder text = new StringBuilder();
+    static class StatePane extends JTextPane {
+        private HTMLDocument doc;
+        private StringBuilder text = new StringBuilder();
 
-    public StatePane() {
-        super();
-        setContentType("text/html");
-        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        doc = (HTMLDocument) getStyledDocument();
-    }
+        public StatePane() {
+            super();
+            setContentType("text/html");
+            setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            doc = (HTMLDocument) getStyledDocument();
+        }
 
 
-    public void addText(String txt){
-        text.append( GuiHelper.convertToHTML(txt, ", ") );
-    }
+        public void addText(String txt){
+            text.append( GuiHelper.convertToHTML(txt, ", ") );
+        }
 
-    public void reset(){
-        setText("");
-        text = new StringBuilder();
-    }
+        public void reset(){
+            setText("");
+            text = new StringBuilder();
+        }
 
-    public void build(){
-        try {
-            doc.insertAfterEnd(doc.getCharacterElement(doc.getLength()), text.toString());
-        } catch (Exception e){
-            e.printStackTrace();
+        public void build(){
+            try {
+                doc.insertAfterEnd(doc.getCharacterElement(doc.getLength()), text.toString());
+            } catch (Exception e){
+                e.printStackTrace();
+            }
         }
     }
 }
 
-//
-//class ColorPane extends JTextPane {
-//    private StyleContext sc;
-//    private AttributeSet aset;
-//
-//    public ColorPane() {
-//        super();
-//        // StyleContext
-//        sc = StyleContext.getDefaultStyleContext();
-//        changeAttSet(NORMAL_TEXT, 12);
-//        aset = sc.addAttribute(aset, StyleConstants.FontFamily, "Menlo"); //Lucida Console
-//        aset = sc.addAttribute(aset, StyleConstants.Alignment, StyleConstants.ALIGN_LEFT);
-//    }
-//
-//    public void appendWithColor(Color color, String text, int fontSize, boolean newLine) {
-//        changeAttSet(color, fontSize);
-//        replaceSelection(text + (newLine? "\n" : "")); // there is no selection, so inserts at caret
-//    }
-//
-//    public void setText(Color color, String text, int fontSize, boolean newLine){
-//        changeAttSet(color, fontSize);
-//        setText(text + (newLine? "\n" : "")); // there is no selection, so inserts at caret
-//    }
-//
-//    private void changeAttSet(Color color, int fontSize){
-//        aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, color);
-//        aset = sc.addAttribute(aset, StyleConstants.FontSize, fontSize);
-//        int len = getDocument().getLength();// same value as getText().length();
-//        setCaretPosition(len); // place caret at the end (with no selection)
-//        setCharacterAttributes(aset, false);
-//    }
-//}

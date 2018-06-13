@@ -29,7 +29,6 @@ public class BNGUIVisualizer extends JFrame{
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "WikiTeX");
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); // metal
-
         renderPanels(series);
 
         // closing the window

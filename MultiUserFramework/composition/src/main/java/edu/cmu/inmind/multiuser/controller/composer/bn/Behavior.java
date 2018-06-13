@@ -1,7 +1,7 @@
 package edu.cmu.inmind.multiuser.controller.composer.bn;
 
 import com.rits.cloning.Cloner;
-import edu.cmu.inmind.multiuser.controller.commons.Utils;
+import edu.cmu.inmind.multiuser.controller.common.Utils;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;

@@ -1,7 +1,5 @@
 package edu.cmu.inmind.multiuser.controller.blackboard;
 
-import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
-import edu.cmu.inmind.multiuser.controller.common.Constants;
 import edu.cmu.inmind.multiuser.controller.communication.ZMsgWrapper;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.exceptions.MultiuserException;

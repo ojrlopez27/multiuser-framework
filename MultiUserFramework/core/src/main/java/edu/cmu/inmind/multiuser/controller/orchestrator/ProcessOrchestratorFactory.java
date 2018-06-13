@@ -1,4 +1,4 @@
-package edu.cmu.inmind.multiuser.controller.composer;
+package edu.cmu.inmind.multiuser.controller.orchestrator;
 
 /**
  * Created by oscarr on 3/7/17.

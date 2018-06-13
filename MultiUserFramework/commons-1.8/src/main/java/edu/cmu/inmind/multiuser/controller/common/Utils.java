@@ -1,4 +1,4 @@
-package edu.cmu.inmind.multiuser.controller.commons;
+package edu.cmu.inmind.multiuser.controller.common;
 
 
 import com.rits.cloning.Cloner;
