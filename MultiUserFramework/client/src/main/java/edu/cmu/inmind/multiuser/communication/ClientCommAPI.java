@@ -77,6 +77,7 @@ public class ClientCommAPI implements DestroyableCallback {
                     checkAndSleep();
                     ZMsg msg = ZMsg.recvMsg(clientSocket, ZMQ.DONTWAIT);
                     canUseSocket.getAndSet(true);
+                    LogC.debug(this, msg.toString());
 
                     // Don't try to handle errors, just assert noisily
                     //assert (msg.size() >= 4)

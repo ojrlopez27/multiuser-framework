@@ -9,6 +9,7 @@ import edu.cmu.inmind.multiuser.controller.common.Constants;
 import edu.cmu.inmind.multiuser.controller.exceptions.ExceptionHandler;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 import edu.cmu.inmind.multiuser.controller.resources.CommonsResourceLocator;
+import edu.cmu.inmind.multiuser.controller.resources.Config;
 import org.zeromq.*;
 
 import java.util.*;
@@ -29,6 +30,7 @@ public class Broker implements CommonUtils.NamedRunnable, DestroyableCallback {
     private AtomicBoolean isDestroyed = new AtomicBoolean(false);
     private ConcurrentHashMap<Service, Boolean> statusResponseMsgs = new ConcurrentHashMap<>();
     private int port;
+    private String publicServerAddress;
     private DestroyableCallback callback;
     private ZMQ.Poller items;
 
@@ -91,17 +93,17 @@ public class Broker implements CommonUtils.NamedRunnable, DestroyableCallback {
     /**
      * Initialize broker state.
      */
-    public Broker(int port) {
+    public Broker(String publicServerAddress, int port) {
         this.services = new ConcurrentHashMap<>();
         this.workers = new ConcurrentHashMap<>();
         this.waiting = new ArrayDeque<>();
         this.heartbeatAt = System.currentTimeMillis() + HEARTBEAT_INTERVAL;
         this.ctx = CommonsResourceLocator.getContext(this);
         this.socket = CommonsResourceLocator.createSocket(ctx, ZMQ.ROUTER);
+        this.publicServerAddress = publicServerAddress;
         this.port = port;
         this.items = ctx.createPoller(1);
         this.items.register(socket, ZMQ.Poller.POLLIN);
-        Log4J.info(this, "creating broker: " + port);
     }
 
     @Override
@@ -345,6 +347,7 @@ public class Broker implements CommonUtils.NamedRunnable, DestroyableCallback {
      */
     public void bind(String endpoint) throws Throwable{
         socket.bind(endpoint);
+        Log4J.info(this, String.format("Running MUF at: %s:%s", publicServerAddress, port ));
     }
 
     /**

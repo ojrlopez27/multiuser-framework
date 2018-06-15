@@ -1,5 +1,6 @@
 package edu.cmu.inmind.multiuser.controller.composer.ui;
 
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.composer.bn.Behavior;
 import edu.cmu.inmind.multiuser.controller.composer.bn.BehaviorNetwork;
 import edu.cmu.inmind.multiuser.controller.composer.bn.Premise;
@@ -31,9 +32,10 @@ public class BehaviorsPanel extends JPanel {
         setPreferredSize(new Dimension((int) width, (int) height));
 
         //create the root node
-        treeNode = new DefaultMutableTreeNode("Behaviors");
+        treeNode = new DefaultMutableTreeNode("Behaviors (Services)");
         //create the tree by passing in the root node
         behaviorTree = new JTree(treeNode);
+        behaviorTree.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
 
         DefaultTreeCellRenderer renderer = (DefaultTreeCellRenderer) behaviorTree.getCellRenderer();
         BehaviorTreeCellEditor behaviorEditor = new BehaviorTreeCellEditor();
@@ -59,12 +61,13 @@ public class BehaviorsPanel extends JPanel {
         treeNode.removeAllChildren();
         //create the child nodes
         for (Behavior behavior : network.getBehaviors()) {
-            DefaultMutableTreeNode behaviorNode = new DefaultMutableTreeNode(behavior.getName());
+            DefaultMutableTreeNode behaviorNode = new DefaultMutableTreeNode( String.format("%s%s",
+                    CommonUtils.padRight(behavior.getShortName(), 10), behavior.getName()));
             treeNode.add(behaviorNode);
             for (List<Premise> premises : behavior.getPreconditions() ) {
                 for(Premise premise : premises){
                     DefaultMutableTreeNode node = new DefaultMutableTreeNode(String.format("%s  :  [%s]",
-                            premise.getLabel(), premise.getWeight()) );
+                            CommonUtils.padRight(premise.getLabel(), 35), premise.getWeight()) );
                     behaviorNode.add(node);
                 }
             }
@@ -148,7 +151,7 @@ public class BehaviorsPanel extends JPanel {
 
         // Mimic all the constructors people expect with text fields.
         public BehaviorEditor() {
-            this("", 20);
+            this("", 35);
         }
 
         public String getBehaviorName() {

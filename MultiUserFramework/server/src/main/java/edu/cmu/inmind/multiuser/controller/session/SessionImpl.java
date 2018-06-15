@@ -151,7 +151,7 @@ public class SessionImpl implements Session, CommonUtils.NamedRunnable, Orchestr
             this.callback = callback;
         if( !isClosed.getAndSet(true) ) {
             notifyObservers();
-            Log4J.info(this, String.format("Closing session: %s", id));
+            Log4J.info(this, String.format("Closing session: %s. Callback: ", id, callback));
             if( sessionCommController != null ) { // it is null when TCP is off
                 //notify the client
                 sessionCommController.disconnect();

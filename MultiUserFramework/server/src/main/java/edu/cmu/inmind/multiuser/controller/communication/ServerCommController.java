@@ -83,6 +83,10 @@ public class ServerCommController implements DestroyableCallback {
     /*******************************************************************************************/
     /********************************** RECEIVE ************************************************/
     /*******************************************************************************************/
+
+    /**
+     * Send reply, if any, to broker and wait for next request.
+     */
     public ZMsgWrapper receive(ZMsg reply){
         try {
             // Format and send the reply if we were provided one
@@ -91,10 +95,6 @@ public class ServerCommController implements DestroyableCallback {
                 try {
                     // Poll socket for a reply, with timeout
                     if (items.poll(timeout) == -1) {
-                        /**
-                         * Send reply, if any, to broker and wait for next request.
-                         */
-
                         break; // Interrupted
                     }
 
@@ -146,6 +146,7 @@ public class ServerCommController implements DestroyableCallback {
                         heartbeatAt = System.currentTimeMillis() + heartbeat;
                     }
                 } catch (Throwable error) {
+                    error.printStackTrace();
                     if( stop.get() || CommonUtils.isZMQException(error) ) {
                         ResourceLocator.setIamDone(this);
                         destroyInCascade(this);
@@ -157,6 +158,7 @@ public class ServerCommController implements DestroyableCallback {
             }
             return null;
         }catch (Throwable e){
+            e.printStackTrace();
             try {
                 if( CommonUtils.isZMQException(e) ) {
                     ResourceLocator.setIamDone(this);
@@ -165,6 +167,7 @@ public class ServerCommController implements DestroyableCallback {
                     ExceptionHandler.handle(e);
                 }
             }catch (Throwable t){
+                t.printStackTrace();
             }finally {
                 return null;
             }
@@ -224,6 +227,7 @@ public class ServerCommController implements DestroyableCallback {
                         "reply: " + reply, "message: " + message));
             }
         }catch (Throwable e){
+            e.printStackTrace();
             if( CommonUtils.isZMQException(e) ) {
                 destroyInCascade(this); // interrupted
             }else{
@@ -293,13 +297,12 @@ public class ServerCommController implements DestroyableCallback {
     @Override
     public void destroyInCascade(DestroyableCallback destroyedObj) throws Throwable{
         try {
-            if( !isDestroyed.get() ) {
+            if( !isDestroyed.getAndSet(true) ) {
                 if( items.isLocked() )
                     items.close();
                 if (msgTemplate != null) msgTemplate.destroy();
                 if (replyTo != null) replyTo.destroy();
                 ctx = null;
-                isDestroyed.getAndSet(true);
                 Log4J.info(this, "Gracefully destroying...");
             }
             CommonsResourceLocator.setIamDone(this);

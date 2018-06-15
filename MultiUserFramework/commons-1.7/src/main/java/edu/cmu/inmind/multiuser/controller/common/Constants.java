@@ -78,4 +78,5 @@ public class Constants {
 
     public static final String NO_SESSION = "NO_SESSION";
     public static final String SERVICE_NAME = "service-name:";
+    public static final String CROSS_SESSION_MESSAGE = "CROSS_SESSION_MESSAGE";
 }

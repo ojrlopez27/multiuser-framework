@@ -394,6 +394,14 @@ public class ResourceLocator {
         sessions.put( session.getId(), session );
     }
 
+    public static Session getSession(String sessionId){
+        return sessions.get(sessionId);
+    }
+
+    public static ConcurrentHashMap<String, Session> getSessions() {
+        return sessions;
+    }
+
     public static Pluggable getComponent(String sessionId, Class<? extends Pluggable> componentClass) throws Exception{
         Session session = sessions.get(sessionId);
         if( session == null ){

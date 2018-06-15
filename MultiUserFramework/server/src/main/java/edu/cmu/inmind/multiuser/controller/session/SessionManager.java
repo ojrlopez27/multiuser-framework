@@ -111,12 +111,12 @@ public class SessionManager implements CommonUtils.NamedRunnable, SessionImpl.Se
             brokers = new Broker[numOfPorts];
             for (int i = 0; i < numOfPorts; i++) {
                 // Can be called multiple times with different endpoints
-                brokers[i] = new Broker(sessionMngPort + (i + 1));
+                brokers[i] = new Broker(config.getServerAddress(), sessionMngPort + (i + 1));
                 CommonUtils.execute(brokers[i]);
                 closeableObjects.add(brokers[i]);
             }
         }
-        managerBroker = new Broker(sessionMngPort);
+        managerBroker = new Broker(config.getServerAddress(), sessionMngPort);
         CommonUtils.execute( managerBroker );
         closeableObjects.add(managerBroker);
     }

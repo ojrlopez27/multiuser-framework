@@ -15,6 +15,7 @@ public class GuiHelper {
     public static double heightFirstPanel;
     public static double widthSecondPanel;
     public static double heightSecondPanel;  //780 - heightFirstPanel;
+    private static final String style = "font-family: Monospaced, Calibri, Lucida Console, Menlo; font-size: 12px";
 
     static {
         init( new Dimension(1420, 780)) ;
@@ -51,7 +52,7 @@ public class GuiHelper {
 
 
         public void addText(String txt){
-            text.append( GuiHelper.convertToHTML(txt, ", ") );
+            text.append( GuiHelper.convertToHTML(txt, ", "));
         }
 
         public void reset(){

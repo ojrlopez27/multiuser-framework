@@ -72,6 +72,7 @@ public class ParametersPanel extends JPanel implements StateObserver{
         stateText.setPreferredSize(new Dimension((int)(width - 60), (int) (height * 0.25)));
         stateText.setOpaque(true);
         stateText.setBackground(Color.WHITE);
+        stateText.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         JScrollPane scrollPane2 = new JScrollPane(stateText);
         scrollPane2.setPreferredSize(new Dimension(200, 80));
         this.add(scrollPane2, c);

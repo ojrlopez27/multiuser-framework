@@ -1,7 +1,6 @@
 package edu.cmu.inmind.multiuser.controller.composer.ui;
 
 import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.annotations.XYBoxAnnotation;
 import org.jfree.chart.annotations.XYTextAnnotation;
@@ -88,6 +87,7 @@ public class BNXYPlot extends JPanel {
             for (int j = 0; j < thresholds.size(); j++) {
                 ts.addOrUpdate(j + offset, thresholds.get(j).doubleValue());
             }
+
             target.setStartValue( minThreshold );
             target.setEndValue( maxThreshold );
 
@@ -97,7 +97,8 @@ public class BNXYPlot extends JPanel {
                 ts = dataset.getSeries(series[i]);
                 ts.clear();
                 for (int j = 0; j < size; j++) {
-                    ts.add(j + offset, behaviorsCopy[i].get(j).doubleValue());
+                    ts.addOrUpdate(j + offset, behaviorsCopy[i].get(j).doubleValue());
+                    //System.out.println(String.format("Value: (%s, %s)", j + offset, behaviorsCopy[i].get(j).doubleValue()));
                 }
             }
 
@@ -110,7 +111,7 @@ public class BNXYPlot extends JPanel {
                 double y = (Double)activations.get(x)[1];
                 if( name != null && !name.isEmpty() ) {
                     double heightBox = maxActivation / annotationHeight;
-                    System.out.println("$$$$ Highest activation: " + activations.get(activations.size()-1)[1] + "  height: " + heightBox );
+                    //System.out.println("$$$$ Highest activation: " + activations.get(activations.size()-1)[1] + "  height: " + heightBox );
                     double x1 = x + offsetAnnotation - (widthBox/2);
                     double x2 = x1 + widthBox;
                     double y1 = y - (heightBox/2);
@@ -122,6 +123,7 @@ public class BNXYPlot extends JPanel {
 
                     XYTextAnnotation annotationText = new XYTextAnnotation( name, (x + offsetAnnotation), y);
                     annotationText.setFont(new Font("SansSerif", Font.ITALIC, 11));
+                    //System.out.println(String.format("Annotation: (%s, %s)", (x + offsetAnnotation), y));
                     chart.getXYPlot().addAnnotation( annotationText );
                 }
             }
@@ -137,7 +139,7 @@ public class BNXYPlot extends JPanel {
      */
     private JFreeChart createChart() {
         createDataset();
-        final JFreeChart chart = ChartFactory.createXYLineChart(
+        final JFreeChart chart = ChartFactory.createScatterPlot(
                 "Spreading Activation Dynamics",
                 "Time",
                 "Activation",
@@ -189,7 +191,7 @@ public class BNXYPlot extends JPanel {
      */
     public JPanel createPanel() {
         chart = createChart();
-        return new ChartPanel(chart);
+        return new ExtChartPanel(chart);
     }
 
     /**
