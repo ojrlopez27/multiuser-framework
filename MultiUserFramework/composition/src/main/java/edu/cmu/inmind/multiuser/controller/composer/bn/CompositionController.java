@@ -124,8 +124,9 @@ public class CompositionController {
         int beh = network.selectBehavior();
         for(int i = 0; i < network.getBehaviors().size(); i++){
             Behavior behavior = network.getBehaviors().get(i);
-            if(beh > -1) activations[i].add( behavior.getActivation() );
+            activations[i].add( behavior.getActivation() );
         }
+        if( !network.isExecutable()) return -1;
         return beh;
     }
 
@@ -219,7 +220,7 @@ public class CompositionController {
         double highest = network.getHighestActivation();
         double currentBehActivation = getActivationBeh();
         int idxActivated = network.getIdxBehActivated();
-        if( highest > currentBehActivation ) {
+        if( currentBehActivation != -1 && highest > currentBehActivation ) {
             double belowActivated = currentBehActivation * 0.9;
             for (int i = 0; i < activations.length; i++) {
                 Double lastActivation = activations[i].remove(activations[i].size() - 1);
@@ -241,7 +242,7 @@ public class CompositionController {
     }
 
     public double getActivationBeh() {
-        if(network.getIdxBehActivated() == -1) throw new IllegalStateException("There should be a winner behavior");
+        if(network.getIdxBehActivated() == -1) return -1; //throw new IllegalStateException("There should be a winner behavior");
         return network.getBehaviorActivated().getActivation();
     }
 
@@ -251,5 +252,9 @@ public class CompositionController {
 
     public BehaviorNetwork getNetwork() {
         return network;
+    }
+
+    public boolean isExecutable() {
+        return network.isExecutable();
     }
 }

@@ -29,7 +29,7 @@ public class BehaviorNetwork {
 	private transient double[][] activationConflicters;
 	private transient double[] activationInputs;
 	private transient double[] activationLinks;
-	private transient boolean execution = false;
+	private transient boolean executable = false;
 	private transient int indexBehActivated = -1;
 	private transient int cont = 1;
 	private transient Double[] activations;
@@ -39,9 +39,11 @@ public class BehaviorNetwork {
 	private transient List<Behavior> behaviorsCopy = new Vector<>();
 	private transient String nameBehaviorActivated;
 	private transient List<StateObserver> stateObservers = new ArrayList<>();
+	private transient boolean shouldWaitForUserSelection;
+	private transient boolean pickBehaviorNow;
 	private String output;
-	private String statesOutput;
 
+	private String statesOutput;
 	private transient int cycle = 1;
 	private transient HashMap<String, Behavior> map;
 	private transient int padBehaviorName;
@@ -193,7 +195,11 @@ public class BehaviorNetwork {
 		this.delta = delta;
 	}
 
-	/**
+    public boolean isExecutable() {
+        return executable;
+    }
+
+    /**
 	 * a function S (t) returning the propositions that are observed to be true at time t
 	 * (the state of the environment as perceived by the agent) S being implemented
 	 * by an independent process (or the real world),
@@ -241,16 +247,6 @@ public class BehaviorNetwork {
 		}
 	}
 
-//	public void addState(List<String> states){
-//		if(states == null)
-//			this.states = null;
-//		else
-//			for(int i = 0; i < states.size(); i++) {
-//				if( !this.states.contains(states.get(i)) ) {
-//					this.states.add(states.get(i));
-//				}
-//			}
-//	}
 
 	/**
 	 * a function G(t) returning the propositions that are a goal of the agent at time
@@ -421,7 +417,7 @@ public class BehaviorNetwork {
 	 */
 	private void computeLinks (){
 		//int highest = highestNumPreconditions();
-		double highest = highestUtility();
+		//double highest = highestUtility();
 		for(int i = 0; i < behaviors.size(); i++){
 			//boolean isExecutable = executable(i);
 			boolean isExecutable = executable(i); //executable(i, highest);
@@ -662,14 +658,20 @@ public class BehaviorNetwork {
 	private int activateBehavior (){
 		double act = 0;
 		indexBehActivated = -1;
-		for( Behavior beh : behaviors){
-			if( beh.getActivation() >= theta && beh.getExecutable() && beh.getActivation() > act){
-				indexBehActivated = behaviors.indexOf(beh);
-				act = beh.getActivation();
-				nameBehaviorActivated = beh.getName(); //beh.getName();
-			}
-		}
-		execution = false;
+		boolean behaviorActivated = false;
+
+        for (Behavior beh : behaviors) {
+            if (beh.getActivation() >= theta && beh.getExecutable() && beh.getActivation() > act) {
+                indexBehActivated = behaviors.indexOf(beh);
+                act = beh.getActivation();
+                nameBehaviorActivated = beh.getName();
+                behaviorActivated = true;
+            }
+        }
+        if(indexBehActivated == -1){
+            indexBehActivated = getHighestActivationWithTheta();
+        }
+		executable = false;
 		if( verboseTree ) {
 			System.out.println(LEVEL_2 + "STATE: " + Arrays.toString(states.toArray()));
 			System.out.println(LEVEL_2 + "BEHAVIOR (B), ACTIVATION (AC), PRECONDITIONS THAT ARE TRUE (PT), LIST OF PRECONDITIONS (LP), So:  |-- B  AC  (PT) -> LP");
@@ -684,12 +686,15 @@ public class BehaviorNetwork {
 		if( verboseTree ) {
 			System.out.println(LEVEL_2 + "THETA (THRESHOLD): " + theta );
 		}
-		if( indexBehActivated >= 0 ){
+		if( behaviorActivated ){
 			statesOutput = Arrays.toString(states.toArray());
 			if(verboseTree ) {
 				System.out.println(LEVEL_2 + "EXECUTING BEHAVIOR: " + behaviors.get(indexBehActivated).getName());
 			}
-			execution = true;
+            if( !shouldWaitForUserSelection || pickBehaviorNow ) {
+                pickBehaviorNow = false;
+                executable = true;
+            }
 			behaviors.get(indexBehActivated).setActivated(true);
 		}
 		return indexBehActivated;
@@ -785,7 +790,7 @@ public class BehaviorNetwork {
 	 */
 	private void reset(){
 		//reseting
-		if(execution)
+		if(executable)
 			theta = initialTheta;
 		for (Behavior behavior : behaviors) {
 			behavior.resetActivation(behavior.getActivated());
@@ -833,7 +838,7 @@ public class BehaviorNetwork {
 	}
 
 	public void checkExecute(){
-		if( !execution ){
+		if( !executable){
 			theta *= 0.9;
 			if( verboseVal ) {
 				System.err.println("None of the executable behaviors has accumulated enough activation to become active");
@@ -852,10 +857,11 @@ public class BehaviorNetwork {
 			Behavior beh = behaviors.get(i);
 			if( beh.getActivation() > theta && beh.getActivation() > max ){
 				idx = i;
+				max = beh.getActivation();
 			}
 		}
-		behaviors.get(idx).setActivation(max * 1.15);
-		nameBehaviorActivated = behaviors.get(idx).getId(); //.getName();
+		//behaviors.get(idx).setActivation(max * 1.15);
+		nameBehaviorActivated = behaviors.get(idx).getShortName(); //.getName();
 		return indexBehActivated = idx;
 	}
 
@@ -892,7 +898,7 @@ public class BehaviorNetwork {
 		behaviors.get(idx).setActivation(max * 1.30);
 		behaviors.get(idx).setNumMatches(maxPrecTrue);
 		behaviors.get(idx).setActivated(true);
-		execution = true;
+		executable = true;
 		recordActivations();
 		return idx;
 	}
@@ -1038,5 +1044,21 @@ public class BehaviorNetwork {
                 }
             }
         }
+    }
+
+    public void shouldWaitForUserSelection(boolean shouldWait) {
+            this.shouldWaitForUserSelection = shouldWait;
+    }
+
+	public void pickCurrentBestBehavior() {
+		this.pickBehaviorNow = true;
+	}
+
+    public Behavior getBehaviorByShortName(String shortName) {
+        for(Behavior behavior : behaviors){
+            if(behavior.getShortName().equals(shortName))
+                return behavior;
+        }
+        return null;
     }
 }

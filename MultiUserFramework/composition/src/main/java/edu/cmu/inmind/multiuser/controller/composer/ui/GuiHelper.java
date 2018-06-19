@@ -15,7 +15,7 @@ public class GuiHelper {
     public static double heightFirstPanel;
     public static double widthSecondPanel;
     public static double heightSecondPanel;  //780 - heightFirstPanel;
-    private static final String style = "font-family: Monospaced, Calibri, Lucida Console, Menlo; font-size: 12px";
+    public static double widthThirdPanel;
 
     static {
         init( new Dimension(1420, 780)) ;
@@ -23,8 +23,9 @@ public class GuiHelper {
 
 
     public static void init(Dimension dim){
-        widthFirstPanel = dim.getWidth() * 0.40;
-        widthSecondPanel = dim.getWidth() - widthFirstPanel;
+        widthFirstPanel = dim.getWidth() * 0.35;
+        widthSecondPanel =  dim.getWidth() * 0.40;
+        widthThirdPanel = dim.getWidth() - (widthFirstPanel + widthSecondPanel);
         heightFirstPanel = dim.getHeight() * 0.40;
         heightSecondPanel =  dim.getHeight() - heightFirstPanel;
     }
@@ -39,15 +40,19 @@ public class GuiHelper {
     }
 
 
-    static class StatePane extends JTextPane {
+    static class MultilinePane extends JTextPane {
         private HTMLDocument doc;
         private StringBuilder text = new StringBuilder();
 
-        public StatePane() {
+        public MultilinePane() {
             super();
             setContentType("text/html");
             setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             doc = (HTMLDocument) getStyledDocument();
+            setBorder(BorderFactory.createEtchedBorder());
+            setOpaque(true);
+            setBackground(Color.WHITE);
+            setFont(new Font(Font.MONOSPACED, Font.PLAIN, 14));
         }
 
 

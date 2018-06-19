@@ -347,7 +347,6 @@ public class Broker implements CommonUtils.NamedRunnable, DestroyableCallback {
      */
     public void bind(String endpoint) throws Throwable{
         socket.bind(endpoint);
-        Log4J.info(this, String.format("Running MUF at: %s:%s", publicServerAddress, port ));
     }
 
     /**

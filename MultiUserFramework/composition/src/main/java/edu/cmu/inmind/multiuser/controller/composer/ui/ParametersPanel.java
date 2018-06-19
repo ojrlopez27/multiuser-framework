@@ -11,7 +11,7 @@ import java.awt.*;
  * Created by oscarr on 6/11/18.
  */
 public class ParametersPanel extends JPanel implements StateObserver{
-    private GuiHelper.StatePane stateText;
+    private GuiHelper.MultilinePane stateText;
     private BehaviorNetwork network;
 
     public ParametersPanel(LayoutManager layout, double width, double height, BehaviorNetwork network) {
@@ -65,14 +65,10 @@ public class ParametersPanel extends JPanel implements StateObserver{
         c.insets = new Insets(10,0,0,0);
         c.gridx = 0;
         c.gridy = 3;
-        stateText = new GuiHelper.StatePane();
+        stateText = new GuiHelper.MultilinePane();
         stateText.addText(network.getStateString());
         stateText.build();
-        stateText.setBorder(BorderFactory.createEtchedBorder());
         stateText.setPreferredSize(new Dimension((int)(width - 60), (int) (height * 0.25)));
-        stateText.setOpaque(true);
-        stateText.setBackground(Color.WHITE);
-        stateText.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         JScrollPane scrollPane2 = new JScrollPane(stateText);
         scrollPane2.setPreferredSize(new Dimension(200, 80));
         this.add(scrollPane2, c);

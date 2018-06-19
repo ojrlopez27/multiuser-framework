@@ -17,9 +17,11 @@ public class BNGUIVisualizer extends JFrame{
 
     private ParametersPanel parametersPanel;
     private BehaviorsPanel behaviorsPanel;
+    private ExecutionPanel executionPanel;
     private JPanel plotPanel;
     private BNXYPlot bnXYPlot;
     private BehaviorNetwork network;
+    private boolean paused;
     static final String metal = UIManager.getSystemLookAndFeelClassName();
 
     public BNGUIVisualizer(String title, String[] series, BehaviorNetwork network) throws Exception {
@@ -49,7 +51,9 @@ public class BNGUIVisualizer extends JFrame{
         content.setLayout( new GridBagLayout() );
         parametersPanel = new ParametersPanel(new GridBagLayout(), widthFirstPanel, heightFirstPanel, network);
         behaviorsPanel = new BehaviorsPanel(new GridBagLayout(), widthSecondPanel, heightFirstPanel, network);
-        bnXYPlot = new BNXYPlot(series, widthFirstPanel + widthSecondPanel, heightSecondPanel);
+        executionPanel = new ExecutionPanel(new GridBagLayout(), widthThirdPanel, heightFirstPanel, network, this);
+        bnXYPlot = new BNXYPlot(series, widthFirstPanel + widthSecondPanel + widthThirdPanel, heightSecondPanel);
+        bnXYPlot.setPlotObserver(executionPanel);
         plotPanel = bnXYPlot.getPanel();
 
         GridBagConstraints c = new GridBagConstraints();
@@ -65,7 +69,12 @@ public class BNGUIVisualizer extends JFrame{
         add(behaviorsPanel, c);
         add(Box.createRigidArea(new Dimension(0, 40)));
 
-        c.gridwidth = 2;
+        c.gridx = 2;
+        c.gridy = 0;
+        add(executionPanel, c);
+        add(Box.createRigidArea(new Dimension(0, 40)));
+
+        c.gridwidth = 3;
         c.gridx = 0;
         c.gridy = 1;
         add(plotPanel, c);
@@ -96,8 +105,16 @@ public class BNGUIVisualizer extends JFrame{
         JFrame.setDefaultLookAndFeelDecorated(true);
     }
 
+    public void setPaused(boolean paused) {
+        this.paused = paused;
+    }
+
+    public boolean isPaused() {
+        return paused;
+    }
+
     public void setDataset(List<Double>[] normalizedActivations, double threshold,
-                           String behActivated, double activationBeh) {
-        bnXYPlot.setDataset(normalizedActivations, threshold, behActivated, activationBeh);
+                           String behActivated, double activationBeh, boolean isExecutable) {
+        bnXYPlot.setDataset(normalizedActivations, threshold, behActivated, activationBeh, isExecutable);
     }
 }

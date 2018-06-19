@@ -33,4 +33,5 @@ public interface ProcessOrchestrator extends BlackboardListener{
     MessageLog getLogger();
     Session getSession();
     <T extends Pluggable> T get(Class<T> clazz) throws Exception;
+    void postCreate();
 }

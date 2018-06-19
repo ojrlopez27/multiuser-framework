@@ -52,10 +52,12 @@ public class TestDemoGUI {
         int step = SimuConstants.SimSteps.S1_ALICE_LOCATION.ordinal();
         Scanner scanner = new Scanner(System.in);
         while( !compositionController.hasMoreGoals() ) {
-            runOneStep(step);
-            step++;
-            scanner.nextLine();
-            CommonUtils.sleep(10);
+            if(!plot.isPaused()) {
+                runOneStep(step);
+                step++;
+            }
+            //scanner.nextLine();
+            CommonUtils.sleep(1000);
         }
         System.exit(0);
     }
@@ -77,7 +79,7 @@ public class TestDemoGUI {
             compositionController.executeBehavior(idx, step);
         }
         addEventToState(step);
-        if(shouldPlot && idx >= 0) refreshPlot();
+        if(shouldPlot) refreshPlot();
         return idx;
     }
 
@@ -219,6 +221,7 @@ public class TestDemoGUI {
         plot.setDataset(compositionController.getNormalizedActivations(),
                 compositionController.getThreshold(),
                 compositionController.getBehActivated(),
-                compositionController.getActivationBeh());
+                compositionController.getActivationBeh(),
+                compositionController.isExecutable());
     }
 }

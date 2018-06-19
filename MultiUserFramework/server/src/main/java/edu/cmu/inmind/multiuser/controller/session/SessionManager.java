@@ -30,17 +30,23 @@ import java.util.concurrent.atomic.AtomicLong;
 public class SessionManager implements CommonUtils.NamedRunnable, SessionImpl.SessionObserver, DestroyableCallback {
     /** sessions handled by the session manager */
     private ConcurrentHashMap<String, SessionImpl> sessions;
+
     private CopyOnWriteArrayList<Object> closeableObjects;
+
     /** communication controller that process
      * lifecycle request messages (connect a client, disconnect, etc.)*/
     private ServerCommController serverCommController;
+
     private Config config;
+
     /** message that is used to reply to clients */
     private ZMsg reply;
+
     /** this is the id of the session manager. we use it to filter messages that must be
      * processed by the session manager
      */
     private String serviceId = Constants.SESSION_MANAGER_SERVICE;
+
     private Broker[] brokers;
     private Broker managerBroker;
     private AtomicLong portIncrease = new AtomicLong(0);
@@ -52,6 +58,7 @@ public class SessionManager implements CommonUtils.NamedRunnable, SessionImpl.Se
     private AtomicBoolean stopped = new AtomicBoolean(false);
     private AtomicBoolean isDestroyed = new AtomicBoolean(false);
     private List<Object> postCreationList;
+    private String publicAddress;
 
 
     public SessionManager(PluginModule[] modules, Config config, ServiceInfo serviceInfo) throws MultiuserException{
@@ -74,6 +81,7 @@ public class SessionManager implements CommonUtils.NamedRunnable, SessionImpl.Se
             createFrameworkAsService(serviceInfo);
         }
         sessions = new ConcurrentHashMap<>();
+        publicAddress = String.format("tcp://%s:%s", CommonUtils.getPublicIP(), config.getSessionManagerPort());
         extractConfig();
         if( config.isTCPon() ) {
             initializeBrokers();
@@ -127,6 +135,7 @@ public class SessionManager implements CommonUtils.NamedRunnable, SessionImpl.Se
      */
     public void run(){
         Log4J.info(this, "Starting Multiuser framework...");
+        Log4J.info(this, String.format("Running MUF at: %s", publicAddress));
         try {
             reply = null;
             loadRemoteServices();
@@ -306,7 +315,7 @@ public class SessionManager implements CommonUtils.NamedRunnable, SessionImpl.Se
         closeableObjects.add(session);
         SessionMessage sm = new SessionMessage( Constants.SESSION_INITIATED);
         //sm.setPayload(address);
-        sm.setPayload( String.format("tcp://%s:%s", CommonUtils.getPublicIP(), port) );
+        sm.setPayload( publicAddress );
         send( msgRequest, sm );
     }
 

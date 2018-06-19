@@ -40,6 +40,8 @@ public class BNXYPlot extends JPanel {
     private double maxActivation = 0;
     private double annotationHeight = 15;
     private JPanel chartPanel;
+    private List<Boolean> listExecutables;
+    private PlotObserver plotObserver;
 
 
     /**
@@ -48,23 +50,30 @@ public class BNXYPlot extends JPanel {
     public BNXYPlot(String[] series, double width, double height) {
         this.series = series;
         chartPanel = createPanel();
-        chartPanel.setPreferredSize(new Dimension((int)width, (int)height));
-        chartPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLoweredBevelBorder(), " Network Plot ") );
+        chartPanel.setPreferredSize(new Dimension((int) width, (int) height));
+        chartPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLoweredBevelBorder(), " Network Plot "));
         thresholds = new ArrayList<>();
         activations = new ArrayList<>();
+        listExecutables = new ArrayList<>();
     }
 
     public JPanel getPanel() {
         return chartPanel;
     }
 
-    public IntervalXYDataset refreshDataset(){
+    public void setPlotObserver(PlotObserver plotObserver) {
+        this.plotObserver = plotObserver;
+    }
+
+    public IntervalXYDataset refreshDataset(boolean isExecutable){
         if (behaviors != null) {
+            listExecutables.add(isExecutable);
             //keep number of samples no bigger than maxNumSamples
             if (behaviors[0].size() > maxNumSamples) {
                 for (int i = 0; i < behaviors.length; i++) {
                     behaviors[i].remove(0);
                 }
+                listExecutables.remove(0);
                 thresholds.remove(0);
                 activations.remove(0);
                 offset++;
@@ -98,37 +107,41 @@ public class BNXYPlot extends JPanel {
                 ts.clear();
                 for (int j = 0; j < size; j++) {
                     ts.addOrUpdate(j + offset, behaviorsCopy[i].get(j).doubleValue());
-                    //System.out.println(String.format("Value: (%s, %s)", j + offset, behaviorsCopy[i].get(j).doubleValue()));
                 }
             }
 
             //who is activated?
-            chart.getXYPlot().clearAnnotations();
-            int offsetAnnotation = maxNumSamples - activations.size();
-            for (int x = 0; x < activations.size(); x++) {
-                String name = (String)activations.get(x)[0];
-                double widthBox = name.length()/6.0; // 6 is the longest name for the service composition example
-                double y = (Double)activations.get(x)[1];
-                if( name != null && !name.isEmpty() ) {
-                    double heightBox = maxActivation / annotationHeight;
-                    //System.out.println("$$$$ Highest activation: " + activations.get(activations.size()-1)[1] + "  height: " + heightBox );
-                    double x1 = x + offsetAnnotation - (widthBox/2);
-                    double x2 = x1 + widthBox;
-                    double y1 = y - (heightBox/2);
-                    double y2 = y1 + heightBox;
-
-                    XYBoxAnnotation annotation = new XYBoxAnnotation(x1, y1, x2, y2, new BasicStroke(1.0F),
-                            Color.BLACK, new Color(255, 0, 0, 125));
-                    chart.getXYPlot().addAnnotation(annotation);
-
-                    XYTextAnnotation annotationText = new XYTextAnnotation( name, (x + offsetAnnotation), y);
-                    annotationText.setFont(new Font("SansSerif", Font.ITALIC, 11));
-                    //System.out.println(String.format("Annotation: (%s, %s)", (x + offsetAnnotation), y));
-                    chart.getXYPlot().addAnnotation( annotationText );
-                }
-            }
+            plotAnnotations();
         }
         return dataset;
+    }
+
+    private void plotAnnotations() {
+        chart.getXYPlot().clearAnnotations();
+        int offsetAnnotation = maxNumSamples - activations.size();
+        for (int x = 0; x < activations.size(); x++) {
+            String name = (String)activations.get(x)[0];
+            double widthBox = name.length()/6.0; // 6 is the longest name for the service composition example
+            double y = (Double)activations.get(x)[1];
+            if( name != null && !name.isEmpty() ) {
+                double heightBox = maxActivation / annotationHeight;
+                //System.out.println("$$$$ Highest activation: " + activations.get(activations.size()-1)[1] + "  height: " + heightBox );
+                double x1 = x + offsetAnnotation - (widthBox/2);
+                double x2 = x1 + widthBox;
+                double y1 = y - (heightBox/2);
+                double y2 = y1 + heightBox;
+
+                XYBoxAnnotation annotation = new XYBoxAnnotation(x1, y1, x2, y2, new BasicStroke(1.0F),
+                        Color.BLACK, listExecutables.get(x)? new Color(255, 0, 0, 125) : Color.WHITE);
+                chart.getXYPlot().addAnnotation(annotation);
+                if(listExecutables.get(x)) plotObserver.onWinnerService(name);
+
+                XYTextAnnotation annotationText = new XYTextAnnotation( name, (x + offsetAnnotation), y);
+                annotationText.setFont(new Font("SansSerif", Font.ITALIC, 11));
+                //System.out.println(String.format("Annotation: (%s, %s)", (x + offsetAnnotation), y));
+                chart.getXYPlot().addAnnotation( annotationText );
+            }
+        }
     }
 
 
@@ -213,11 +226,12 @@ public class BNXYPlot extends JPanel {
                 if(j < behs.length-1) behs[j].add(random.nextInt(20) + random.nextDouble());
                 else behs[j].add(15d);
             }
-            demo.setDataset(behs, 15, "beh" + (random.nextInt(3) + 1), 3.3333);
+            demo.setDataset(behs, 15, "beh" + (random.nextInt(3) + 1), 3.3333, true);
         }
     }
 
-    public void setDataset(List<Double>[] behaviors, double threshhold, String nameBehActivated, double activation) {
+    public void setDataset(List<Double>[] behaviors, double threshhold, String nameBehActivated, double activation,
+                           boolean isExecutable) {
         this.behaviors = behaviors;
         this.thresholds.add(threshhold);
         this.activations.add( new Object[]{nameBehActivated, activation} );
@@ -232,7 +246,7 @@ public class BNXYPlot extends JPanel {
             maxThreshold = threshhold + portion > maxThreshold? maxThreshold : threshhold + portion;
             minThreshold = threshhold - portion < minThreshold? minThreshold : threshhold - portion;
         }
-        refreshDataset();
+        refreshDataset(isExecutable);
         chart.fireChartChanged();
     }
 }

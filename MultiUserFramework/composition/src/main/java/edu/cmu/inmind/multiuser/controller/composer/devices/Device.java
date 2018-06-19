@@ -4,6 +4,7 @@ import edu.cmu.inmind.multiuser.controller.common.Pair;
 import edu.cmu.inmind.multiuser.controller.composer.bn.Behavior;
 import edu.cmu.inmind.multiuser.controller.composer.bn.BehaviorNetwork;
 import edu.cmu.inmind.multiuser.controller.composer.services.*;
+import edu.cmu.inmind.multiuser.controller.log.Log4J;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -68,8 +69,8 @@ public class Device {
     }
 
     public synchronized boolean executeService(String serviceName, int simulationStep){
-        System.out.println(String.format("*** %s device is executing service: %s   at simulation step: %s"
-                , name, serviceName, simulationStep));
+        Log4J.info(this, String.format("%s device is executing service: %s at simulation step: %s",
+                name, serviceName, simulationStep));
         boolean perfomed = behServMap.get(serviceName).snd.execute(simulationStep);
         //TODO: each subclass has to do something with the actual service
         return perfomed;

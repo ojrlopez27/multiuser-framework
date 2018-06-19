@@ -200,7 +200,8 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
         postCreate();
     }
 
-    private void postCreate() {
+    @Override
+    public void postCreate() {
         if( postCreationList != null ) {
             for (Object process : postCreationList) {
                 processHook(process);
