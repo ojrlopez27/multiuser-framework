@@ -146,7 +146,6 @@ public class ServerCommController implements DestroyableCallback {
                         heartbeatAt = System.currentTimeMillis() + heartbeat;
                     }
                 } catch (Throwable error) {
-                    error.printStackTrace();
                     if( stop.get() || CommonUtils.isZMQException(error) ) {
                         ResourceLocator.setIamDone(this);
                         destroyInCascade(this);
@@ -158,7 +157,6 @@ public class ServerCommController implements DestroyableCallback {
             }
             return null;
         }catch (Throwable e){
-            e.printStackTrace();
             try {
                 if( CommonUtils.isZMQException(e) ) {
                     ResourceLocator.setIamDone(this);
@@ -167,7 +165,7 @@ public class ServerCommController implements DestroyableCallback {
                     ExceptionHandler.handle(e);
                 }
             }catch (Throwable t){
-                t.printStackTrace();
+                //t.printStackTrace();
             }finally {
                 return null;
             }
@@ -227,7 +225,6 @@ public class ServerCommController implements DestroyableCallback {
                         "reply: " + reply, "message: " + message));
             }
         }catch (Throwable e){
-            e.printStackTrace();
             if( CommonUtils.isZMQException(e) ) {
                 destroyInCascade(this); // interrupted
             }else{

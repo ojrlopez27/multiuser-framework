@@ -241,7 +241,6 @@ public class ClientCommController implements ClientController, DestroyableCallba
             if( isTCPon ) {
                 LogC.info(this, "Connecting to: " + serverAddress);
                 this.sessionMngrCommAPI = new ClientCommAPI(serverAddress);
-                LogC.debug(this, "1");
                 closeableObjects.add( sessionMngrCommAPI );
                 SessionMessage sessionMessage = new SessionMessage();
                 sessionMessage.setSessionId(sessionId);
@@ -249,60 +248,45 @@ public class ClientCommController implements ClientController, DestroyableCallba
                 //sessionMessage.setUrl(clientAddress);
                 sessionMessage.setPayload(Arrays.toString(subscriptionMessages));
                 CommonUtils.setAtom( stop, !sendToBroker( sessionManagerService, CommonUtils.toJson(sessionMessage)) );
-                LogC.debug(this, "2");
                 if (!stop.get()) {
                     timer.schedule(new ResponseCheck(), timeout);
                     String replyString = receive(sessionMngrCommAPI);
-                    LogC.debug(this, "3");
-                    LogC.debug(this, "Response from Server: " + replyString);
                     timer.stopTimer();
                     if( replyString.equals(STOP_FLAG) ){
                         stop.getAndSet(true);
-                        LogC.debug(this, "3.1");
                     }else{
                         SessionMessage reply = CommonUtils.fromJson(replyString, SessionMessage.class);
-                        LogC.debug(this, "4");
                         if (reply != null) {
                             if (reply.getRequestType().equals(Constants.RESPONSE_ALREADY_CONNECTED)
                                     || reply.getRequestType().equals(Constants.RESPONSE_NOT_VALID_OPERATION)
                                     || reply.getRequestType().equals(Constants.RESPONSE_UNKNOWN_SESSION)) {
-                                LogC.debug(this, "4.1");
                                 throw new Exception(reply.getRequestType());
                             } else {
                                 if (reply.getRequestType().equals(Constants.SESSION_INITIATED) ||
                                         reply.getRequestType().equals(Constants.SESSION_RECONNECTED)) {
-                                    LogC.debug(this, "5");
                                     if(reply.getPayload() != null && Constants.NO_SESSION.equals(reply.getPayload()) ){
-                                        LogC.debug(this, "5.1");
                                         this.sessionCommAPI = sessionMngrCommAPI;
                                     }else if( reply.getPayload() != null && CommonUtils.isURLvalid( reply.getPayload() )) {
-                                        LogC.debug(this, "5.2");
                                         this.sessionCommAPI = new ClientCommAPI(reply.getPayload());
                                     }else{
-                                        LogC.debug(this, "5.3");
                                         this.sessionCommAPI = new ClientCommAPI( sessionMngrCommAPI.getBroker() );
                                     }
                                     closeableObjects.add( sessionCommAPI );
                                 }
-                                LogC.debug(this, "6");
                                 if( responseListener == null ){
-                                    LogC.debug(this, "6.1");
                                     ExceptionHandler.handle(new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
                                             "responseListener: " + responseListener ));
                                 }else {
-                                    LogC.debug(this, "7");
                                     responseListener.process(replyString);
                                 }
                             }
                         } else {
-                            LogC.debug(this, "8");
                             stop.getAndSet(true);
                         }
                     }
                 }
             }
         }catch (Throwable e){
-            LogC.debug(this, "9 " + e.getMessage());
             ExceptionHandler.handle(e);
         }
     }

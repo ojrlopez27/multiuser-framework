@@ -381,7 +381,7 @@ public class ResourceLocator {
                         ctx.destroy();
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    //e.printStackTrace();
                 }
                 //context.destroy();
             }

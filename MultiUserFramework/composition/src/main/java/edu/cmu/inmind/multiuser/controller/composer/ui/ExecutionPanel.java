@@ -15,6 +15,8 @@ public class ExecutionPanel extends JPanel implements ActionListener, PlotObserv
     private GuiHelper.MultilinePane winningService;
     private BehaviorNetwork network;
     private BNGUIVisualizer visualizer;
+    private JButton pauseButton;
+    private JButton selectServiceButton;
     private boolean paused;
     private final static String pickAutoCommand = "pickAutomatically";
     private final static String userSelectCommand = "userSelection";
@@ -83,17 +85,18 @@ public class ExecutionPanel extends JPanel implements ActionListener, PlotObserv
         c.gridx = 0;
         c.gridy = 3;
         c.gridwidth = 1;
-        JButton selectService = new JButton("Pick Service");
-        selectService.addActionListener(this);
-        selectService.setActionCommand(selectButtonCommand);
-        this.add(selectService, c);
+        selectServiceButton = new JButton("Pick Service");
+        selectServiceButton.addActionListener(this);
+        selectServiceButton.setActionCommand(selectButtonCommand);
+        this.add(selectServiceButton, c);
 
         c.gridx = 1;
         c.gridy = 3;
-        JButton pause = new JButton("Pause");
-        pause.addActionListener(this);
-        pause.setActionCommand(pauseButtonCommand);
-        this.add(pause, c);
+        pauseButton = new JButton("Pause");
+        pauseButton.addActionListener(this);
+        pauseButton.setPreferredSize(new Dimension(93, 29));
+        pauseButton.setActionCommand(pauseButtonCommand);
+        this.add(pauseButton, c);
     }
 
 
@@ -107,6 +110,7 @@ public class ExecutionPanel extends JPanel implements ActionListener, PlotObserv
             network.pickCurrentBestBehavior();
         }else if(e.getActionCommand().equals(pauseButtonCommand)){
             paused = !paused;
+            pauseButton.setText( paused? "Resume" : "Pause" );
             visualizer.setPaused(paused);
         }
     }

@@ -59,8 +59,8 @@ public class CompositionController {
     }
 
     /**
-     * User abstract behaviors to instantiate grounded behaviors. Remove abstract behaviors
-     * from network, and add newly created grounded behaviors.
+     * User abstract behaviors/services to instantiate grounded behaviors/services.
+     * Remove abstract behaviors/services from network, and add newly created grounded behaviors.
      */
     public void instantiateServices(Pair<List<String>, List<String>>... mappings) {
         // let's remove all abstract behaviors
@@ -120,7 +120,7 @@ public class CompositionController {
         }
     }
 
-    public int selectBehavior() {
+    public int selectService() {
         int beh = network.selectBehavior();
         for(int i = 0; i < network.getBehaviors().size(); i++){
             Behavior behavior = network.getBehaviors().get(i);
@@ -130,7 +130,7 @@ public class CompositionController {
         return beh;
     }
 
-    public boolean executeBehavior(int idx, int simulationStep) {
+    public boolean executeService(int idx, int simulationStep) {
         // executing service
         Behavior selectedBehavior = network.getBehaviors().get(idx);
         boolean performed = deviceServiceMap.get(selectedBehavior)

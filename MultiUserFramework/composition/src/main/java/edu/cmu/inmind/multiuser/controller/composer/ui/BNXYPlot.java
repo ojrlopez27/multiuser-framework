@@ -119,14 +119,14 @@ public class BNXYPlot extends JPanel {
     private void plotAnnotations() {
         chart.getXYPlot().clearAnnotations();
         int offsetAnnotation = maxNumSamples - activations.size();
+        double currentMaxActivation = getMaxActivation();
         for (int x = 0; x < activations.size(); x++) {
             String name = (String)activations.get(x)[0];
             double widthBox = name.length()/6.0; // 6 is the longest name for the service composition example
             double y = (Double)activations.get(x)[1];
             if( name != null && !name.isEmpty() ) {
-                double heightBox = maxActivation / annotationHeight;
-                //System.out.println("$$$$ Highest activation: " + activations.get(activations.size()-1)[1] + "  height: " + heightBox );
-                double x1 = x + offsetAnnotation - (widthBox/2);
+                double heightBox = currentMaxActivation / annotationHeight;
+                double x1 = x + offsetAnnotation + offset - (widthBox/2);
                 double x2 = x1 + widthBox;
                 double y1 = y - (heightBox/2);
                 double y2 = y1 + heightBox;
@@ -136,12 +136,21 @@ public class BNXYPlot extends JPanel {
                 chart.getXYPlot().addAnnotation(annotation);
                 if(listExecutables.get(x)) plotObserver.onWinnerService(name);
 
-                XYTextAnnotation annotationText = new XYTextAnnotation( name, (x + offsetAnnotation), y);
+                XYTextAnnotation annotationText = new XYTextAnnotation( name, (x + offsetAnnotation + offset), y);
                 annotationText.setFont(new Font("SansSerif", Font.ITALIC, 11));
-                //System.out.println(String.format("Annotation: (%s, %s)", (x + offsetAnnotation), y));
                 chart.getXYPlot().addAnnotation( annotationText );
             }
         }
+    }
+
+    private double getMaxActivation(){
+        double max = 0;
+        for(Object[] obj : activations){
+            if( ((Double) obj[1]) > max ){
+                max = ((Double) obj[1]);
+            }
+        }
+        return max;
     }
 
 
@@ -214,8 +223,6 @@ public class BNXYPlot extends JPanel {
      */
     public static void main(String[] args) {
         BNXYPlot demo = new BNXYPlot(new String[]{"beh1", "beh2", "beh3", "threshold"}, 1500, 500);
-
-
         List<Double>[] behs = new List[4];
         for(int i = 0; i < behs.length; i++ ){
             behs[i] = new ArrayList<>();

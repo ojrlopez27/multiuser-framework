@@ -43,9 +43,9 @@ public class TestDemo {
         int step = S2_ALICE_LOCATION;
         while( !compositionController.hasMoreGoals() ) {
             compositionController.updateDeviceState();
-            int idx = compositionController.selectBehavior();
+            int idx = compositionController.selectService();
             if( idx >= 0 ){
-                if( compositionController.executeBehavior(idx, step) ) {
+                if( compositionController.executeService(idx, step) ) {
                     step++;
                 }
                 addEventToState(step);

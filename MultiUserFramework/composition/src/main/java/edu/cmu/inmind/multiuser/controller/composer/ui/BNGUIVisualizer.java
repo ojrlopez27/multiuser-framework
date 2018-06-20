@@ -6,6 +6,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.ArrayList;
 import java.util.List;
 
 import static edu.cmu.inmind.multiuser.controller.composer.ui.GuiHelper.*;
@@ -22,11 +23,13 @@ public class BNGUIVisualizer extends JFrame{
     private BNXYPlot bnXYPlot;
     private BehaviorNetwork network;
     private boolean paused;
+    private List<VisualizerObserver> observers;
     static final String metal = UIManager.getSystemLookAndFeelClassName();
 
     public BNGUIVisualizer(String title, String[] series, BehaviorNetwork network) throws Exception {
         super(title);
         this.network = network;
+        this.observers = new ArrayList<>();
 
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "WikiTeX");
@@ -107,6 +110,13 @@ public class BNGUIVisualizer extends JFrame{
 
     public void setPaused(boolean paused) {
         this.paused = paused;
+        notifyObservers();
+    }
+
+    private void notifyObservers() {
+        for(VisualizerObserver observer : observers){
+            observer.onPausedChanged(paused);
+        }
     }
 
     public boolean isPaused() {
@@ -116,5 +126,9 @@ public class BNGUIVisualizer extends JFrame{
     public void setDataset(List<Double>[] normalizedActivations, double threshold,
                            String behActivated, double activationBeh, boolean isExecutable) {
         bnXYPlot.setDataset(normalizedActivations, threshold, behActivated, activationBeh, isExecutable);
+    }
+
+    public void addObserver(VisualizerObserver observer){
+        observers.add(observer);
     }
 }

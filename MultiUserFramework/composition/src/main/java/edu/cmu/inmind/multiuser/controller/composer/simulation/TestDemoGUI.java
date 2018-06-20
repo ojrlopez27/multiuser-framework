@@ -45,6 +45,7 @@ public class TestDemoGUI {
     private static int seqIdx = 0;
 
     public static void main(String args[]) throws Exception{
+
         shouldPlot = true;
         init();
 
@@ -73,10 +74,10 @@ public class TestDemoGUI {
 
     public static int runOneStep(int step) {
         compositionController.updateDeviceState();
-        int idx = compositionController.selectBehavior();
+        int idx = compositionController.selectService();
         if( idx >= 0 ){
             //checkCorrectSequence(idx);
-            compositionController.executeBehavior(idx, step);
+            compositionController.executeService(idx, step);
         }
         addEventToState(step);
         if(shouldPlot) refreshPlot();
