@@ -9,8 +9,13 @@ import static edu.cmu.inmind.multiuser.controller.composer.simulation.SimuConsta
  * Created by oscarr on 4/26/18.
  */
 public class TabletDevice extends Device {
-    public TabletDevice(String name, BehaviorNetwork network, String belongsToUser){
-        super(name, network, belongsToUser);
+    public TabletDevice(BehaviorNetwork network, String belongsToUser){
+        super(network, belongsToUser);
+    }
+
+    @Override
+    public TYPES getType() {
+        return TYPES.TABLET;
     }
 
     @Override

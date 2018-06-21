@@ -3,8 +3,12 @@ package edu.cmu.inmind.multiuser.controller.composer.simulation;
 import edu.cmu.inmind.multiuser.controller.common.Pair;
 import edu.cmu.inmind.multiuser.controller.composer.bn.CompositionController;
 import edu.cmu.inmind.multiuser.controller.composer.devices.Device;
+import edu.cmu.inmind.multiuser.controller.composer.services.*;
+
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static edu.cmu.inmind.multiuser.controller.composer.group.User.ADMIN;
 import static edu.cmu.inmind.multiuser.controller.composer.simulation.SimuConstants.*;
@@ -30,6 +34,7 @@ public class TestDemo {
 
         // create services
         compositionController.instantiateServices(
+                getMapOfServices(),
                 new Pair<>(Arrays.asList("bob", "alice"), getUserServices()),
                 new Pair<>(Arrays.asList(ADMIN), getServerServices() ));
 
@@ -43,7 +48,7 @@ public class TestDemo {
         int step = S2_ALICE_LOCATION;
         while( !compositionController.hasMoreGoals() ) {
             compositionController.updateDeviceState();
-            int idx = compositionController.selectService();
+            int idx = compositionController.selectService()[0];
             if( idx >= 0 ){
                 if( compositionController.executeService(idx, step) ) {
                     step++;
@@ -54,6 +59,20 @@ public class TestDemo {
         System.exit(0);
     }
 
+    private static Map<String,Class<? extends Service>> getMapOfServices() {
+        Map<String, Class<? extends Service>> map = new HashMap<>();
+        map.put("get-self-location", LocationService.class);
+        map.put("find-place-location", FindPlaceService.class);
+        map.put("get-distance-to-place", DistanceCalculatorService.class);
+        map.put("calculate-nearest-place", WhoIsNearestService.class);
+        map.put("share-grocery-list", ShareGroceryListService.class);
+        map.put("do-grocery-shopping", DoGroceryShoppingService.class);
+        map.put("do-beer-shopping", DoBeerShoppingService.class);
+        map.put("go-home-decor", GoHomeDecoService.class);
+        map.put("organize-party", OrganizePartyService.class);
+        map.put("go-pharmacy", GoPharmacyService.class);
+        return map;
+    }
 
 
     private static void addEventToState(int simulationStep) {

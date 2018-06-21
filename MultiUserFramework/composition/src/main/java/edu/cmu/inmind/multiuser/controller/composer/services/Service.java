@@ -1,8 +1,11 @@
 package edu.cmu.inmind.multiuser.controller.composer.services;
 
+import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.composer.bn.Behavior;
 import edu.cmu.inmind.multiuser.controller.composer.bn.BehaviorNetwork;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
@@ -14,6 +17,7 @@ public abstract class Service {
     protected BehaviorNetwork network;
     protected String deviceName;
     protected String user;
+    private static Map<String, Class<? extends Service>> mapServices = new HashMap<>();
 
     public Service(){}
 
@@ -38,18 +42,13 @@ public abstract class Service {
         this.behavior = behavior;
     }
 
+
+    public static void setMapServices(Map<String, Class<? extends Service>> mapServices) {
+        Service.mapServices = mapServices;
+    }
+
     public static Service getService(Behavior behavior, String name, ConcurrentSkipListSet<String> state) {
         behavior.setUserName(name.substring(0, name.contains(Behavior.TOKEN)? name.indexOf(Behavior.TOKEN) : name.length()));
-        if( behavior.getName().equals("get-self-location") ) return new LocationService(name, behavior, state);
-        else if( behavior.getName().equals("find-place-location") ) return new FindPlaceService(name, behavior, state);
-        else if( behavior.getName().equals("get-distance-to-place") ) return new DistanceCalculatorService(name, behavior, state);
-        else if( behavior.getName().equals("calculate-nearest-place") ) return new WhoIsNearestService(name, behavior, state);
-        else if( behavior.getName().equals("share-grocery-list") ) return new ShareGroceryListService(name, behavior, state);
-        else if( behavior.getName().equals("do-grocery-shopping") ) return new DoGroceryShoppingService(name, behavior, state);
-        else if( behavior.getName().equals("do-beer-shopping") ) return new DoBeerShoppingService(name, behavior, state);
-        else if( behavior.getName().equals("go-home-decor") ) return new GoHomeDecoService(name, behavior, state);
-        else if( behavior.getName().equals("organize-party") ) return new OrganizePartyService(name, behavior, state);
-        else if( behavior.getName().equals("go-pharmacy") ) return new GoPharmacyService(name, behavior, state);
-        return null;
+        return CommonUtils.createInstance( mapServices.get( behavior.getName() ), name, behavior, state);
     }
 }

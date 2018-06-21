@@ -1,24 +1,18 @@
 package edu.cmu.inmind.multiuser.controller.composer.devices;
 
 import edu.cmu.inmind.multiuser.controller.composer.bn.BehaviorNetwork;
-import edu.cmu.inmind.multiuser.controller.composer.group.User;
-
-import java.util.Collection;
 
 /**
- * Created by oscarr on 4/27/18.
+ * Created by oscarr on 6/21/18.
  */
-public class ServerDevice extends Device {
-    private Collection<User> users;
-
-    public ServerDevice(BehaviorNetwork network, String belongsTo, Collection<User> users){
+public class SmartwatchDevice extends Device {
+    public SmartwatchDevice(BehaviorNetwork network, String belongsTo){
         super(network, belongsTo);
-        this.users = users;
     }
 
     @Override
     public TYPES getType() {
-        return TYPES.SERVER;
+        return TYPES.SMARTWATCH;
     }
 
     @Override

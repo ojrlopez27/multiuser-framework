@@ -2,11 +2,9 @@ package edu.cmu.inmind.multiuser.controller.composer.bn;
 
 import edu.cmu.inmind.multiuser.controller.common.CommonUtils;
 import edu.cmu.inmind.multiuser.controller.common.Pair;
-import edu.cmu.inmind.multiuser.controller.composer.devices.Device;
-import edu.cmu.inmind.multiuser.controller.composer.devices.PhoneDevice;
-import edu.cmu.inmind.multiuser.controller.composer.devices.ServerDevice;
-import edu.cmu.inmind.multiuser.controller.composer.devices.TabletDevice;
+import edu.cmu.inmind.multiuser.controller.composer.devices.*;
 import edu.cmu.inmind.multiuser.controller.composer.group.User;
+import edu.cmu.inmind.multiuser.controller.composer.services.Service;
 
 import java.util.*;
 
@@ -19,7 +17,7 @@ import static edu.cmu.inmind.multiuser.controller.composer.group.User.ADMIN;
 public class CompositionController {
     private BehaviorNetwork network;
     private List<Device> devices;
-    private HashMap<String, Behavior> serviceMap;
+    private HashMap<String, Behavior> serviceBehaviorMap;
     private HashMap<Behavior, Device> deviceServiceMap;
     private HashMap<String, User> usersMap;
     private HashMap<String, List<String>> behaviorsActivatedByUser;
@@ -30,7 +28,7 @@ public class CompositionController {
     public CompositionController(String bnJsonFile){
         try {
             network = CommonUtils.fromJsonFile(bnJsonFile, BehaviorNetwork.class);
-            serviceMap = network.map();
+            serviceBehaviorMap = network.map();
             devices = new ArrayList<>();
             usersMap = new HashMap<>();
             behaviorsActivatedByUser = new HashMap<>();
@@ -48,29 +46,39 @@ public class CompositionController {
         usersMap.put(ADMIN, new User(ADMIN));
     }
 
-    public Device createDevice(String userName, Device.TYPES type) {
-        String deviceName = userName + Behavior.TOKEN + type.toString().toLowerCase();
-        Device device = type.equals( Device.TYPES.PHONE )? new PhoneDevice( deviceName, network, userName )
-                : type.equals( Device.TYPES.TABLET )? new TabletDevice( deviceName, network, userName )
-                : new ServerDevice(SERVER, network, ADMIN, usersMap.values());
+    public Device createDevice(String userName, Class<? extends Device> deviceClass){
+        Device device = deviceClass.equals(ServerDevice.class)? new ServerDevice( network, userName, usersMap.values())
+                 : CommonUtils.createInstance( deviceClass, network, userName );
         devices.add( device );
         usersMap.get(userName).addDevice(device);
         return device;
     }
 
+    public Device createDevice(String userName, Device.TYPES type) {
+        return createDevice(userName, type.equals( Device.TYPES.PHONE )? PhoneDevice.class
+                : type.equals( Device.TYPES.TABLET )? TabletDevice.class
+                : type.equals( Device.TYPES.SERVER )? ServerDevice.class
+                : SmartwatchDevice.class);
+    }
+
     /**
      * User abstract behaviors/services to instantiate grounded behaviors/services.
      * Remove abstract behaviors/services from network, and add newly created grounded behaviors.
+     * @param serviceMap    subclasses of Service base class. This map contains as keys the name of the service and as
+     *                      value a class name of the mapped service
+     * @param mappings      it contains a map where keys are user names and values are the names of the associated services
      */
-    public void instantiateServices(Pair<List<String>, List<String>>... mappings) {
+    public void instantiateServices(Map<String, Class<? extends Service>> serviceMap,
+                                    Pair<List<String>, List<String>>... mappings) {
+
+        Service.setMapServices(serviceMap);
         // let's remove all abstract behaviors
         network.getBehaviors().clear();
-
         for(Pair mapping : mappings) {
             List<String> services = (List<String>) mapping.snd;
             List<Behavior> behaviors = new ArrayList<>();
             for (String service : services) {
-                behaviors.add(serviceMap.get(service));
+                behaviors.add(serviceBehaviorMap.get(service));
             }
             for(String user : (List<String>)mapping.fst) {
                 for (Device device : usersMap.get(user).getDevices()) {
@@ -94,9 +102,9 @@ public class CompositionController {
             }
         }
         network.sortBehaviorsByName();
-        serviceMap = network.map();
+        serviceBehaviorMap = network.map();
         deviceServiceMap = generateMap();
-        activations = new List[serviceMap.values().size()];
+        activations = new List[serviceBehaviorMap.values().size()];
         for(int i = 0; i < activations.length; i++){
             activations[i] = new ArrayList<>();
         }
@@ -120,14 +128,14 @@ public class CompositionController {
         }
     }
 
-    public int selectService() {
+    public int[] selectService() {
         int beh = network.selectBehavior();
         for(int i = 0; i < network.getBehaviors().size(); i++){
             Behavior behavior = network.getBehaviors().get(i);
             activations[i].add( behavior.getActivation() );
         }
-        if( !network.isExecutable()) return -1;
-        return beh;
+        if( !network.isExecutable()) return new int[]{-1, beh};
+        return new int[]{beh, beh};
     }
 
     public boolean executeService(int idx, int simulationStep) {

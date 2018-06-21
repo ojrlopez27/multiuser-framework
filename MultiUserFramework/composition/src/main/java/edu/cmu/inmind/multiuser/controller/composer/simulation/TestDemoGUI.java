@@ -7,12 +7,10 @@ import edu.cmu.inmind.multiuser.controller.composer.bn.Behavior;
 import edu.cmu.inmind.multiuser.controller.composer.bn.BehaviorNetwork;
 import edu.cmu.inmind.multiuser.controller.composer.bn.CompositionController;
 import edu.cmu.inmind.multiuser.controller.composer.devices.Device;
+import edu.cmu.inmind.multiuser.controller.composer.services.*;
 import edu.cmu.inmind.multiuser.controller.composer.ui.BNGUIVisualizer;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 import static edu.cmu.inmind.multiuser.controller.composer.group.User.ADMIN;
 
@@ -45,7 +43,6 @@ public class TestDemoGUI {
     private static int seqIdx = 0;
 
     public static void main(String args[]) throws Exception{
-
         shouldPlot = true;
         init();
 
@@ -74,7 +71,7 @@ public class TestDemoGUI {
 
     public static int runOneStep(int step) {
         compositionController.updateDeviceState();
-        int idx = compositionController.selectService();
+        int idx = compositionController.selectService()[0];
         if( idx >= 0 ){
             //checkCorrectSequence(idx);
             compositionController.executeService(idx, step);
@@ -100,6 +97,7 @@ public class TestDemoGUI {
 
         // create services
         compositionController.instantiateServices(
+                getMapOfServices(),
                 new Pair<>(Arrays.asList("bob", "alice"), getUserServices()),
                 new Pair<>(Arrays.asList(ADMIN), getServerServices() ));
 
@@ -224,5 +222,20 @@ public class TestDemoGUI {
                 compositionController.getBehActivated(),
                 compositionController.getActivationBeh(),
                 compositionController.isExecutable());
+    }
+
+    private static Map<String,Class<? extends Service>> getMapOfServices() {
+        Map<String, Class<? extends Service>> map = new HashMap<>();
+        map.put("get-self-location", LocationService.class);
+        map.put("find-place-location", FindPlaceService.class);
+        map.put("get-distance-to-place", DistanceCalculatorService.class);
+        map.put("calculate-nearest-place", WhoIsNearestService.class);
+        map.put("share-grocery-list", ShareGroceryListService.class);
+        map.put("do-grocery-shopping", DoGroceryShoppingService.class);
+        map.put("do-beer-shopping", DoBeerShoppingService.class);
+        map.put("go-home-decor", GoHomeDecoService.class);
+        map.put("organize-party", OrganizePartyService.class);
+        map.put("go-pharmacy", GoPharmacyService.class);
+        return map;
     }
 }

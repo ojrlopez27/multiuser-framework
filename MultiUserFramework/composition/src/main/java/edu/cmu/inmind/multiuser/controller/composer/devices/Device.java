@@ -15,8 +15,8 @@ import java.util.concurrent.ConcurrentSkipListSet;
 /**
  * Created by oscarr on 4/26/18.
  */
-public class Device {
-    public enum TYPES{ PHONE, TABLET, SERVER}
+public abstract class Device {
+    public enum TYPES{ PHONE, TABLET, SERVER, SMARTWATCH}
     public final static String SERVER = "server";
 
     protected String name;
@@ -24,6 +24,7 @@ public class Device {
     protected ConcurrentSkipListSet<String> state;
     protected BehaviorNetwork network;
     protected String belongsToUser;
+    protected TYPES type;
 
     // QoS device attributes
     protected boolean isGPSturnedOn = true;
@@ -32,13 +33,15 @@ public class Device {
 
     public Device(){}
 
-    public Device(String name, BehaviorNetwork network, String belongsToUser){
+    public Device(BehaviorNetwork network, String belongsToUser){
         this.network = network;
         this.state = network.getState();
-        this.name = name;
         this.behServMap = new HashMap<>();
         this.belongsToUser = belongsToUser;
+        this.name = belongsToUser + Behavior.TOKEN + getType().toString().toLowerCase();
     }
+
+    public abstract TYPES getType();
 
     public Device setGPSturnedOn(boolean GPSturnedOn) {
         isGPSturnedOn = GPSturnedOn;
