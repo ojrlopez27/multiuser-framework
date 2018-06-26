@@ -9,7 +9,8 @@ import java.util.List;
  * Created by oscarr on 5/22/18.
  */
 public class User {
-    public final static String ADMIN = "admin";
+    /** Services that runs on the cloud are under the CLOUD ownership **/
+    public final static String CLOUD = "cloud";
     private String name;
     private List<Device> devices = new ArrayList<>();
 

@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static edu.cmu.inmind.multiuser.controller.composer.group.User.ADMIN;
+import static edu.cmu.inmind.multiuser.controller.composer.group.User.CLOUD;
 import static edu.cmu.inmind.multiuser.controller.composer.simulation.SimuConstants.*;
 
 /**
@@ -30,13 +30,13 @@ public class TestDemo {
         compositionController.createDevice("bob", Device.TYPES.PHONE).setGPSturnedOn(false);
         compositionController.createDevice("bob", Device.TYPES.TABLET).setBatteryLevel(6);
         compositionController.createDevice("alice", Device.TYPES.PHONE);
-        compositionController.createDevice( ADMIN, Device.TYPES.SERVER);
+        compositionController.createDevice(CLOUD, Device.TYPES.SERVER);
 
         // create services
         compositionController.instantiateServices(
                 getMapOfServices(),
                 new Pair<>(Arrays.asList("bob", "alice"), getUserServices()),
-                new Pair<>(Arrays.asList(ADMIN), getServerServices() ));
+                new Pair<>(Arrays.asList(CLOUD), getServerServices() ));
 
         // set system/user goals and states
         compositionController.addState(Arrays.asList("bob-party-not-organized", "alice-party-not-organized" ));

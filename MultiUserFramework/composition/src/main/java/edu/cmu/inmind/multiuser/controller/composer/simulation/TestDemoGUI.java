@@ -12,7 +12,7 @@ import edu.cmu.inmind.multiuser.controller.composer.ui.BNGUIVisualizer;
 
 import java.util.*;
 
-import static edu.cmu.inmind.multiuser.controller.composer.group.User.ADMIN;
+import static edu.cmu.inmind.multiuser.controller.composer.group.User.CLOUD;
 
 /**
  * Created by oscarr on 4/26/18.
@@ -28,7 +28,7 @@ public class TestDemoGUI {
             "alice-phone-get-distance-to-place",
             "bob-phone-find-place-location",
             "bob-phone-get-distance-to-place",
-            "server-admin-calculate-nearest-place",
+            "cloud-calculate-nearest-place",
             "alice-phone-share-grocery-list",
             "bob-phone-do-grocery-shopping",
             "alice-phone-find-place-location",
@@ -93,13 +93,13 @@ public class TestDemoGUI {
         compositionController.createDevice("bob", Device.TYPES.PHONE).setGPSturnedOn(false);
         compositionController.createDevice("bob", Device.TYPES.TABLET).setBatteryLevel(6);
         compositionController.createDevice("alice", Device.TYPES.PHONE);
-        compositionController.createDevice( ADMIN, Device.TYPES.SERVER);
+        compositionController.createDevice(CLOUD, Device.TYPES.SERVER);
 
         // create services
         compositionController.instantiateServices(
                 getMapOfServices(),
                 new Pair<>(Arrays.asList("bob", "alice"), getUserServices()),
-                new Pair<>(Arrays.asList(ADMIN), getServerServices() ));
+                new Pair<>(Arrays.asList(CLOUD), getServerServices() ));
 
         // set system/user goals and states
         compositionController.addState(Arrays.asList("bob-party-not-organized", "alice-party-not-organized" ));

@@ -8,8 +8,7 @@ import edu.cmu.inmind.multiuser.controller.composer.services.Service;
 
 import java.util.*;
 
-import static edu.cmu.inmind.multiuser.controller.composer.devices.Device.SERVER;
-import static edu.cmu.inmind.multiuser.controller.composer.group.User.ADMIN;
+import static edu.cmu.inmind.multiuser.controller.composer.group.User.CLOUD;
 
 /**
  * Created by oscarr on 5/22/18.
@@ -43,7 +42,7 @@ public class CompositionController {
             usersMap.put(name, new User(name));
             users.add(name);
         }
-        usersMap.put(ADMIN, new User(ADMIN));
+        usersMap.put(CLOUD, new User(CLOUD));
     }
 
     public Device createDevice(String userName, Class<? extends Device> deviceClass){
@@ -83,11 +82,11 @@ public class CompositionController {
             for(String user : (List<String>)mapping.fst) {
                 for (Device device : usersMap.get(user).getDevices()) {
                     // let's install the services (behaviors) to each device
-                    if(user.equals(ADMIN)){
+                    if(user.equals(CLOUD)){
                         Map<String, String> userMappings = new HashMap<>();
                         int idx = 1;
                         for(User userObj : usersMap.values()){
-                            if(!userObj.getName().equals(ADMIN)){
+                            if(!userObj.getName().equals(CLOUD)){
                                 userMappings.put("user" + (idx), userObj.getName() );
                                 idx++;
                             }
