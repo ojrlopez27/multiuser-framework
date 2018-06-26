@@ -73,7 +73,7 @@ public class TestDemoGUI {
         compositionController.updateDeviceState();
         int idx = compositionController.selectService()[0];
         if( idx >= 0 ){
-            //checkCorrectSequence(idx);
+            checkCorrectSequence(idx);
             compositionController.executeService(idx, step);
         }
         addEventToState(step);

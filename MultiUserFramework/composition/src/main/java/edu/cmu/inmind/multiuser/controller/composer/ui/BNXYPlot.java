@@ -134,11 +134,12 @@ public class BNXYPlot extends JPanel {
                 XYBoxAnnotation annotation = new XYBoxAnnotation(x1, y1, x2, y2, new BasicStroke(1.0F),
                         Color.BLACK, listExecutables.get(x)? new Color(255, 0, 0, 125) : Color.WHITE);
                 chart.getXYPlot().addAnnotation(annotation);
-                if(listExecutables.get(x)) plotObserver.onWinnerService(name);
-
                 XYTextAnnotation annotationText = new XYTextAnnotation( name, (x + offsetAnnotation + offset), y);
                 annotationText.setFont(new Font("SansSerif", Font.ITALIC, 11));
                 chart.getXYPlot().addAnnotation( annotationText );
+            }
+            if(x == activations.size() - 1 && listExecutables.get(x)){
+                plotObserver.onWinnerService(name);
             }
         }
     }

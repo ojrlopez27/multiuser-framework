@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListSet;
 
+import static edu.cmu.inmind.multiuser.controller.composer.group.User.ADMIN;
+
 /**
  * Created by oscarr on 4/26/18.
  */
@@ -90,8 +92,8 @@ public abstract class Device {
     public void addServices(List<Behavior> behaviors, Map<String, String>... optionalMappings) {
         for (Behavior behavior : behaviors) {
             Service service = Service.getService(behavior, name, state);
-            if(name.equals(SERVER)){
-                behavior = behavior.groundByReplacing(name + Behavior.TOKEN + belongsToUser, optionalMappings[0]);
+            if(name.contains(ADMIN)){
+                behavior = behavior.groundByReplacing(belongsToUser, optionalMappings[0]);
             }else{
                 behavior = behavior.groundByPrefix(name, belongsToUser);
             }

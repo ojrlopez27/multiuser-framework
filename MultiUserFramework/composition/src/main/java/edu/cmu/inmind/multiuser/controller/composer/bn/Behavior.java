@@ -306,6 +306,7 @@ public class Behavior implements Comparable<Behavior>{
 			for(Premise precond : precondRow ){
 				if(states.contains(precond.getLabel())){
 					executable = true;
+					break;
 				}
 			}
 			if( !executable ) break;
@@ -406,6 +407,7 @@ public class Behavior implements Comparable<Behavior>{
 	}
 
 	public List<Premise> getStateMatches() {
+		if(stateMatches == null) stateMatches = new ArrayList<>();
 		return stateMatches;
 	}
 

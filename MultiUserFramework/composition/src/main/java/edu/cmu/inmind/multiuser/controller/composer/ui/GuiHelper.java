@@ -5,6 +5,7 @@ package edu.cmu.inmind.multiuser.controller.composer.ui;
 import javax.swing.*;
 import javax.swing.text.html.HTMLDocument;
 import java.awt.*;
+import java.util.*;
 
 /**
  * Created by oscarr on 3/1/18.
@@ -16,6 +17,14 @@ public class GuiHelper {
     public static double widthSecondPanel;
     public static double heightSecondPanel;  //780 - heightFirstPanel;
     public static double widthThirdPanel;
+    private static final String tableStyle = "font-family: Calibri, Lucida Console, Menlo; width: 100%;";//  border-collapse: collapse;  ";
+    private static final String commonStyle = "font-size: 11px; text-align: left; padding: 0px;"; //border: 1px solid #dddddd;"; //padding: 0px; "; //
+    private static final String header = "<head> <style> " +
+            "table {" + tableStyle + "} " +
+            "th {" + commonStyle + ";} " +
+            "td {" + commonStyle + ";} " +
+            "tr:nth-child(even) {background-color: #dddddd;}" +
+            "</style></head>";
 
     static {
         init( new Dimension(1420, 780)) ;
@@ -31,11 +40,17 @@ public class GuiHelper {
     }
 
     public static String convertToHTML(String text, String token) {
-        String formattedText = "<HTML>";
-        for( String line : text.split(token) ){
-            formattedText += line + "<br>";
+        return convertToHTML(Arrays.asList(text.split(", ")));
+    }
+
+    public static String convertToHTML(java.util.List<String> text){
+        String formattedText = "<HTML>" + header;
+        for( String line : text ){
+            String[] split = line.split(":");
+            formattedText += String.format("<tr><td>%s</td><td>%s</td></tr>",
+                    split[0], split.length>1? split[1] : "");
         }
-        formattedText += "</HTML>";
+        formattedText += "</table></HTML>";
         return formattedText;
     }
 
@@ -58,6 +73,10 @@ public class GuiHelper {
 
         public void addText(String txt){
             text.append( GuiHelper.convertToHTML(txt, ", "));
+        }
+
+        public void addText(java.util.List<String> txt){
+            text.append( GuiHelper.convertToHTML(txt) );
         }
 
         public void reset(){

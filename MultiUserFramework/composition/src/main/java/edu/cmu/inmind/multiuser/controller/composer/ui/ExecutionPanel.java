@@ -6,6 +6,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * Created by oscarr on 6/18/18.
@@ -22,12 +24,14 @@ public class ExecutionPanel extends JPanel implements ActionListener, PlotObserv
     private final static String userSelectCommand = "userSelection";
     private final static String selectButtonCommand = "selectButton";
     private final static String pauseButtonCommand = "pauseButton";
+    private java.util.List<String> listWinners;
 
     public ExecutionPanel(LayoutManager layout, double width, double height, BehaviorNetwork network,
                           BNGUIVisualizer visualizer) {
         super(layout);
         this.network = network;
         this.visualizer = visualizer;
+        this.listWinners = new ArrayList<>();
         setBorder(BorderFactory.createTitledBorder(BorderFactory.createLoweredBevelBorder(), " Control of Execution ") );
         setPreferredSize(new Dimension((int) width, (int) height));
 
@@ -68,13 +72,13 @@ public class ExecutionPanel extends JPanel implements ActionListener, PlotObserv
         c.insets = new Insets(20,10,0,10);
         c.gridx = 0;
         c.gridy = 1;
-        this.add(new JLabel("(Last) Winner Service:"), c);
+        this.add(new JLabel("Winner Services:"), c);
 
         c.insets = new Insets(10,10,0,10);
         c.gridx = 0;
         c.gridy = 2;
         winningService = new GuiHelper.MultilinePane();
-        winningService.addText("NO WINNING SERVICE");
+        winningService.addText("NO WINNER SERVICES");
         winningService.build();
         winningService.setPreferredSize(new Dimension((int)(width - 60), (int) (height * 0.25)));
         JScrollPane scrollPane = new JScrollPane(winningService);
@@ -117,9 +121,10 @@ public class ExecutionPanel extends JPanel implements ActionListener, PlotObserv
 
     @Override
     public void onWinnerService(String shortName) {
-        winningService.reset();
-        winningService.addText(String.format("%s&emsp;&emsp;%s", shortName,
+        listWinners.add(0, String.format("%s:%s", shortName,
                 network.getBehaviorByShortName(shortName).getName()));
+        winningService.reset();
+        winningService.addText(listWinners);
         winningService.build();
     }
 }

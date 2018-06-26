@@ -484,10 +484,7 @@ public class BehaviorNetwork {
                         int cardinalityCy = beh.getPreconditions().size();
                         double temp = beh.getActivation() * (phi/gamma) * (1d / cardinalityMj) * (1d / cardinalityCy);
                         activation[beh.getIdx()] += temp;
-                        if( verboseVal ) {
-                            System.out.println(behaviors.get(indexBehavior).getName() + " spreads " + temp + " forward to " +
-                                    beh.getName() + " for " + addPremise);
-                        }
+                        printToConsole(verboseVal, "spreadsForward", indexBehavior, temp, beh, addPremise);
                     }
                 }
             }
@@ -524,12 +521,9 @@ public class BehaviorNetwork {
                             int cardinalityAy = sparseBehaviors.get(j).getAddList().size();
                             double temp = beh.getActivation() * (1d / cardinalityAj) * (1d / cardinalityAy);
                             activation[sparseBehaviors.get(j).getIdx()] += temp;
-                            if( verboseVal ) {
-                                System.out.println( String.format("%s spreads %s backward to %s for %s",
-                                        beh.getName(), temp, sparseBehaviors.get(j).getName(), cond.getLabel()) );
-                            }
+                            printToConsole(verboseVal, "spreadsBackward", beh, temp,
+                                    sparseBehaviors.get(j), cond.getLabel());
                         }
-
                     }
                 }
             }
@@ -571,10 +565,7 @@ public class BehaviorNetwork {
                         temp = behx.getActivation() * (delta / gamma) * (1d / cardinalityUj) * (1d / cardinalityDy);
                         activation[behy.getIdx()] += temp;//Math.max(activationTemp, sparseBehaviors.get(j).getActivationPrior());
                     }
-                    if( verboseVal ) {
-                        System.out.println(behx.getName() + " decreases (inhibits)" + behy.getName() + " with " + temp +
-                                " for " + cond);
-                    }
+                    printToConsole(verboseVal, "takesAway", behx, behy, temp, cond);
                 }
             }
         }
@@ -636,12 +627,6 @@ public class BehaviorNetwork {
 //				}
 //			}
 //		}
-
-        for(int i = 0; i < behaviors.size(); i++){
-            if( verboseVal ) {
-//                System.out.println("activation-level " + behaviors.get(i).getName() + ": " + behaviors.get(i).getActivation());
-            }
-        }
     }
 
     /**
@@ -673,25 +658,8 @@ public class BehaviorNetwork {
             indexBehActivated = getHighestActivationWithTheta();
         }
         executable = false;
-        if( verboseTree ) {
-            System.out.println(LEVEL_2 + "STATE: " + Arrays.toString(states.toArray()));
-            System.out.println(LEVEL_2 + "BEHAVIOR (B), ACTIVATION (AC), PRECONDITIONS THAT ARE TRUE (PT), LIST OF PRECONDITIONS (LP), So:  |-- B  AC  (PT) -> LP");
-        }
-        for( Behavior beh : behaviors){
-            if( verboseTree ) {
-                System.out.println(LEVEL_3 + CommonUtils.padRight( beh.getName(), padBehaviorName)
-                        + CommonUtils.padRight(beh.getActivation(), 10) + "("+beh.getNumMatches()+") -> "
-                        + beh.getStateMatches().toString());
-            }
-        }
-        if( verboseTree ) {
-            System.out.println(LEVEL_2 + "THETA (THRESHOLD): " + theta );
-        }
         if( behaviorActivated ){
             statesOutput = Arrays.toString(states.toArray());
-            if(verboseTree ) {
-                System.out.println(LEVEL_2 + "EXECUTING BEHAVIOR: " + behaviors.get(indexBehActivated).getName());
-            }
             if( !shouldWaitForUserSelection || pickBehaviorNow ) {
                 pickBehaviorNow = false;
                 executable = true;
@@ -699,6 +667,7 @@ public class BehaviorNetwork {
             }
             behaviors.get(indexBehActivated).setActivated(true);
         }
+        printToConsole(verboseTree, "activateBehavior", behaviorActivated);
         return indexBehActivated;
     }
 
@@ -804,14 +773,11 @@ public class BehaviorNetwork {
      * @return
      */
     public int selectBehavior() {
-        if(verboseTree) System.out.println(LEVEL_1 + "BEHAVIOR NETWORK DECISION CYCLE: " + cycle);
         if (activations == null) {
             setBehaviors(behaviors, behaviors.size() + 1);
         }
         activations[behaviors.size()] = theta;
-        if (verboseVal) {
-            System.out.println(String.format("\nStep: %s.\tgoals achieved: %s,\tgoals: %s",cont, goalsResolved.size(), goals.size()));
-        }
+        printToConsole(verboseTree, "selectBehavior", cycle);
         computeActivation();
         computeLinks();
         updateActivation();
@@ -828,11 +794,9 @@ public class BehaviorNetwork {
      */
     private void recordActivations(){
         for (int i = 0; i < behaviors.size(); i++) {
-            Behavior b = behaviors.get(i);
-            if (verboseVal) {
-                System.out.println("Behavior: " + b.getName() + "  activation: " + b.getActivation());
-            }
-            activations[i] = behaviors.get(i).getActivation();
+            Behavior beh = behaviors.get(i);
+            activations[i] = beh.getActivation();
+            printToConsole(verboseVal, "recordActivations", beh);
         }
         if (indexBehActivated != -1) {
             activations[behaviors.size()] = behaviors.get(indexBehActivated).getActivation();
@@ -842,10 +806,7 @@ public class BehaviorNetwork {
     public void checkExecute(){
         if( !executable){
             theta *= 0.9;
-            if( verboseVal ) {
-                System.err.println("None of the executable behaviors has accumulated enough activation to become active");
-                System.out.println("Theta: " + theta);
-            }
+            printToConsole(verboseVal, "checkExecute");
         }else{
             cycle = 1;
         }
@@ -1078,5 +1039,61 @@ public class BehaviorNetwork {
 
     public void shouldWaitForSync(boolean shouldWaitForSync){
         this.shouldWaitForSync = shouldWaitForSync;
+    }
+
+    /**
+     * This method prints out to console when the verbose is set to true
+     * @param associatedMethod
+     */
+    private void printToConsole(boolean shouldPrint, String associatedMethod, Object... params) {
+        if(shouldPrint) {
+            switch (associatedMethod){
+                case "activateBehavior":
+                    System.out.println(LEVEL_2 + "STATE: " + Arrays.toString(states.toArray()));
+                    System.out.println(LEVEL_2 + "BEHAVIOR (B), ACTIVATION (AC), PRECONDITIONS THAT ARE TRUE (PT), LIST OF PRECONDITIONS (LP), So:  |-- B  AC  (PT) -> LP");
+                    for (Behavior beh : behaviors) {
+                        System.out.println(LEVEL_3 + CommonUtils.padRight(beh.getName(), padBehaviorName)
+                                + CommonUtils.padRight(beh.getActivation(), 10) + "(" + beh.getNumMatches() + ") -> "
+                                + beh.getStateMatches().toString());
+                    }
+                    System.out.println(LEVEL_2 + "THETA (THRESHOLD): " + theta);
+                    if ((Boolean) params[0])
+                        System.out.println(LEVEL_2 + "EXECUTING BEHAVIOR: " + behaviors.get(indexBehActivated).getName());
+                    break;
+
+                case "spreadsForward":
+                    System.out.println(behaviors.get((Integer) params[0]).getName() + " spreads " + params[1] +
+                            " forward to " + ((Behavior) params[2]).getName() + " for " + params[3]);
+                    break;
+
+                case "spreadsBackward":
+                    System.out.println(String.format("%s spreads %s backward to %s for %s",
+                            ((Behavior) params[0]).getName(), params[1], ((Behavior) params[2]).getName(), params[3]));
+                    break;
+
+                case "takesAway":
+                    System.out.println(((Behavior) params[0]).getName() + " decreases (inhibits)" +
+                            ((Behavior) params[1]).getName() + " with " + params[2] + " for " + params[3]);
+                    break;
+
+                case "selectBehavior":
+                    System.out.println(LEVEL_1 + "BEHAVIOR NETWORK DECISION CYCLE: " + cycle);
+                    if (verboseVal) {
+                        System.out.println(String.format("\nStep: %s.\tgoals achieved: %s,\tgoals: %s", cont,
+                                goalsResolved.size(), goals.size()));
+                    }
+                    break;
+
+                case "recordActivations":
+                    System.out.println("Behavior: " + ((Behavior)params[0]).getName() + "  activation: " +
+                            ((Behavior)params[0]).getActivation());
+                    break;
+
+                case "checkExecute":
+                    System.err.println("None of the executable behaviors has accumulated enough activation to become active");
+                    System.out.println("Theta: " + theta);
+                    break;
+            }
+        }
     }
 }
