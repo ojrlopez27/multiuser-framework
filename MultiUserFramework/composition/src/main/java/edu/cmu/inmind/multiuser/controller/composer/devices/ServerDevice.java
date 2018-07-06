@@ -22,7 +22,7 @@ public class ServerDevice extends Device {
     }
 
     @Override
-    public synchronized boolean executeService(String serviceName, int simulationStep){
-        return super.executeService(serviceName, simulationStep);
+    public synchronized boolean executeService(String serviceName){
+        return super.executeService(serviceName);
     }
 }

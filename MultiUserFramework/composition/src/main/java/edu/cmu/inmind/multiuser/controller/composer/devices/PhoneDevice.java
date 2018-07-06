@@ -19,11 +19,10 @@ public class PhoneDevice extends Device {
     }
 
     @Override
-    public synchronized boolean executeService(String serviceName, int simulationStep){
-        boolean performed = super.executeService(serviceName, simulationStep);
+    public synchronized boolean executeService(String serviceName){
+        boolean performed = super.executeService(serviceName);
         String prefix = belongsToUser + Behavior.TOKEN;
-        if(simulationStep <= S3_BOB_LOCATION)
-            addState(prefix + "place-name-provided");
+        addStates(prefix + "place-name-provided");
         return performed;
     }
 }

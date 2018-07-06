@@ -18,10 +18,8 @@ public class DoGroceryShoppingService extends Service {
     }
 
     @Override
-    public boolean execute(int simulationStep) {
-        if(simulationStep == S12_ALICE_DO_GROCERY) {
-            network.triggerPostconditions(behavior, Arrays.asList("grocery-shopping-done"));
-        }
+    public boolean execute(Object... params) {
+        network.triggerPostconditions(behavior, Arrays.asList("grocery-shopping-done"));
         return true;
     }
 }

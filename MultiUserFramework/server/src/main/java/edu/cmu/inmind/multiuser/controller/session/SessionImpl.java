@@ -111,6 +111,7 @@ public class SessionImpl implements Session, CommonUtils.NamedRunnable, Orchestr
             this.fullAddress = fullAddress;
             if(msg != null) {
                 this.sessionCommController = new ServerCommController(fullAddress, id, msg);
+                this.sessionCommController.setDebugMode( config.isDebugMode() );
                 closeableObjects.add( sessionCommController );
             }
         }

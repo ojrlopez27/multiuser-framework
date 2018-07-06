@@ -16,7 +16,7 @@ public class ShareGroceryListService extends Service {
     }
 
     @Override
-    public boolean execute(int simulationStep) {
+    public boolean execute(Object... params) {
         if( user.equals("bob") ) hasShoppingList = false;
         else hasShoppingList = true;
 

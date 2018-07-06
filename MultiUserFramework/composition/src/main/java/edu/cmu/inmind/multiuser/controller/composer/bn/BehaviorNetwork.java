@@ -213,7 +213,7 @@ public class BehaviorNetwork {
 
     public String getStateString(){
         String result = "";
-        if(states != null) {
+        if(states != null && !states.isEmpty()) {
             for( String state : states ){
                 result += state + ", ";
             }
@@ -239,7 +239,7 @@ public class BehaviorNetwork {
                 this.states = new ConcurrentSkipListSet<>(states);
             }else{
                 for(String state : states){
-                    this.states.add(state);
+                    if( !this.states.contains(state) ) this.states.add(state);
                 }
             }
             notifyStateObservers();
@@ -1039,6 +1039,11 @@ public class BehaviorNetwork {
 
     public void shouldWaitForSync(boolean shouldWaitForSync){
         this.shouldWaitForSync = shouldWaitForSync;
+    }
+
+    public void resetState(){
+        states.clear();
+        notifyStateObservers();
     }
 
     /**

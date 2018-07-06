@@ -86,6 +86,7 @@ public class SessionManager implements CommonUtils.NamedRunnable, SessionImpl.Se
         if( config.isTCPon() ) {
             initializeBrokers();
             serverCommController = new ServerCommController(fullAddress, serviceId, null);
+            serverCommController.setDebugMode( config.isDebugMode() );
             closeableObjects.add(serverCommController);
         }
     }

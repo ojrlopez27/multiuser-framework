@@ -113,8 +113,8 @@ public class CompositionController {
         network.endMeansAnalysis( users );
     }
 
-    public void setGoals(List<String> goals) {
-        network.setGoals(goals);
+    public void setGoals(String... goals) {
+        network.setGoals(Arrays.asList(goals));
     }
 
     public boolean hasMoreGoals() {
@@ -137,11 +137,11 @@ public class CompositionController {
         return new int[]{beh, beh};
     }
 
-    public boolean executeService(int idx, int simulationStep) {
+    public boolean executeService(int idx) {
         // executing service
         Behavior selectedBehavior = network.getBehaviors().get(idx);
         boolean performed = deviceServiceMap.get(selectedBehavior)
-                .executeService(selectedBehavior.getName(), simulationStep);
+                .executeService(selectedBehavior.getName());
 
         // keep a record of those (abstract) services that have been activated per user so
         // we don't activate them in the future (e.g., if location is executed by phone, we
@@ -211,11 +211,16 @@ public class CompositionController {
         return result;
     }
 
-    public void addState(List<String> states) {
-        network.setState(states);
+    public void addState(String... states) {
+        network.setState(Arrays.asList(states));
     }
 
-    public void removeState(String state) {
+    public void removeStates(String... states) {
+        for(String state : states)
+            network.getState().remove(state);
+    }
+
+    public void removeState(String state){
         network.getState().remove(state);
     }
 

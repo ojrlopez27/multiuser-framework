@@ -27,6 +27,7 @@ public class Config {
     private Class<? extends ProcessOrchestrator> orchestrator;
     private int numOfSockets;
     private int corePoolSize;
+    private boolean isDebugMode;
 
 
     private Config( Builder builder) {
@@ -44,6 +45,7 @@ public class Config {
         this.serviceConfigPath = builder.serviceConfigPath;
         this.numOfSockets = builder.numOfSockets;
         this.corePoolSize = builder.corePoolSize;
+        this.isDebugMode = builder.isDebugMode;
         ExceptionHandler.setExceptionTraceLevel(this.exceptionTraceLevel);
     }
 
@@ -177,6 +179,10 @@ public class Config {
         return this;
     }
 
+    public boolean isDebugMode() {
+        return isDebugMode;
+    }
+
     /** ========================================================== **/
 
     public static class Builder{
@@ -194,6 +200,7 @@ public class Config {
         private Class<? extends ProcessOrchestrator> orchestrator;
         public int numOfSockets = 1;
         private int corePoolSize = 0;
+        private boolean isDebugMode;
 
         public Builder setSessionManagerPort(int sessionManagerPort) {
             if( sessionManagerPort <= 0 ){
@@ -309,6 +316,11 @@ public class Config {
                 ExceptionHandler.handle( new MultiuserException(ErrorMessages.INCORRECT_CORE_POOL_SIZE) );
             }
             this.corePoolSize = corePoolSize;
+            return this;
+        }
+
+        public Builder setIsDebugMode(boolean isDebugMode){
+            this.isDebugMode = isDebugMode;
             return this;
         }
     }

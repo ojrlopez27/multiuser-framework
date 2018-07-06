@@ -32,11 +32,10 @@ public abstract class Service {
     /**
      * This method executes whatever the service is supposed to do, according to the simulation step (which
      * can be ignored for some services).
-     * @param simulationStep
      * @return it returns whether the service performed any action. For instance, if simulationStep condition
      * is not met, then it will not perform any action and will return false, otherwise true.
      */
-    public abstract boolean execute(int simulationStep);
+    public abstract boolean execute(Object... params);
 
     public void setBehavior(Behavior behavior) {
         this.behavior = behavior;

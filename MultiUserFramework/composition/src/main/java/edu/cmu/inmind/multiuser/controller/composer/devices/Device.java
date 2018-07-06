@@ -6,10 +6,7 @@ import edu.cmu.inmind.multiuser.controller.composer.bn.BehaviorNetwork;
 import edu.cmu.inmind.multiuser.controller.composer.services.*;
 import edu.cmu.inmind.multiuser.controller.log.Log4J;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import static edu.cmu.inmind.multiuser.controller.composer.group.User.CLOUD;
@@ -19,14 +16,12 @@ import static edu.cmu.inmind.multiuser.controller.composer.group.User.CLOUD;
  */
 public abstract class Device {
     public enum TYPES{ PHONE, TABLET, SERVER, SMARTWATCH}
-    public final static String SERVER = "server";
 
     protected String name;
     protected Map<String, Pair<Behavior, Service>> behServMap;
     protected ConcurrentSkipListSet<String> state;
     protected BehaviorNetwork network;
     protected String belongsToUser;
-    protected TYPES type;
 
     // QoS device attributes
     protected boolean isGPSturnedOn = true;
@@ -61,28 +56,30 @@ public abstract class Device {
     }
 
     public synchronized void updateState() {
-        if( batteryLevel >= 7 ) addState(addPrefix("high-battery"));
-        else if( batteryLevel >= 3 ) addState(addPrefix("medium-battery"));
-        else addState(addPrefix("low-battery"));
+        List<String> states = new ArrayList<>();
+        if( batteryLevel >= 7 ) states.add(addPrefix("high-battery"));
+        else if( batteryLevel >= 3 ) states.add(addPrefix("medium-battery"));
+        else states.add(addPrefix("low-battery"));
 
-        if( isGPSturnedOn ) addState( addPrefix("gps-turned-on" ));
-        else addState(addPrefix("gps-turned-off"));
+        if( isGPSturnedOn ) states.add( addPrefix("gps-turned-on" ));
+        else states.add(addPrefix("gps-turned-off"));
 
-        if( latency > 100 ) addState( addPrefix("high-latency" ));
-        else if( latency > 50 ) addState( addPrefix("medium-latency" ));
-        else addState( addPrefix("low-latency" ));
+        if( latency > 100 ) states.add( addPrefix("high-latency" ));
+        else if( latency > 50 ) states.add( addPrefix("medium-latency" ));
+        else states.add( addPrefix("low-latency" ));
+
+        addStates( states.toArray( new String[states.size()] ) );
     }
 
-    public synchronized boolean executeService(String serviceName, int simulationStep){
-        Log4J.info(this, String.format("%s device is executing service: %s at simulation step: %s",
-                name, serviceName, simulationStep));
-        boolean perfomed = behServMap.get(serviceName).snd.execute(simulationStep);
+    public synchronized boolean executeService(String serviceName){
+        Log4J.info(this, String.format("%s device is executing service: %s", name, serviceName));
+        boolean perfomed = behServMap.get(serviceName).snd.execute();
         //TODO: each subclass has to do something with the actual service
         return perfomed;
     }
 
-    public synchronized void addState(String premise){
-        if( !state.contains(premise) ) state.add(premise);
+    public synchronized void addStates(String... states){
+        network.setState(Arrays.asList(states));
     }
 
     private String addPrefix(String premise){

@@ -39,8 +39,8 @@ public class TestDemo {
                 new Pair<>(Arrays.asList(CLOUD), getServerServices() ));
 
         // set system/user goals and states
-        compositionController.addState(Arrays.asList("bob-party-not-organized", "alice-party-not-organized" ));
-        compositionController.setGoals( Arrays.asList(  "grocery-shopping-done", "whatever" )); // "organize-party-done"
+        compositionController.addState("bob-party-not-organized", "alice-party-not-organized" );
+        compositionController.setGoals(   "grocery-shopping-done", "whatever" ); // "organize-party-done"
         // let's extract xxx-required preconditions
         compositionController.endMeansAnalysis();
 
@@ -50,7 +50,7 @@ public class TestDemo {
             compositionController.updateDeviceState();
             int idx = compositionController.selectService()[0];
             if( idx >= 0 ){
-                if( compositionController.executeService(idx, step) ) {
+                if( compositionController.executeService(idx) ) {
                     step++;
                 }
                 addEventToState(step);
@@ -78,60 +78,60 @@ public class TestDemo {
     private static void addEventToState(int simulationStep) {
         switch (simulationStep){
             case S8_ALICE_SHOP_LIST:
-                compositionController.addState(Arrays.asList("bob-grocery-shopping-not-done",
-                        "alice-grocery-shopping-not-done" ));
+                compositionController.addState("bob-grocery-shopping-not-done",
+                        "alice-grocery-shopping-not-done" );
                 break;
             case S11_ALICE_ADD_PREF:
                 compositionController.removeState("alice-is-closer-to-place");
                 compositionController.removeState("bob-is-closer-to-place");
                 compositionController.removeState("alice-place-location-provided");
-                compositionController.addState(Arrays.asList("alice-place-location-required",
-                        "alice-place-name-provided" ));
+                compositionController.addState("alice-place-location-required",
+                        "alice-place-name-provided" );
                 break;
             case S12_ALICE_DO_GROCERY:
-                compositionController.addState(Arrays.asList("alice-close-to-organic-supermarket" ));
+                compositionController.addState("alice-close-to-organic-supermarket" );
                 break;
             case S13_BOB_FIND_BEER:
                 compositionController.removeState("bob-place-location-provided");
-                compositionController.addState(Arrays.asList("bob-place-location-required",
+                compositionController.addState("bob-place-location-required",
                         "bob-place-name-provided",
-                        "bob-beer-shopping-not-done" ));
+                        "bob-beer-shopping-not-done" );
                 break;
             case S14_BOB_GO_BEER_SHOP:
                 compositionController.removeState("bob-grocery-shopping-required");
                 compositionController.removeState("alice-grocery-shopping-required");
                 compositionController.removeState("bob-grocery-shopping-not-done");
-                compositionController.addState(Arrays.asList("bob-driver-license-provided",
+                compositionController.addState("bob-driver-license-provided",
                         "bob-is-closer-to-place",
                         "bob-beer-shopping-not-done",
-                        "bob-beer-shopping-required" ));
+                        "bob-beer-shopping-required" );
                 break;
             case S15_BOB_FIND_HOME_DECO:
                 compositionController.removeState("bob-place-location-provided");
-                compositionController.addState( Arrays.asList("bob-place-location-required",
-                        "bob-place-name-provided"));
+                compositionController.addState( "bob-place-location-required",
+                        "bob-place-name-provided");
                 break;
             case S16_BOB_GO_HOME_DECO:
-                compositionController.addState(Arrays.asList("bob-is-closer-to-place",
-                        "bob-buy-decoration-required"));
+                compositionController.addState("bob-is-closer-to-place",
+                        "bob-buy-decoration-required");
                 break;
             case S17_ALICE_HEADACHE:
                 compositionController.removeState("bob-place-location-provided");
                 compositionController.removeState("bob-buy-decoration-required");
-                compositionController.addState(Arrays.asList("bob-place-location-required",
+                compositionController.addState("bob-place-location-required",
                         "bob-place-name-provided",
                         "bob-somebody-has-headache",
-                        "bob-no-medication-at-home" ));
+                        "bob-no-medication-at-home" );
                 break;
             case S18_BOB_COUPONS:
-                compositionController.addState(Arrays.asList("bob-has-coupons"));
+                compositionController.addState("bob-has-coupons");
                 break;
             case S19_BOB_GO_HOME_DECO:
-                compositionController.addState(Arrays.asList("bob-buy-decoration-required"));
+                compositionController.addState("bob-buy-decoration-required");
                 break;
             case S20_ALICE_GO_HOME_DECO:
-                compositionController.addState(Arrays.asList("alice-buy-decoration-required",
-                        "alice-is-closer-to-place"));
+                compositionController.addState("alice-buy-decoration-required",
+                        "alice-is-closer-to-place");
                 break;
         }
     }

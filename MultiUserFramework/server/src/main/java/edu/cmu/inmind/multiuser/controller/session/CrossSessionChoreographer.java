@@ -20,11 +20,12 @@ public class CrossSessionChoreographer {
         return instance;
     }
 
-    public void passMessage(String sessionFrom, String sessionTo, String message){
+    public void passMessage(String sessionFrom, String sessionTo, String message, String messageId){
         try {
             SessionMessage sessionMessage = new SessionMessage();
             sessionMessage.setSessionId(sessionFrom);
-            sessionMessage.setMessageId(Constants.CROSS_SESSION_MESSAGE);
+            sessionMessage.setMessageId(messageId);
+            sessionMessage.setRequestType(Constants.CROSS_SESSION_MESSAGE);
             sessionMessage.setPayload(message);
             ResourceLocator.getSession(sessionTo).getOrchestrator().process(CommonUtils.toJson(sessionMessage));
         }catch (Throwable throwable){
@@ -34,10 +35,10 @@ public class CrossSessionChoreographer {
 
 
 
-    public void passMessage(String sessionFrom, String message){
+    public void passMessage(String sessionFrom, String message, String messageId){
         for(String sessionId : ResourceLocator.getSessions().keySet()){
             if(!sessionFrom.equals(sessionId)){
-                passMessage(sessionFrom, sessionId, message);
+                passMessage(sessionFrom, sessionId, message, messageId);
             }
         }
     }

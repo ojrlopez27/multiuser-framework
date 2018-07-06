@@ -19,11 +19,8 @@ public class WhoIsNearestService extends Service{
     }
 
     @Override
-    public boolean execute(int simulationStep) {
-        if( simulationStep == S8_ALICE_SHOP_LIST) {
-            network.triggerPostconditions(behavior, Arrays.asList("bob-is-closer-to-place"));
-            return true;
-        }
-        return false;
+    public boolean execute(Object... params) {
+        network.triggerPostconditions(behavior, Arrays.asList("bob-is-closer-to-place"));
+        return true;
     }
 }

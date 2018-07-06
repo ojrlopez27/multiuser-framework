@@ -14,7 +14,7 @@ public class DistanceCalculatorService extends Service {
     }
 
     @Override
-    public boolean execute(int simulationStep) {
+    public boolean execute(Object... params) {
         network.triggerPostconditions(behavior);
         return true;
     }

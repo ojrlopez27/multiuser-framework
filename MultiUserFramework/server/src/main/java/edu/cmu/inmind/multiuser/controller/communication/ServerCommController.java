@@ -36,6 +36,8 @@ public class ServerCommController implements DestroyableCallback {
     private ZMQ.Poller items;
 
     private long timeout = 2500;
+    private long timeoutForDebug = 1000 * 60 * 60; // so we can test 1 hour without annoying disconnections messages
+    private boolean DEBUG_MODE = false;
 
     // Return address, if any
     private ZFrame replyTo;
@@ -94,7 +96,7 @@ public class ServerCommController implements DestroyableCallback {
             while ( !isDestroyed.get() ) {
                 try {
                     // Poll socket for a reply, with timeout
-                    if (items.poll(timeout) == -1) {
+                    if (items.poll( DEBUG_MODE? timeoutForDebug : timeout) == -1) {
                         break; // Interrupted
                     }
 
@@ -325,5 +327,9 @@ public class ServerCommController implements DestroyableCallback {
 
     public void setReconnect(int reconnect) {
         this.reconnect = reconnect;
+    }
+
+    public void setDebugMode(boolean isDebugMode){
+        DEBUG_MODE = isDebugMode;
     }
 }

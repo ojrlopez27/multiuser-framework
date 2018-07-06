@@ -16,10 +16,8 @@ public class GoHomeDecoService extends Service {
     }
 
     @Override
-    public boolean execute(int simulationStep) {
-        if (simulationStep >= S19_BOB_GO_HOME_DECO) {
-            network.triggerPostconditions(behavior);
-        }
+    public boolean execute(Object... params) {
+        network.triggerPostconditions(behavior);
         return true;
     }
 }
