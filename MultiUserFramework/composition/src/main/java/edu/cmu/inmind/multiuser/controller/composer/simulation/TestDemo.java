@@ -33,10 +33,7 @@ public class TestDemo {
         compositionController.createDevice(CLOUD, Device.TYPES.SERVER);
 
         // create services
-        compositionController.instantiateServices(
-                getMapOfServices(),
-                new Pair<>(Arrays.asList("bob", "alice"), getUserServices()),
-                new Pair<>(Arrays.asList(CLOUD), getServerServices() ));
+        compositionController.instantiateServices( getMapOfServices(), getMapOfServicesPerUser());
 
         // set system/user goals and states
         compositionController.addState("bob-party-not-organized", "alice-party-not-organized" );
@@ -57,6 +54,15 @@ public class TestDemo {
             }
         }
         System.exit(0);
+    }
+
+    private static Map<Pair<String, Device.TYPES>, List<String>> getMapOfServicesPerUser() {
+        Map<Pair<String, Device.TYPES>, List<String>> map = new HashMap<>();
+        map.put(new Pair("bob", Device.TYPES.PHONE), getUserServices());
+        map.put(new Pair("bob", Device.TYPES.TABLET), getUserServices());
+        map.put(new Pair("alice", Device.TYPES.PHONE), getUserServices());
+        map.put(new Pair(CLOUD, Device.TYPES.SERVER), getServerServices());
+        return map;
     }
 
     private static Map<String,Class<? extends Service>> getMapOfServices() {

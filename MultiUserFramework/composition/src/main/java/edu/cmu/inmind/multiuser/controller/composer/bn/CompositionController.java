@@ -68,37 +68,34 @@ public class CompositionController {
      * @param mappings      it contains a map where keys are user names and values are the names of the associated services
      */
     public void instantiateServices(Map<String, Class<? extends Service>> serviceMap,
-                                    Pair<List<String>, List<String>>... mappings) {
+                                    Map<Pair<String, Device.TYPES>, List<String>> mappings) {
 
         Service.setMapServices(serviceMap);
         // let's remove all abstract behaviors
         network.getBehaviors().clear();
-        for(Pair mapping : mappings) {
-            List<String> services = (List<String>) mapping.snd;
+        for(Pair<String, Device.TYPES> userDevicePair : mappings.keySet()) {
+            List<String> services = mappings.get(userDevicePair);
             List<Behavior> behaviors = new ArrayList<>();
             for (String service : services) {
                 behaviors.add(serviceBehaviorMap.get(service));
             }
-            for(String user : (List<String>)mapping.fst) {
-                for (Device device : usersMap.get(user).getDevices()) {
-                    // let's install the services (behaviors) to each device
-                    if(user.equals(CLOUD)){
-                        Map<String, String> userMappings = new HashMap<>();
-                        int idx = 1;
-                        for(User userObj : usersMap.values()){
-                            if(!userObj.getName().equals(CLOUD)){
-                                userMappings.put("user" + (idx), userObj.getName() );
-                                idx++;
-                            }
-                        }
-                        device.addServices(behaviors, userMappings);
-                    }else{
-                        device.addServices(behaviors);
+            Device device = usersMap.get(userDevicePair.fst).getDevice(userDevicePair.snd);
+            // let's install the services (behaviors) to the device
+            if(userDevicePair.fst.equals(CLOUD)){
+                Map<String, String> userMappings = new HashMap<>();
+                int idx = 1;
+                for(User userObj : usersMap.values()){
+                    if(!userObj.getName().equals(CLOUD)){
+                        userMappings.put("user" + (idx), userObj.getName() );
+                        idx++;
                     }
-                    // let's add grounded behaviors created in previous step
-                    network.addBehaviors(device.getBehaviors());
                 }
+                device.addServices(behaviors, userMappings);
+            }else{
+                device.addServices(behaviors);
             }
+            // let's add grounded behaviors created in previous step
+            network.addBehaviors(device.getBehaviors());
         }
         network.sortBehaviorsByName();
         serviceBehaviorMap = network.map();

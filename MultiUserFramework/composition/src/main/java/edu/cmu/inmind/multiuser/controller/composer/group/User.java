@@ -26,6 +26,13 @@ public class User {
         return devices;
     }
 
+    public Device getDevice(Device.TYPES deviceType){
+        for(Device device : devices){
+            if(device.getType().equals(deviceType)) return device;
+        }
+        return null;
+    }
+
     public String getName() {
         return name;
     }
