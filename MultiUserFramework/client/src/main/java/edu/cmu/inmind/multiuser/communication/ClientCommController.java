@@ -277,7 +277,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
                                     ExceptionHandler.handle(new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
                                             "responseListener: " + responseListener ));
                                 }else {
-                                    responseListener.process(replyString);
+                                    processResponse(replyString);
                                 }
                             }
                         } else {
@@ -289,6 +289,16 @@ public class ClientCommController implements ClientController, DestroyableCallba
         }catch (Throwable e){
             ExceptionHandler.handle(e);
         }
+    }
+
+    @Override
+    public void processResponse(String response){
+        CommonUtils.execute(new Runnable() {
+            @Override
+            public void run() {
+                responseListener.process(response);
+            }
+        });
     }
 
     @Override
@@ -579,7 +589,7 @@ public class ClientCommController implements ClientController, DestroyableCallba
                             stop.getAndSet(true);
                         } else if (responseListener != null) {
                             if (shouldProcessReply) {
-                                responseListener.process(response);
+                                processResponse(response);
                                 if( sendAck ) send(sessionId, new SessionMessage(Constants.ACK));
                                 if( response.contains(Constants.SHUTDOW_SERVER) ){
                                     stop.set(true);

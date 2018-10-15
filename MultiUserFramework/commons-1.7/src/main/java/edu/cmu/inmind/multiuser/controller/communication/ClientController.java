@@ -9,5 +9,6 @@ public interface ClientController {
     void setResponseListener(ResponseListener responseListener);
     void disconnect(String sessionId);
     void close(DestroyableCallback callback);
+    void processResponse(String response);
     ResponseListener getResponseListener();
 }

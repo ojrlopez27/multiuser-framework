@@ -259,7 +259,7 @@ public class SessionImpl implements Session, CommonUtils.NamedRunnable, Orchestr
         if( config.isTCPon() ) {
             sessionCommController.send(output);
         }else{
-            client.getResponseListener().process( CommonUtils.toJson(output) );
+            client.processResponse( CommonUtils.toJson(output) );
         }
         if(useSessionTimeout) timer.schedule(new InactivityCheck(), config.getSessionTimeout());
     }
