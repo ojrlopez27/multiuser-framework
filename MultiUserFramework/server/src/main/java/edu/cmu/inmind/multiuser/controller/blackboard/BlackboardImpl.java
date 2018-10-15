@@ -108,7 +108,6 @@ public class BlackboardImpl implements Blackboard {
 
     private void post(BlackboardListener sender, String key, Object element, boolean shouldClone) throws Throwable{
         try {
-            Log4J.track(this, "21.1:" + element);
             if( key == null ){
                 checkException( new MultiuserException(ErrorMessages.BLACKBOARD_KEY_NULL, "") );
             }
@@ -124,7 +123,6 @@ public class BlackboardImpl implements Blackboard {
             if (loggerOn){
                 logger.add(key, clone == null? "element is null" : clone.toString());
             }
-            Log4J.track(this, "21.2:" + element);
             notifySubscribers(sender, Constants.ELEMENT_ADDED, key, clone);
         }
         catch (NoClassDefFoundError e){
@@ -230,29 +228,23 @@ public class BlackboardImpl implements Blackboard {
                     checkException( new MultiuserException(ErrorMessages.NOBODY_IS_SUBSCRIBED, key) );
                 }
                 if (listeners != null) {
-                    Log4J.track(this, "21.3:" + element);
                     for(final BlackboardListener subscriber : listeners ){
                         if( subscriber == null ){
                             checkException( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL,
                                     "subscriber: " + subscriber));
                             continue;
                         }
-                        Log4J.track(this, "21.4:" + element);
                         if( !subscriber.isClosing() ) {
-                            Log4J.track(this, "21.5:" + element);
                             final String sessionId = sender.getSessionId();
                             if (subscriber instanceof PluggableComponent) {
                                 ((PluggableComponent) subscriber).setActiveSession(sessionId);
                             }
-                            Log4J.track(this, "21.6:" + element);
                             final BlackboardImpl bb = this;
                             new Thread("blackboard-onEvent-" + sessionId) {
                                 public void run() {
                                     try {
                                         BlackboardEvent event = new BlackboardEvent(status, key, element, sessionId);
-                                        Log4J.track(this, "21.8:" + element);
                                         subscriber.onEvent(bb, event);
-                                        Log4J.track(this, "21.8:" + element);
                                         if (subscriber instanceof PluggableComponent && subscriber.getClass()
                                                 .isAnnotationPresent(ConnectRemoteService.class)) {
                                             SessionMessage sessionMessage = new SessionMessage();

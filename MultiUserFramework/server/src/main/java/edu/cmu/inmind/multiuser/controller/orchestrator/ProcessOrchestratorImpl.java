@@ -144,7 +144,6 @@ public abstract class ProcessOrchestratorImpl implements ProcessOrchestrator, De
         try {
             for(OrchestratorListener listener : orchestratorListeners){
                 try {
-                    Log4J.track("ProcessOrchestratorImpl", "25:" + output);
                     // we need a delay in order to avoid consecutive messages to block the sender socket
                     CommonUtils.sleep( CommonUtils.getProperty("orchestrator.send.response.delay", 5L));
                     listener.processOutput(output);

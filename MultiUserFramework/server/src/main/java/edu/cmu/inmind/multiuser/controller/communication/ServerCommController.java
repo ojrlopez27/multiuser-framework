@@ -117,9 +117,7 @@ public class ServerCommController implements DestroyableCallback {
                         header.destroy();
 
                         ZFrame command = msg.pop();
-                        Log4J.track(this, "19.1:" + msg + " commmand: " + command);
                         if (MDP.S_REQUEST.frameEquals(command)) {
-                            Log4J.track(this, "19.2:" + msg );
                             // We should pop and save as many addresses as there are
                             // up to a null part, but for now, just save one
                             replyTo = msg.unwrap();

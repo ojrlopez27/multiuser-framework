@@ -28,10 +28,6 @@ public class PerformanceTestPC extends PluggableComponent {
             Log4J.debug(this, String.format("messageCount for %s is %s and element is %s", agentId, messageCount,
                     event.getElement()));
         }
-        Log4J.track("PerformanceTestPC", "22:" + event.getElement());
-        if( !agentId.equals(event.getSessionId()) || !agentId.equals(event.getElement().toString().split(":")[1]) ){
-            Log4J.track("PerformanceTestPC", "22.1: They are not equal");
-        }
         messageCount++;
         blackboard.post(this, "MSG_SEND_TO_STATELESS", event.getElement());
     }

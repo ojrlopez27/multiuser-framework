@@ -28,10 +28,6 @@ public class PerformanceTestPCStateless extends PluggableComponent {
             Log4J.error(this, String.format("messageCount for %s is %s and element is %s", agentId,
                     messageCount.incrementAndGet(), event.getElement()));
         }
-        Log4J.track("PerformanceTestPCStateless", "23:" + event.getElement());
-        if( !agentId.equals(event.getSessionId()) || !agentId.equals(event.getElement().toString().split(":")[1]) ){
-            Log4J.track("PerformanceTestPCStateless", "23.1: They are not equal");
-        }
         blackboard.post(this, "MSG_SEND_RESPONSE", event.getElement());
     }
 }

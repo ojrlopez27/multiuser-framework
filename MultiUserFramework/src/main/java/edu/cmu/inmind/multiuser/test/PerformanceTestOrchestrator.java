@@ -28,14 +28,12 @@ public class PerformanceTestOrchestrator extends ProcessOrchestratorImpl {
     @Override
     public void process(String input) throws Throwable{
         //we use plain strings instead of SessionMessage to avoid json parsing
-        Log4J.track("PerformanceTestOrchestrator", "21:" + input);
         blackboard.post(this, ConstantsTests.MSG_PERFORMANCE_COMPONENT, input);
     }
 
     @Override
     public void onEvent(Blackboard blackboard, BlackboardEvent event){
         //we use plain strings instead of SessionMessage to avoid json parsing
-        Log4J.track("PerformanceTestOrchestrator", "24:" + event.getElement());
         sendResponse( event.getElement());
         if(verbose)
             Log4J.debug(this, "onEvent sendResponse: " + event.getElement());

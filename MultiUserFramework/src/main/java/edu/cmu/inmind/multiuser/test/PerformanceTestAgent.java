@@ -66,7 +66,6 @@ public class PerformanceTestAgent implements CommonUtils.NamedRunnable {
             try {
                 if( verbose ) {
                     CommonUtils.printNewAddedThreads();
-                    Log4J.track(this, "Active: " + Thread.activeCount());
                 }
                 if( message.contains(Constants.SESSION_INITIATED) ){
                     initializedAgents.incrementAndGet();
@@ -75,7 +74,6 @@ public class PerformanceTestAgent implements CommonUtils.NamedRunnable {
                             initializedAgents.get() ) );
                     stop.getAndSet( false );
                 }else if( !message.contains(Constants.SESSION_CLOSED) && !message.contains(Constants.SESSION_RECONNECTED)){
-                    Log4J.track(this, "35:" + message);
                     int key = Integer.valueOf(message.split(":")[2]);
                     long value = times.get(key);
                     times.put( key,  System.nanoTime() - value );
@@ -85,7 +83,6 @@ public class PerformanceTestAgent implements CommonUtils.NamedRunnable {
                         Log4J.debug(this, String.format("%s receives: %s receivedMessages: %s total: %s", agentId,
                                 message, receivedMessages, receivedMsgs.get()));
                     if(receivedMessages == numMessages ){
-                        Log4J.track(this, "36:" + message);
                         ids[id].getAndSet(-1);
                         StringBuffer left =  new StringBuffer("");
                         for( AtomicInteger idAgent : ids ){
@@ -114,7 +111,6 @@ public class PerformanceTestAgent implements CommonUtils.NamedRunnable {
             for (int i = 0; i < numMessages; i++) {
                 //we send plain strings instead of SessionMessage to avoid json parsing
                 message = "@@@:" + agentId + ":"  +(i + 1);
-                Log4J.track(this, "3:" + message);
                 times.put( (i + 1), System.nanoTime() );
                 ccc.send(agentId, message);
                 int sent = sentMessages.incrementAndGet();
@@ -125,7 +121,6 @@ public class PerformanceTestAgent implements CommonUtils.NamedRunnable {
             while( !stop.get() ){
                 CommonUtils.sleep(100);
             }
-            Log4J.track(this, "37:" + message);
         }catch (Exception e){
             e.printStackTrace();
         }

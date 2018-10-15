@@ -56,8 +56,8 @@ public class Log4J implements ILog4J{
 
     @Override
     public void infoI(Object caller, String message){
-        String sessionId = getSessionId(caller);
         if (turnedOn){
+            String sessionId = getSessionId(caller);
             if( sessionId != null ){
                 info( caller, sessionId, message);
             }else{
@@ -72,8 +72,8 @@ public class Log4J implements ILog4J{
 
     @Override
     public void traceI(Object caller, String message){
-        String sessionId = getSessionId(caller);
         if (turnedOn){
+            String sessionId = getSessionId(caller);
             if( sessionId != null ){
                 trace( caller, sessionId, message);
             }else{
@@ -88,8 +88,8 @@ public class Log4J implements ILog4J{
 
     @Override
     public void debugI(Object caller, String message){
-        String sessionId = getSessionId(caller);
         if (turnedOn){
+            String sessionId = getSessionId(caller);
             if( sessionId != null ){
                 debug( caller, sessionId, message);
             }else{
@@ -104,8 +104,8 @@ public class Log4J implements ILog4J{
 
     @Override
     public void errorI(Object caller, String message){
-        String sessionId = getSessionId(caller);
         if (turnedOn){
+            String sessionId = getSessionId(caller);
             if( sessionId != null ){
                 error( caller, sessionId, message);
             }else{
@@ -120,8 +120,8 @@ public class Log4J implements ILog4J{
 
     @Override
     public void warnI(Object caller, String message){
-        String sessionId = getSessionId(caller);
         if (turnedOn){
+            String sessionId = getSessionId(caller);
             if( sessionId != null ){
                 warn( caller, sessionId, message);
             }else{
@@ -136,8 +136,8 @@ public class Log4J implements ILog4J{
 
     @Override
     public void trackI(Object caller, String message){
-        String sessionId = getSessionId(caller);
         if (turnedOn){
+            String sessionId = getSessionId(caller);
             if( sessionId != null ){
                 track( caller, sessionId, message);
             }else{
@@ -228,7 +228,7 @@ public class Log4J implements ILog4J{
     }
 
     public static void turnOn(boolean shouldTurnOn){
-        instance.turnOn(shouldTurnOn);
+        instance.turnOnI(shouldTurnOn);
     }
 
     @Override

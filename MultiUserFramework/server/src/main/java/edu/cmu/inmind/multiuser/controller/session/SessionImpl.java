@@ -257,7 +257,6 @@ public class SessionImpl implements Session, CommonUtils.NamedRunnable, Orchestr
             ExceptionHandler.handle( new MultiuserException(ErrorMessages.ANY_ELEMENT_IS_NULL, "output: " + output));
         }
         if( config.isTCPon() ) {
-            Log4J.track("ProcessOrchestratorImpl", "26:" + output);
             sessionCommController.send(output);
         }else{
             client.getResponseListener().process( CommonUtils.toJson(output) );
