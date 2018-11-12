@@ -14,7 +14,7 @@ import java.util.Random;
  */
 class MainClient {
     private ClientCommController commController;
-    private String serverAddress = "tcp://127.0.0.1:5555";
+    private String serverAddress = "tcp://128.237.219.42:5555";
     private String sessionId = "my-session-id";
     private ResponseListener responseListener;
 

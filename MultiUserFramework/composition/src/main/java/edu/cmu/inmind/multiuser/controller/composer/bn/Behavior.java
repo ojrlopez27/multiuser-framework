@@ -26,6 +26,7 @@ public class Behavior implements Comparable<Behavior>{
 	private String description;
 	private List<String> addGoals = new Vector<>();
 	private List<String> deleteList = new Vector <>();
+	private String shortName;
 
 	private transient double activation = 0;
 	private transient int idx;
@@ -36,7 +37,6 @@ public class Behavior implements Comparable<Behavior>{
 	private transient double utility;
 	private transient BehaviorNetwork network;
 	private transient String userName;
-	private transient String shortName;
 
 	public Behavior(String name){
 		this.name = name;
@@ -487,6 +487,10 @@ public class Behavior implements Comparable<Behavior>{
 
 	public String getShortName() {
 		return shortName;
+	}
+
+	public void setShortName(String shortName){
+		this.shortName = shortName;
 	}
 
 	private void extractShortName(){
