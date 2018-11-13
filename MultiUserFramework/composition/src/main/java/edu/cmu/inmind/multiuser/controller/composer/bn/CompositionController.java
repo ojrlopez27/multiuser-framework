@@ -97,14 +97,19 @@ public class CompositionController {
             // let's add grounded behaviors created in previous step
             network.addBehaviors(device.getBehaviors());
         }
+        initActivations();
+        deviceServiceMap = generateMap();
+    }
+
+    public void initActivations(){
         network.sortBehaviorsByName();
         serviceBehaviorMap = network.map();
-        deviceServiceMap = generateMap();
         activations = new List[serviceBehaviorMap.values().size()];
         for(int i = 0; i < activations.length; i++){
             activations[i] = new ArrayList<>();
         }
     }
+
 
     public void endMeansAnalysis() {
         network.endMeansAnalysis( users );
