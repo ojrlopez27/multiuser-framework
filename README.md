@@ -1,5 +1,14 @@
 # What the MUF is?
 
+![coverage](https://img.shields.io/badge/coverage-90%25-yellowgreen.svg?cacheSeconds=2592000) 
+![language](https://img.shields.io/badge/language-Java-yellowgreen.svg?cacheSeconds=2592000) 
+![language](https://img.shields.io/badge/language-Python-yellowgreen.svg?cacheSeconds=2592000) 
+![version](https://img.shields.io/badge/version-2.5-blue.svg?cacheSeconds=2592000)
+![build](https://img.shields.io/badge/build-passed-green.svg?cacheSeconds=2592000)
+![test](https://img.shields.io/badge/test-passed-green.svg?cacheSeconds=2592000)
+![dependencies](https://img.shields.io/badge/dependencies-zeromq-orange.svg?cacheSeconds=2592000)
+![codacy](https://img.shields.io/badge/codacy-B-green.svg?cacheSeconds=2592000)
+
 The MUF is a framework that allows developers to easily scale their mono-user architectures to multi-user architectures with little effort. The MUF is a plugin-based architecture written in Java (though it supports interaction with almost any programming language thanks to its communication layer that uses ZeroMQ). 
 
 <p align="center">
