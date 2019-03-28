@@ -1,19 +1,29 @@
-# What the MUF is?
+# multiuser-framework (MUF)
+ 
+Status for master branch:
 
+[//]: # (this is a comment: see this link for badges using travis-CI, codecov, etc: https://github.com/mlindauer/SMAC3/blob/warmstarting_multi_model/README.md) 
+![build](https://img.shields.io/badge/build-passing-green.svg?cacheSeconds=2592000) 
+![test](https://img.shields.io/badge/test-passing-green.svg?cacheSeconds=2592000) 
 ![coverage](https://img.shields.io/badge/coverage-90%25-yellowgreen.svg?cacheSeconds=2592000) 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/98b8e8df2b364f46affc1e4c2e7c117e)](https://www.codacy.com/app/ojrlopez27/multiuser-framework?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ojrlopez27/multiuser-framework&amp;utm_campaign=Badge_Grade)
+
+Implementation:
+
+![version](https://img.shields.io/badge/version-2.5-blue.svg?cacheSeconds=2592000)
 ![language](https://img.shields.io/badge/language-Java-yellowgreen.svg?cacheSeconds=2592000) 
 ![language](https://img.shields.io/badge/language-Python-yellowgreen.svg?cacheSeconds=2592000) 
-![version](https://img.shields.io/badge/version-2.5-blue.svg?cacheSeconds=2592000)
-![build](https://img.shields.io/badge/build-passed-green.svg?cacheSeconds=2592000)
-![test](https://img.shields.io/badge/test-passed-green.svg?cacheSeconds=2592000)
 ![dependencies](https://img.shields.io/badge/dependencies-zeromq-orange.svg?cacheSeconds=2592000)
-![codacy](https://img.shields.io/badge/codacy-B-green.svg?cacheSeconds=2592000)
 
-The MUF is a framework that allows developers to easily scale their mono-user architectures to multi-user architectures with little effort. The MUF is a plugin-based architecture written in Java (though it supports interaction with almost any programming language thanks to its communication layer that uses ZeroMQ). 
+## Overview
+
+The MUF is a framework that allows developers to easily scale their mono-user architecture to a multi-user architecture with little effort. The MUF is a plugin-based architecture written in Java (though it supports interaction with almost any programming language thanks to its communication layer that uses ZeroMQ). 
 
 <p align="center">
     <img align="center" width="75%" src="MUF.png" alt="MUF Architecture" title="MUF Architecture"</img>   
 </p>
+
+## Features
 
 The most relevant features of the MUF are:
 
@@ -48,9 +58,7 @@ The most relevant features of the MUF are:
 * **Multiplatform and Multilanguage:** thanks to MUF uses a potent messaging and concurrency libraries such as ZMQ, you can easily communicate the MUF implementation (Java code) with clients written in almost any programming language with low extra effort (there is an example in the github repo of how to connect Java MUF with a Python MUF, but so many other languages may be supported). Also, you can communicate your MUF with another MUF which runs on another machine, that means that your MUF may behave as a server when receiving requests from clients (phones) or as a client when it sends or forwards messages to other MUF’s and waits for responses from them, so you can get a nested architecture of MUF’s.
 
 
-# How to use the MUF
-
-## Gradle Dependency
+## How to use the MUF
 
 Currently the MUF is hosted on a CMU AFS (Andrew File System) space but it will be ported to AWS soon. You can add this gradle dependency to your build.gradle file:
 
@@ -126,7 +134,7 @@ Or stop all MUF's instances like this:
 MultiuserFrameworkContainer.stopFrameworks( );
 ```
 
-## Create a Client, send and receive messages to/from MUF
+## Create a Client, and send and receive messages to/from MUF
 
 Creating a client that connects to MUF is a simple as follows (using the default configuration):
 ```java
