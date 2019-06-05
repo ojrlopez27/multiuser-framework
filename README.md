@@ -221,3 +221,16 @@ On SaraProject, you will find 15 examples that take you through the whole set of
 - [**Ex15_WholePipeline:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex15_WholePipeline.java) This example illustrates the whole pipeline: AndroidClient (ASR) -> DialogueSystem (NLU) -> TaskReasoner -> SocialReasoner -> NLG -> AndroidClient. Note: this time you will have to run DialogueSystem and uncomment the second block of method DialogueSystem.MainClass.createServiceInfo, that is, the block that uses setMsgSubscriptions.
 - [**EX16_MasterCallsSlaves:**](Examples/SaraProject/src/main/java/edu/cmu/inmind/multiuser/sara/examples/Ex16_MasterCallsSlaves.java) This example is pretty similar to EX15_Wholepipeline, however, unlike Ex15_WholePipeline, in this example the master MUF (Sara MUF) initilizes its slaves MUF's (i.e., Dialogue MUF, etc.) rather than the slaves register to the master. In order to run this example, you have to define the connection information of your slaves MUF's into the file services.json.
 
+
+## How to cite our work
+
+Please cite our [ArXiv paper](https://arxiv.org/abs/XXXXX) if you use MUF/AMIPA in your work:
+
+```
+@misc{arxiv:muf:2019,
+  title = {Architectural Middleware that Supports Building High-performance, Scalable, Ubiquitous, Intelligent Personal Assistants},
+  author = {{Romero}, {Oscar} J.},
+  publisher = {ArXiv},
+  year          = "2019"
+}
+```
