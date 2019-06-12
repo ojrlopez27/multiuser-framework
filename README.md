@@ -224,7 +224,7 @@ On SaraProject, you will find 15 examples that take you through the whole set of
 
 ## How to cite our work
 
-Please cite our [ArXiv paper](https://arxiv.org/abs/XXXXX) if you use MUF/AMIPA in your work:
+[ArXiv paper](https://arxiv.org/abs/XXXXX):
 
 ```
 @misc{arxiv:muf:2019,
